@@ -1,0 +1,880 @@
+<style>
+  :root {
+    --plane:#F4F1E7; --surface:#FFFFFF; --surface-2:#FBFAF4;
+    --ink:#16241C; --ink-2:#4C574E; --muted:#7A857B;
+    --line:rgba(20,35,28,0.12); --line-soft:rgba(20,35,28,0.07);
+    --accent:#9A6C10; --accent-ink:#7C560A;
+    --pos:#1E7A50; --neg:#C24B3F;
+    --pine:#14231C; --shadow:0 1px 2px rgba(20,35,28,.06),0 8px 30px rgba(20,35,28,.08);
+    /* app (device) palette — a single committed dark-pine identity, same in both page themes */
+    --app-bg:#14231C; --app-card:#1E3228; --app-card-2:#26402F; --app-line:rgba(255,255,255,.09);
+    --app-ink:#F3F0E6; --app-ink-2:#A7B4AB; --app-muted:#76867C;
+    --app-gold:#E9B44C; --app-mint:#3ED996; --app-coral:#E97767; --app-blue:#6FA8E8;
+    --c-green:#26A876; --c-amber:#BC8623; --c-blue:#4E8FD9; --c-red:#D95A4E;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,Roboto,Helvetica,Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --plane:#0B140F; --surface:#131F18; --surface-2:#0F1A13;
+      --ink:#F3F0E6; --ink-2:#A7B4AB; --muted:#77857B;
+      --line:rgba(255,255,255,.10); --line-soft:rgba(255,255,255,.055);
+      --accent:#E9B44C; --accent-ink:#F0C86E;
+      --pos:#3ED996; --neg:#E97767;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 34px rgba(0,0,0,.45);
+    }
+  }
+  :root[data-theme="light"]{
+    --plane:#F4F1E7; --surface:#FFFFFF; --surface-2:#FBFAF4;
+    --ink:#16241C; --ink-2:#4C574E; --muted:#7A857B;
+    --line:rgba(20,35,28,0.12); --line-soft:rgba(20,35,28,0.07);
+    --accent:#9A6C10; --accent-ink:#7C560A; --pos:#1E7A50; --neg:#C24B3F;
+    --shadow:0 1px 2px rgba(20,35,28,.06),0 8px 30px rgba(20,35,28,.08);
+  }
+  :root[data-theme="dark"]{
+    --plane:#0B140F; --surface:#131F18; --surface-2:#0F1A13;
+    --ink:#F3F0E6; --ink-2:#A7B4AB; --muted:#77857B;
+    --line:rgba(255,255,255,.10); --line-soft:rgba(255,255,255,.055);
+    --accent:#E9B44C; --accent-ink:#F0C86E; --pos:#3ED996; --neg:#E97767;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 34px rgba(0,0,0,.45);
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--plane);color:var(--ink);font-family:var(--sans);
+    line-height:1.55;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1200px;margin:0 auto;padding:0 24px;}
+  h1,h2,h3,h4{margin:0;text-wrap:balance;letter-spacing:-.02em;}
+  p{margin:0}
+  .tnum{font-variant-numeric:tabular-nums}
+
+  /* ---------- Masthead ---------- */
+  header.mast{padding:72px 0 48px;border-bottom:1px solid var(--line);}
+  .eyebrow{font-size:12px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);}
+  .mast h1{font-size:clamp(40px,7vw,76px);font-weight:800;line-height:.98;margin:18px 0 0;}
+  .mast .lede{font-size:clamp(17px,2.2vw,21px);color:var(--ink-2);max-width:60ch;margin-top:22px;line-height:1.5;}
+  .metastrip{display:flex;flex-wrap:wrap;gap:10px;margin-top:30px;}
+  .chip{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;
+    padding:7px 13px;border:1px solid var(--line);border-radius:999px;color:var(--ink-2);background:var(--surface);}
+  .chip b{color:var(--ink);font-weight:700}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--accent)}
+
+  /* ---------- Section scaffolding ---------- */
+  section{padding:60px 0;border-bottom:1px solid var(--line);}
+  .sec-head{display:flex;align-items:baseline;gap:16px;margin-bottom:8px;}
+  .sec-num{font-size:13px;font-weight:700;color:var(--accent);letter-spacing:.08em;font-variant-numeric:tabular-nums;}
+  .sec-head h2{font-size:clamp(26px,3.6vw,38px);font-weight:800;}
+  .sec-intro{color:var(--ink-2);max-width:68ch;font-size:16px;margin:14px 0 40px;}
+
+  /* ---------- Flow map ---------- */
+  .flow{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;overflow-x:auto;}
+  .flow-col{display:flex;flex-direction:column;gap:10px;min-width:150px;}
+  .flow-lab{font-size:11px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);
+    padding-bottom:8px;border-bottom:1px dashed var(--line);margin-bottom:2px;}
+  .node{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 13px;box-shadow:var(--shadow);}
+  .node .nt{font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px;}
+  .node .nd{font-size:12px;color:var(--ink-2);margin-top:4px;line-height:1.4;}
+  .node.key{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),var(--shadow);}
+  .ic{width:20px;height:20px;flex:0 0 20px;color:var(--accent)}
+  .flow-note{font-size:13px;color:var(--muted);margin-top:18px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .kbadge{font-size:10.5px;font-weight:700;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:2px 7px;letter-spacing:.04em}
+
+  /* ---------- Screen gallery ---------- */
+  .group-label{font-size:12px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);
+    margin:44px 0 20px;display:flex;align-items:center;gap:12px;}
+  .group-label::after{content:"";flex:1;height:1px;background:var(--line);}
+  .screens{display:grid;grid-template-columns:repeat(auto-fill,minmax(288px,1fr));gap:34px 28px;align-items:start;}
+  .screen{display:flex;flex-direction:column;gap:14px;}
+  .screen .cap{}
+  .screen .cap .st{font-weight:700;font-size:16px;display:flex;align-items:center;gap:8px}
+  .screen .cap .step{font-size:11px;font-weight:700;color:#fff;background:var(--accent);border-radius:6px;padding:1px 7px;letter-spacing:.03em}
+  :root[data-theme="dark"] .screen .cap .step,@media(prefers-color-scheme:dark){}
+  .screen .cap .sd{font-size:13.5px;color:var(--ink-2);margin-top:6px;line-height:1.5}
+  .annot{list-style:none;padding:0;margin:10px 0 0;display:flex;flex-direction:column;gap:7px;}
+  .annot li{position:relative;padding-left:22px;font-size:12.5px;color:var(--ink-2);line-height:1.45}
+  .annot li::before{content:"";position:absolute;left:2px;top:6px;width:9px;height:9px;border-radius:50%;
+    border:2px solid var(--accent);}
+  .annot li b{color:var(--ink);font-weight:650}
+
+  /* ---------- Phone device ---------- */
+  .device{width:100%;max-width:300px;aspect-ratio:9/19.5;background:var(--app-bg);border-radius:38px;
+    padding:11px;box-shadow:0 0 0 2px rgba(0,0,0,.35),0 22px 50px rgba(0,0,0,.28);position:relative;
+    border:1px solid rgba(255,255,255,.06);}
+  @media (prefers-color-scheme:light){.device{box-shadow:0 0 0 1.5px #0d1b13,0 22px 50px rgba(20,35,28,.22)}}
+  :root[data-theme="light"] .device{box-shadow:0 0 0 1.5px #0d1b13,0 22px 50px rgba(20,35,28,.22)}
+  .scr{position:absolute;inset:11px;border-radius:28px;overflow:hidden;background:var(--app-bg);
+    color:var(--app-ink);font-size:12px;display:flex;flex-direction:column;}
+  .notch{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:74px;height:20px;
+    background:#000;border-radius:0 0 12px 12px;z-index:9;}
+  /* app internal */
+  .statusbar{display:flex;justify-content:space-between;padding:9px 18px 4px;font-size:11px;font-weight:600;color:var(--app-ink);flex:0 0 auto}
+  .appbody{flex:1;overflow:hidden;padding:4px 15px 0;display:flex;flex-direction:column;gap:11px;}
+  .app-h{display:flex;justify-content:space-between;align-items:flex-start;margin-top:2px}
+  .app-h .greet{font-size:11px;color:var(--app-ink-2)}
+  .app-h .title{font-size:18px;font-weight:800;letter-spacing:-.02em;margin-top:1px}
+  .avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#2c4a3a,#1a2e23);
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;color:var(--app-gold);border:1px solid var(--app-line)}
+  .card{background:var(--app-card);border:1px solid var(--app-line);border-radius:16px;padding:13px;}
+  .card.hero{background:linear-gradient(150deg,#233a2c,#182a20);}
+  .lbl{font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--app-muted)}
+  .big{font-size:26px;font-weight:800;letter-spacing:-.03em;margin-top:3px;line-height:1}
+  .cur{font-size:12px;font-weight:600;color:var(--app-ink-2)}
+  .row{display:flex;align-items:center;gap:9px}
+  .between{justify-content:space-between}
+  .pos{color:var(--app-mint)} .neg{color:var(--app-coral)}
+  .pill{font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px;letter-spacing:.02em}
+  .pill.g{background:rgba(62,217,150,.14);color:var(--app-mint)}
+  .pill.r{background:rgba(233,119,103,.15);color:var(--app-coral)}
+  .pill.a{background:rgba(233,180,76,.15);color:var(--app-gold)}
+  .miniquad{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .stat{background:var(--app-card);border:1px solid var(--app-line);border-radius:13px;padding:10px 11px}
+  .stat .v{font-size:15px;font-weight:800;letter-spacing:-.02em;margin-top:5px}
+  .txn{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--app-line)}
+  .txn:last-child{border-bottom:0}
+  .tico{width:32px;height:32px;border-radius:10px;flex:0 0 32px;display:flex;align-items:center;justify-content:center;
+    background:var(--app-card-2);color:var(--app-ink);font-size:14px}
+  .txn .tn{font-weight:650;font-size:12px}
+  .txn .tm{font-size:10px;color:var(--app-muted);margin-top:1px;display:flex;align-items:center;gap:5px}
+  .txn .amt{margin-left:auto;font-weight:700;font-size:12px}
+  .tabbar{flex:0 0 auto;display:flex;justify-content:space-around;align-items:center;padding:9px 8px 12px;
+    border-top:1px solid var(--app-line);background:rgba(0,0,0,.18)}
+  .tab{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:8.5px;color:var(--app-muted);font-weight:600}
+  .tab.on{color:var(--app-gold)}
+  .tab svg{width:20px;height:20px}
+  .fab{width:40px;height:40px;border-radius:14px;background:var(--app-gold);color:#20170a;display:flex;
+    align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(233,180,76,.35);margin-top:-6px}
+  .fab svg{width:22px;height:22px}
+  .sheet-title{font-size:16px;font-weight:800;letter-spacing:-.02em}
+  .field{background:var(--app-card);border:1px solid var(--app-line);border-radius:12px;padding:10px 12px;margin-top:8px}
+  .field .fl{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--app-muted)}
+  .field .fv{font-size:13px;font-weight:600;margin-top:3px}
+  .keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
+  .key{background:var(--app-card);border:1px solid var(--app-line);border-radius:11px;text-align:center;
+    padding:9px 0;font-size:16px;font-weight:700}
+  .btn{background:var(--app-gold);color:#20170a;font-weight:800;font-size:13px;text-align:center;
+    padding:12px;border-radius:13px;margin-top:11px}
+  .btn.ghost{background:transparent;color:var(--app-ink);border:1px solid var(--app-line)}
+  .catrow{display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid var(--app-line)}
+  .catrow:last-child{border-bottom:0}
+  .swatch{width:11px;height:11px;border-radius:4px;flex:0 0 11px}
+  .bar-track{height:7px;border-radius:4px;background:var(--app-card-2);overflow:hidden;margin-top:6px}
+  .bar-fill{height:100%;border-radius:4px}
+  .seg{display:flex;gap:3px;margin-top:8px}
+  .seg .s{height:8px;border-radius:3px}
+  .waves{display:flex;align-items:center;gap:3px;height:56px;justify-content:center;margin:6px 0}
+  .waves span{width:3px;border-radius:3px;background:var(--app-gold);opacity:.85}
+  .recdot{width:9px;height:9px;border-radius:50%;background:var(--app-coral)}
+  .scanframe{flex:1;border:2px dashed rgba(255,255,255,.25);border-radius:16px;margin:6px 0;display:flex;
+    flex-direction:column;align-items:center;justify-content:center;gap:9px;color:var(--app-ink-2);text-align:center;padding:16px}
+  .ocrline{display:flex;justify-content:space-between;font-size:11px;padding:7px 0;border-bottom:1px solid var(--app-line)}
+  .toggle{width:32px;height:19px;border-radius:999px;background:var(--app-gold);position:relative;flex:0 0 32px}
+  .toggle::after{content:"";position:absolute;width:15px;height:15px;border-radius:50%;background:#20170a;top:2px;right:2px}
+  .toggle.off{background:var(--app-card-2)}
+  .toggle.off::after{right:auto;left:2px;background:var(--app-muted)}
+  .segctl{display:flex;background:var(--app-card);border:1px solid var(--app-line);border-radius:11px;padding:3px;font-size:10px;font-weight:700}
+  .segctl .o{flex:1;text-align:center;padding:6px 0;border-radius:8px;color:var(--app-ink-2)}
+  .segctl .o.on{background:var(--app-gold);color:#20170a}
+  .filterchips{display:flex;gap:6px;overflow:hidden}
+  .fchip{font-size:9.5px;font-weight:700;padding:5px 10px;border-radius:999px;border:1px solid var(--app-line);color:var(--app-ink-2);white-space:nowrap}
+  .fchip.on{background:var(--app-gold);color:#20170a;border-color:var(--app-gold)}
+  .daylabel{font-size:9.5px;font-weight:700;color:var(--app-muted);letter-spacing:.05em;text-transform:uppercase;margin-top:4px}
+  .scrollfade{position:relative}
+
+  /* ---------- Architecture footer ---------- */
+  .arch{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin-top:8px}
+  .acard{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+  .acard h4{font-size:15px;font-weight:750;display:flex;align-items:center;gap:8px}
+  .acard p{font-size:13.5px;color:var(--ink-2);margin-top:8px}
+  .acard code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;background:var(--surface-2);
+    border:1px solid var(--line-soft);border-radius:5px;padding:1px 5px;color:var(--accent-ink)}
+  .stack-list{list-style:none;padding:0;margin:10px 0 0;font-size:13px;color:var(--ink-2)}
+  .stack-list li{padding:5px 0;border-bottom:1px solid var(--line-soft);display:flex;gap:8px}
+  .stack-list li:last-child{border:0}
+  .stack-list b{color:var(--ink);font-weight:650}
+  footer{padding:40px 0 70px;color:var(--muted);font-size:13px}
+  .callout{background:var(--surface-2);border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:0 12px 12px 0;padding:16px 18px;margin-top:22px;font-size:14px;color:var(--ink-2)}
+  .callout b{color:var(--ink)}
+  a{color:var(--accent-ink)}
+  @media(max-width:720px){.flow{grid-template-columns:repeat(5,minmax(150px,1fr))}}
+</style>
+
+<header class="mast">
+  <div class="wrap">
+    <div class="eyebrow">Rabbit Dairy · UI Flow &amp; Screen Design</div>
+    <h1>A money diary you'll<br>actually keep.</h1>
+    <p class="lede">A personal finance tracker built around three ways to capture a transaction — type it, <b>say it out loud</b>, or <b>snap your bank / mobile-money statement</b> and let it read the lines for you. Every screen below is drawn from your own Rabbit Dairy spreadsheet: real categories, real April numbers, real FCFA.</p>
+    <div class="metastrip">
+      <span class="chip"><span class="dot"></span>React Native · <b>Expo</b></span>
+      <span class="chip">iOS &amp; Android</span>
+      <span class="chip">Currency <b>XAF · FCFA</b></span>
+      <span class="chip"><b>14</b> screens · 4 flows</span>
+      <span class="chip">Supabase · <b>DDD / CQRS</b></span>
+    </div>
+  </div>
+</header>
+
+<!-- ============ 1. FLOW MAP ============ -->
+<section>
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">01</span><h2>The flow at a glance</h2></div>
+    <p class="sec-intro">Five zones. You land in the <b>Dashboard</b>, and everything is one tap from the bottom bar. The gold <b>＋ Add</b> button in the centre opens the capture hub — the heart of the app — where you choose how to log a transaction.</p>
+
+    <div class="flow">
+      <div class="flow-col">
+        <div class="flow-lab">Entry</div>
+        <div class="node"><div class="nt">Welcome</div><div class="nd">Value prop, sign-in</div></div>
+        <div class="node"><div class="nt">Sign in / up</div><div class="nd">Supabase auth · email or phone</div></div>
+      </div>
+      <div class="flow-col">
+        <div class="flow-lab">Core · tab bar</div>
+        <div class="node key"><div class="nt">Dashboard</div><div class="nd">Month summary, balances, recent activity</div></div>
+        <div class="node"><div class="nt">Transactions</div><div class="nd">The Daily Log — searchable, filterable</div></div>
+        <div class="node"><div class="nt">Transaction detail</div><div class="nd">Voice note, receipt, edit</div></div>
+      </div>
+      <div class="flow-col">
+        <div class="flow-lab">Capture · the ＋ button</div>
+        <div class="node key"><div class="nt">Add hub</div><div class="nd">Choose: Type · Speak · Scan</div></div>
+        <div class="node"><div class="nt">Manual entry</div><div class="nd">Amount, category, method</div></div>
+        <div class="node"><div class="nt">Voice capture</div><div class="nd">Record + reason → parsed</div></div>
+        <div class="node"><div class="nt">Scan &amp; import</div><div class="nd">Statement photo → OCR review</div></div>
+      </div>
+      <div class="flow-col">
+        <div class="flow-lab">Planning</div>
+        <div class="node"><div class="nt">Budgets</div><div class="nd">Set monthly caps per category</div></div>
+        <div class="node"><div class="nt">Budget vs Actual</div><div class="nd">Variance &amp; % used</div></div>
+        <div class="node"><div class="nt">Monthly report</div><div class="nd">Breakdowns, top 5, MoM</div></div>
+        <div class="node"><div class="nt">Yearly overview</div><div class="nd">12-month picture</div></div>
+      </div>
+      <div class="flow-col">
+        <div class="flow-lab">System</div>
+        <div class="node"><div class="nt">Categories</div><div class="nd">5 types, colours, methods</div></div>
+        <div class="node"><div class="nt">Settings</div><div class="nd">Active month, currency, emergency fund</div></div>
+      </div>
+    </div>
+    <div class="flow-note"><span class="kbadge">KEY</span> Gold-outlined nodes are the two screens users touch most: <b>Dashboard</b> (where they land) and <b>Add hub</b> (how everything gets in).</div>
+  </div>
+</section>
+
+<!-- ============ 2. SCREENS ============ -->
+<section>
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">02</span><h2>Every screen</h2></div>
+    <p class="sec-intro">Fourteen screens, grouped by the four flows. Each mockup shows the live layout; the notes beside it call out behaviour and the data model behind it.</p>
+
+    <!-- ===== GROUP: ENTRY ===== -->
+    <div class="group-label">Entry &amp; Authentication</div>
+    <div class="screens">
+
+      <!-- Welcome -->
+      <div class="screen">
+        <div class="device"><div class="scr">
+          <div class="statusbar"><span>9:41</span><span>&#9679;&#9679;&#9679; &#9203;</span></div>
+          <div class="appbody" style="justify-content:space-between;padding-bottom:22px">
+            <div style="margin-top:26px">
+              <div class="avatar" style="width:46px;height:46px;border-radius:15px;font-size:20px">&#128007;</div>
+              <div style="font-size:26px;font-weight:800;letter-spacing:-.03em;margin-top:20px;line-height:1.1">Know where<br>your money goes.</div>
+              <div style="font-size:12px;color:var(--app-ink-2);margin-top:12px;line-height:1.5">Track spending by typing, speaking, or scanning your statement. No subscription. Just your money, clearly.</div>
+            </div>
+            <div>
+              <div class="row" style="gap:8px;margin-bottom:14px">
+                <span class="pill a">TYPE</span><span class="pill a">SPEAK</span><span class="pill a">SCAN</span>
+              </div>
+              <div class="btn">Get started</div>
+              <div class="btn ghost">I already have an account</div>
+            </div>
+          </div>
+        </div></div>
+        <div class="cap">
+          <div class="st"><span class="step">01</span> Welcome</div>
+          <div class="sd">First-run value proposition. Names the three capture methods up front — the app's core differentiator.</div>
+          <ul class="annot">
+            <li>Single primary action; secondary is a quiet ghost button.</li>
+            <li>Skippable — returning users go straight to sign-in.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Auth -->
+      <div class="screen">
+        <div class="device"><div class="scr">
+          <div class="statusbar"><span>9:41</span><span>&#9679;&#9679;&#9679; &#9203;</span></div>
+          <div class="appbody">
+            <div style="margin-top:16px;font-size:22px;font-weight:800;letter-spacing:-.02em">Welcome back</div>
+            <div style="font-size:12px;color:var(--app-ink-2);margin-top:-4px">Sign in to your diary</div>
+            <div class="segctl" style="margin-top:14px"><div class="o on">Email</div><div class="o">Phone</div></div>
+            <div class="field"><div class="fl">Email</div><div class="fv">sam@nyota.ltd</div></div>
+            <div class="field"><div class="fl">Password</div><div class="fv">&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;</div></div>
+            <div style="font-size:10.5px;color:var(--app-gold);text-align:right;margin-top:8px;font-weight:600">Forgot password?</div>
+            <div class="btn">Sign in</div>
+            <div class="row between" style="margin-top:12px;gap:8px">
+              <div style="flex:1;height:1px;background:var(--app-line)"></div>
+              <span style="font-size:9px;color:var(--app-muted)">OR</span>
+              <div style="flex:1;height:1px;background:var(--app-line)"></div>
+            </div>
+            <div class="btn ghost" style="margin-top:12px">Continue with Google</div>
+          </div>
+        </div></div>
+        <div class="cap">
+          <div class="st"><span class="step">02</span> Sign in / Sign up</div>
+          <div class="sd">Supabase Auth. Email or phone (mobile-money numbers are the norm locally), plus OAuth.</div>
+          <ul class="annot">
+            <li><b>Row-Level Security</b> scopes every table to the signed-in user.</li>
+            <li>Phone OTP suits users without email.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== GROUP: CORE ===== -->
+    <div class="group-label">Core · Dashboard &amp; Transactions</div>
+    <div class="screens">
+
+      <!-- Dashboard -->
+      <div class="screen">
+        <div class="device"><div class="scr">
+          <div class="statusbar"><span>9:41</span><span>&#9679;&#9679;&#9679; &#9203;</span></div>
+          <div class="appbody">
+            <div class="app-h">
+              <div><div class="greet">Good evening, Sam</div><div class="title">April 2026</div></div>
+              <div class="avatar">SN</div>
+            </div>
+            <div class="card hero">
+              <div class="row between"><span class="lbl">Net balance · this month</span><span class="pill g">+43.9%</span></div>
+              <div class="big tnum">247,621 <span class="cur">FCFA</span></div>
+              <div class="seg">
+                <div class="s" style="flex:69.5;background:var(--app-coral)"></div>
+                <div class="s" style="flex:30.5;background:var(--app-mint)"></div>
+              </div>
+              <div class="row between" style="margin-top:7px;font-size:9.5px;color:var(--app-ink-2)">
+                <span>Spent 69.5%</span><span>Kept 30.5%</span>
+              </div>
+            </div>
+            <div class="miniquad">
+              <div class="stat"><span class="lbl">Income</span><div class="v tnum pos">811,821</div></div>
+              <div class="stat"><span class="lbl">Expenses</span><div class="v tnum neg">564,200</div></div>
+            </div>
+            <div class="row between" style="margin-top:2px">
+              <span class="lbl">Recent activity</span><span style="font-size:10px;color:var(--app-gold);font-weight:700">See all</span>
+            </div>
+            <div>
+              <div class="txn"><div class="tico">&#128184;</div><div><div class="tn">Njangi payback</div><div class="tm">Loan · Apr 4</div></div><span class="amt neg tnum">−350,000</span></div>
+              <div class="txn"><div class="tico">&#128717;</div><div><div class="tn">Shopping</div><div class="tm">Mobile Money · Apr 2</div></div><span class="amt neg tnum">−40,500</span></div>
+              <div class="txn"><div class="tico">&#127974;</div><div><div class="tn">Salary</div><div class="tm">Bank Transfer · Apr 1</div></div><span class="amt pos tnum">+811,821</span></div>
+            </div>
+          </div>
+          <div class="tabbar">
+            <div class="tab on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10l9-7 9 7v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/></svg>Home</div>
+            <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Activity</div>
+            <div class="fab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+            <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V9m5 10V5m5 14v-7m5 7V8"/></svg>Insights</div>
+            <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>Me</div>
+          </div>
+        </div></div>
+        <div class="cap">
+          <div class="st"><span class="step">03</span> Dashboard <span class="pill a" style="margin-left:4px">HOME</span></div>
+          <div class="sd">The landing screen. Net balance headline, the income-vs-kept split bar, and the latest entries from the Daily Log.</div>
+          <ul class="annot">
+            <li>Numbers are the real April figures: <b>+247,621</b> net, 69.5% spent.</li>
+            <li>Month name is tappable → month switcher (mirrors the sheet's "Active Month").</li>
+            <li>Persistent tab bar; the gold <b>＋</b> is always reachable.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Transactions -->
+      <div class="screen">
+        <div class="device"><div class="scr">
+          <div class="statusbar"><span>9:41</span><span>&#9679;&#9679;&#9679; &#9203;</span></div>
+          <div class="appbody">
+            <div class="app-h"><div><div class="title" style="font-size:20px">Transactions</div></div>
+              <div class="avatar" style="background:var(--app-card);color:var(--app-ink)"><svg viewBox="0 0 24 24" width="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg></div></div>
+            <div class="filterchips">
+              <span class="fchip on">All</span><span class="fchip">Income</span><span class="fchip">Expense</span><span class="fchip">Savings</span><span class="fchip">Business</span>
+            </div>
+            <div class="daylabel">Sat · Apr 4</div>
+            <div class="txn"><div class="tico">&#128184;</div><div><div class="tn">Njangi payback</div><div class="tm">Loan / Debt · Cash</div></div><span class="amt neg tnum">−350,000</span></div>
+            <div class="txn"><div class="tico">&#127857;</div><div><div class="tn">Groceries &amp; Food</div><div class="tm">Cash</div></div><span class="amt neg tnum">−11,200</span></div>
+            <div class="daylabel">Thu · Apr 3</div>
+            <div class="txn"><div class="tico">&#128176;</div><div><div class="tn">Carpet &amp; center table</div><div class="tm">Equipment · <span style="color:var(--app-gold)">&#127908; voice</span></div></div><span class="amt neg tnum">−150,000</span></div>
+            <div class="txn"><div class="tico">&#127873;</div><div><div class="tn">Gift — mum</div><div class="tm">Gifts &amp; Donations</div></div><span class="amt neg tnum">−12,500</span></div>
+            <div class="daylabel">Wed · Apr 2</div>
+            <div class="txn"><div class="tico">&#128717;</div><div><div class="tn">Shopping / Clothing</div><div class="tm">Mobile Money</div></div><span class="amt neg tnum">−40,500</span></div>
+          </div>
+          <div class="tabbar">
+            <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10l9-7 9 7v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/></svg>Home</div>
+            <div class="tab on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Activity</div>
+            <div class="fab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+            <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V9m5 10V5m5 14v-7m5 7V8"/></svg>Insights</div>
+            <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>Me</div>
+          </div>
+        </div></div>
+        <div class="cap">
+          <div class="st"><span class="step">04</span> Transactions (Daily Log)</div>
+          <div class="sd">The full ledger, grouped by day. Type filter chips across the top; search by tapping the glass.</div>
+          <ul class="annot">
+            <li>A <span style="color:var(--accent)">&#127908; voice</span> tag marks entries logged by recording.</li>
+            <li>Swipe a row to edit or delete; infinite scroll back through months.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Transaction detail -->
+      <div class="screen">
+        <div class="device"><div class="scr">
+          <div class="statusbar"><span>9:41</span><span>&#9679;&#9679;&#9679; &#9203;</span></div>
+          <div class="appbody">
+            <div class="row between" style="margin-top:6px"><span style="font-size:11px;color:var(--app-gold);font-weight:700">&#8249; Back</span><span style="font-size:11px;color:var(--app-ink-2)">Edit</span></div>
+            <div style="text-align:center;margin-top:8px">
+              <div class="tico" style="width:48px;height:48px;border-radius:16px;margin:0 auto;font-size:22px">&#128176;</div>
+              <div class="big tnum neg" style="font-size:28px;margin-top:10px">−150,000 <span class="cur">FCFA</span></div>
+              <div style="font-size:12px;color:var(--app-ink-2);margin-top:2px">Carpet &amp; center table</div>
+            </div>
+            <div class="card" style="margin-top:6px">
+              <div class="row between" style="padding:5px 0"><span class="lbl">Category</span><span style="font-size:11px;font-weight:600">Equipment / Hardware</span></div>
+              <div class="row between" style="padding:5px 0"><span class="lbl">Type</span><span class="pill a">Business cost</span></div>
+              <div class="row between" style="padding:5px 0"><span class="lbl">Method</span><span style="font-size:11px;font-weight:600">Mobile Money</span></div>
+              <div class="row between" style="padding:5px 0"><span class="lbl">Date</span><span style="font-size:11px;font-weight:600">Apr 3, 2026</span></div>
+            </div>
+            <div class="card" style="background:rgba(233,180,76,.08);border-color:rgba(233,180,76,.3)">
+              <div class="row between"><span class="lbl" style="color:var(--app-gold)">&#127908; Voice note · why</span><span style="font-size:10px;color:var(--app-ink-2)">0:12</span></div>
+              <div class="waves" style="height:30px;margin:8px 0 4px">
+                <span style="height:30%"></span><span style="height:70%"></span><span style="height:45%"></span><span style="height:90%"></span><span style="height:55%"></span><span style="height:75%"></span><span style="height:35%"></span><span style="height:60%"></span><span style="height:80%"></span><span style="height:40%"></span><span style="height:65%"></span><span style="height:50%"></span>
+              </div>
+              <div style="font-size:10.5px;color:var(--app-ink-2);font-style:italic">"Furnishing the new place — needed a table and rug for the living room."</div>
+            </div>
+          </div>
+        </div></div>
+        <div class="cap">
+          <div class="st"><span class="step">05</span> Transaction detail</div>
+          <div class="sd">Everything about one entry — including the <b>voice reason</b> you recorded, with playback and its transcription.</div>
+          <ul class="annot">
+            <li>Voice memo stored in Supabase Storage; transcript cached on the record.</li>
+            <li>Receipt / statement crop attaches here when imported by scan.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== GROUP: CAPTURE ===== -->
+    <div class="group-label">Capture · the three ways in</div>
+    <div class="screens">
+
+      <!-- Add hub -->
+      <div class="screen">
+        <div class="device"><div class="scr">
+          <div class="statusbar"><span>9:41</span><span>&#9679;&#9679;&#9679; &#9203;</span></div>
+          <div class="appbody" style="justify-content:flex-end;padding-bottom:16px">
+            <div style="position:absolute;inset:0;background:rgba(8,15,11,.55)"></div>
+            <div style="position:relative">
+              <div class="sheet-title" style="margin-bottom:4px">Add a transaction</div>
+              <div style="font-size:11px;color:var(--app-ink-2);margin-bottom:12px">How do you want to log it?</div>
+              <div class="card" style="display:flex;align-items:center;gap:12px;margin-bottom:9px">
+                <div class="tico" style="background:rgba(233,180,76,.16);color:var(--app-gold);font-size:17px">&#9998;</div>
+                <div><div class="tn" style="font-size:13px">Type it in</div><div class="tm" style="font-size:10px">Amount, category, method</div></div>
+              </div>
+              <div class="card" style="display:flex;align-items:center;gap:12px;margin-bottom:9px;border-color:rgba(233,180,76,.4)">
+                <div class="tico" style="background:rgba(233,180,76,.16);color:var(--app-gold);font-size:17px">&#127908;</div>
+                <div><div class="tn" style="font-size:13px">Speak it</div><div class="tm" style="font-size:10px">Record &amp; say why you spent</div></div>
+              </div>
+              <div class="card" style="display:flex;align-items:center;gap:12px">
+                <div class="tico" style="background:rgba(233,180,76,.16);color:var(--app-gold);font-size:17px">&#128247;</div>
+                <div><div class="tn" style="font-size:13px">Scan a statement</div><div class="tm" style="font-size:10px">Photo of bank / mobile money</div></div>
+              </div>
+              <div class="btn ghost" style="margin-top:11px">Cancel</div>
+            </div>
+          </div>
+        </div></div>
+        <div class="cap">
+          <div class="st"><span class="step">06</span> Add hub <span class="pill a" style="margin-left:4px">＋</span></div>
+          <div class="sd">A bottom sheet from the ＋ button. Three routes — the whole reason the app exists sits behind this one tap.</div>
+          <ul class="annot">
+            <li>Voice is visually emphasised as the fastest path.</li>
+            <li>Sheet dims the screen behind; swipe-down or Cancel dismisses.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Manual -->
+      <div class="screen">
+        <div class="device"><div class="scr">
+          <div class="statusbar"><span>9:41</span><span>&#9679;&#9679;&#9679; &#9203;</span></div>
+          <div class="appbody">
+            <div class="row between" style="margin-top:6px"><span style="font-size:11px;color:var(--app-ink-2)">Cancel</span><span class="sheet-title" style="font-size:14px">New expense</span><span style="font-size:11px;color:var(--app-muted)">Save</span></div>
+            <div class="segctl" style="margin-top:6px"><div class="o">Income</div><div class="o on">Expense</div><div class="o">Savings</div></div>
+            <div style="text-align:center;margin-top:14px"><div class="lbl">Amount</div><div class="big tnum" style="font-size:34px;margin-top:4px">40,500<span style="opacity:.4">|</span></div><div class="cur">FCFA</div></div>
+            <div class="row" style="gap:8px;margin-top:10px">
+              <div class="field" style="flex:1;margin-top:0"><div class="fl">Category</div><div class="fv">Shopping</div></div>
+              <div class="field" style="flex:1;margin-top:0"><div class="fl">Method</div><div class="fv">&#128241; Mobile Money</div></div>
+            </div>
+            <div class="keypad">
+              <div class="key">1</div><div class="key">2</div><div class="key">3</div>
+              <div class="key">4</div><div class="key">5</div><div class="key">6</div>
+              <div class="key">7</div><div class="key">8</div><div class="key">9</div>
+              <div class="key">.</div><div class="key">0</div><div class="key">&#9003;</div>
+            </div>
+          </div>
+        </div></div>
+        <div class="cap">
+          <div class="st"><span class="step">07</span> Manual entry</div>
+          <div class="sd">Big-number keypad first — amount is what you know instantly. Type toggle sets Income / Expense / Savings, matching the sheet's transaction types.</div>
+          <ul class="annot">
+            <li>Category &amp; method are one-tap pickers pulled from your Categories list.</li>
+            <li>Date defaults to today; long-press to change.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Voice -->
+      <div class="screen">
+        <div class="device"><div class="scr">
+          <div class="statusbar"><span>9:41</span><span>&#9679;&#9679;&#9679; &#9203;</span></div>
+          <div class="appbody" style="align-items:center;text-align:center">
+            <div class="row between" style="width:100%;margin-top:6px"><span style="font-size:11px;color:var(--app-ink-2)">Cancel</span><span class="row" style="gap:6px"><span class="recdot"></span><span style="font-size:11px;font-weight:700;color:var(--app-coral)">0:08</span></span></div>
+            <div style="margin-top:30px" class="lbl">Listening…</div>
+            <div class="waves" style="height:90px;margin-top:14px">
+              <span style="height:30%"></span><span style="height:55%"></span><span style="height:80%"></span><span style="height:45%"></span><span style="height:95%"></span><span style="height:60%"></span><span style="height:75%"></span><span style="height:40%"></span><span style="height:85%"></span><span style="height:50%"></span><span style="height:70%"></span><span style="height:35%"></span><span style="height:65%"></span>
+            </div>
+            <div class="card" style="width:100%;margin-top:22px;text-align:left">
+              <div class="lbl">Heard so far</div>
+              <div style="font-size:12px;margin-top:6px;line-height:1.5">"Spent <b style="color:var(--app-gold)">forty thousand five hundred</b> on <b style="color:var(--app-gold)">clothes</b> from the shop, paid with <b style="color:var(--app-gold)">mobile money</b> — needed something for the wedding."</div>
+            </div>
+            <div style="flex:1"></div>
+            <div style="width:62px;height:62px;border-radius:50%;background:var(--app-coral);display:flex;align-items:center;justify-content:center;margin-bottom:18px">
+              <div style="width:22px;height:22px;border-radius:5px;background:#fff"></div>
+            </div>
+          </div>
+        </div></div>
+        <div class="cap">
+          <div class="st"><span class="step">08</span> Voice capture</div>
+          <div class="sd">Tap ＋ → Speak. You say the amount and <b>why you're spending</b> — the recording is kept as the reason, and speech-to-text drafts the fields live.</div>
+          <ul class="annot">
+            <li>Transcript is parsed into amount / category / method for you to confirm.</li>
+            <li>The audio itself is saved to the transaction — your spoken "why".</li>
+            <li>Works offline; transcription syncs when back online.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Scan -->
+      <div class="screen">
+        <div class="device"><div class="scr">
+          <div class="statusbar"><span>9:41</span><span>&#9679;&#9679;&#9679; &#9203;</span></div>
+          <div class="appbody">
+            <div class="row between" style="margin-top:6px"><span style="font-size:11px;color:var(--app-ink-2)">Cancel</span><span class="sheet-title" style="font-size:14px">Scan statement</span><span style="font-size:11px;color:var(--app-gold);font-weight:700">Upload</span></div>
+            <div class="scanframe">
+              <div style="font-size:26px">&#128247;</div>
+              <div style="font-size:12px;font-weight:700;color:var(--app-ink)">Frame your statement</div>
+              <div style="font-size:10.5px">Point at your bank SMS, MoMo history, or a bank app screenshot. Or upload from your gallery.</div>
+              <div style="position:absolute;top:14px;left:14px;width:22px;height:22px;border-top:2px solid var(--app-gold);border-left:2px solid var(--app-gold)"></div>
+              <div style="position:absolute;bottom:14px;right:14px;width:22px;height:22px;border-bottom:2px solid var(--app-gold);border-right:2px solid var(--app-gold)"></div>
+            </div>
+            <div class="row" style="gap:9px">
+              <div class="btn" style="flex:1;margin-top:0">Capture</div>
+              <div class="btn ghost" style="flex:1;margin-top:0">&#128444; Gallery</div>
+            </div>
+            <div style="font-size:9.5px;color:var(--app-muted);text-align:center;margin-top:8px">Images are processed on-device where possible &#128274;</div>
+          </div>
+        </div></div>
+        <div class="cap">
+          <div class="st"><span class="step">09</span> Scan &amp; upload</div>
+          <div class="sd">Snap or upload a screenshot of your <b>bank or mobile-money</b> statement. This is the "just screenshot it" flow you described.</div>
+          <ul class="annot">
+            <li>Accepts camera capture <b>or</b> gallery upload (screenshots).</li>
+            <li>Privacy note reassures — statements are sensitive.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- OCR review -->
+      <div class="screen">
+        <div class="device"><div class="scr">
+          <div class="statusbar"><span>9:41</span><span>&#9679;&#9679;&#9679; &#9203;</span></div>
+          <div class="appbody">
+            <div class="row between" style="margin-top:6px"><span style="font-size:11px;color:var(--app-ink-2)">&#8249; Retake</span><span class="sheet-title" style="font-size:14px">Review 4 rows</span></div>
+            <div style="font-size:10.5px;color:var(--app-ink-2)">We read these from your statement. Uncheck any you don't want, fix a category, then import.</div>
+            <div class="card" style="margin-top:4px">
+              <div class="ocrline"><span class="row" style="gap:7px"><span class="toggle" style="transform:scale(.8)"></span>Airtime top-up</span><span class="tnum neg">−1,000</span></div>
+              <div class="ocrline"><span class="row" style="gap:7px"><span class="toggle" style="transform:scale(.8)"></span>MTN MoMo — market</span><span class="tnum neg">−7,500</span></div>
+              <div class="ocrline"><span class="row" style="gap:7px"><span class="toggle" style="transform:scale(.8)"></span>Transfer received</span><span class="tnum pos">+25,000</span></div>
+              <div class="ocrline" style="border-bottom:0;opacity:.5"><span class="row" style="gap:7px"><span class="toggle off" style="transform:scale(.8)"></span>Withdrawal fee</span><span class="tnum neg">−125</span></div>
+            </div>
+            <div class="card" style="background:rgba(111,168,232,.08);border-color:rgba(111,168,232,.3);padding:9px 11px">
+              <div style="font-size:10px;color:var(--app-blue);font-weight:700">&#9432; Needs a category</div>
+              <div style="font-size:10px;color:var(--app-ink-2);margin-top:3px">"MTN MoMo — market" → tap to set. We guessed <b>Groceries</b>.</div>
+            </div>
+            <div class="btn">Import 3 transactions</div>
+          </div>
+        </div></div>
+        <div class="cap">
+          <div class="st"><span class="step">10</span> Import review (OCR)</div>
+          <div class="sd">Parsed rows from the scan, each a checkbox. You confirm before anything hits the ledger — never blind auto-import.</div>
+          <ul class="annot">
+            <li>Amounts, signs and dates extracted; categories auto-guessed and editable.</li>
+            <li>Duplicate detection flags rows you've already logged.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== GROUP: PLANNING ===== -->
+    <div class="group-label">Planning · Budgets &amp; Insights</div>
+    <div class="screens">
+
+      <!-- Budgets -->
+      <div class="screen">
+        <div class="device"><div class="scr">
+          <div class="statusbar"><span>9:41</span><span>&#9679;&#9679;&#9679; &#9203;</span></div>
+          <div class="appbody">
+            <div class="app-h"><div><div class="greet">Monthly budgets</div><div class="title" style="font-size:20px">April 2026</div></div><div class="avatar" style="background:var(--app-card);color:var(--app-gold);font-size:16px">&#9998;</div></div>
+            <div class="lbl">Fixed expenses</div>
+            <div class="card">
+              <div class="row between"><span style="font-size:12px;font-weight:650">Rent / Mortgage</span><span class="tnum" style="font-size:12px;font-weight:700">225,000</span></div>
+              <div class="row between" style="margin-top:9px"><span style="font-size:12px;font-weight:650">Loan / Debt</span><span class="tnum" style="font-size:12px;font-weight:700">350,000</span></div>
+            </div>
+            <div class="lbl">Variable expenses</div>
+            <div class="card">
+              <div class="row between"><span style="font-size:12px;font-weight:650">Groceries &amp; Food</span><span class="tnum" style="font-size:12px;font-weight:700">60,000</span></div>
+              <div class="row between" style="margin-top:9px"><span style="font-size:12px;font-weight:650">Transport / Fuel</span><span class="tnum" style="font-size:12px;font-weight:700">25,000</span></div>
+              <div class="row between" style="margin-top:9px"><span style="font-size:12px;font-weight:650">Tithe / Church</span><span class="tnum" style="font-size:12px;font-weight:700">90,000</span></div>
+            </div>
+            <div class="card hero"><div class="row between"><span class="lbl">Total budgeted</span><span class="tnum" style="font-weight:800;font-size:16px">750,000</span></div></div>
+          </div>
+        </div></div>
+        <div class="cap">
+          <div class="st"><span class="step">11</span> Budgets</div>
+          <div class="sd">Set a planned cap per category, per month — the "Monthly Budgets" sheet, made tappable. Copy-forward from last month in one tap.</div>
+          <ul class="annot">
+            <li>Grouped by the same category types as your spreadsheet.</li>
+            <li>Running total footer updates as you edit.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Budget vs Actual -->
+      <div class="screen">
+        <div class="device"><div class="scr">
+          <div class="statusbar"><span>9:41</span><span>&#9679;&#9679;&#9679; &#9203;</span></div>
+          <div class="appbody">
+            <div class="app-h"><div><div class="greet">Budget vs actual</div><div class="title" style="font-size:20px">April 2026</div></div></div>
+            <div class="card">
+              <div class="row between"><span style="font-size:11px;font-weight:650">Groceries &amp; Food</span><span style="font-size:10px;color:var(--app-mint);font-weight:700">19% used</span></div>
+              <div class="bar-track"><div class="bar-fill" style="width:19%;background:var(--app-mint)"></div></div>
+              <div class="row between" style="margin-top:4px;font-size:9px;color:var(--app-muted)"><span class="tnum">11,200 spent</span><span class="tnum">of 60,000</span></div>
+            </div>
+            <div class="card">
+              <div class="row between"><span style="font-size:11px;font-weight:650">Loan / Debt</span><span style="font-size:10px;color:var(--app-gold);font-weight:700">100% used</span></div>
+              <div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--app-gold)"></div></div>
+              <div class="row between" style="margin-top:4px;font-size:9px;color:var(--app-muted)"><span class="tnum">350,000 spent</span><span class="tnum">of 350,000</span></div>
+            </div>
+            <div class="card" style="border-color:rgba(233,119,103,.4)">
+              <div class="row between"><span style="font-size:11px;font-weight:650">Shopping / Clothing</span><span style="font-size:10px;color:var(--app-coral);font-weight:700">over by 40,500</span></div>
+              <div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--app-coral)"></div></div>
+              <div class="row between" style="margin-top:4px;font-size:9px;color:var(--app-muted)"><span class="tnum">40,500 spent</span><span class="tnum">no budget set</span></div>
+            </div>
+            <div class="card hero"><div class="row between"><span class="lbl">Spent of budget</span><span class="tnum pos" style="font-weight:800;font-size:15px">75%</span></div><div class="bar-track"><div class="bar-fill" style="width:75%;background:var(--app-mint)"></div></div></div>
+          </div>
+        </div></div>
+        <div class="cap">
+          <div class="st"><span class="step">12</span> Budget vs Actual</div>
+          <div class="sd">Progress bars per category with variance and % used — the sheet's variance table, colour-coded so overruns jump out.</div>
+          <ul class="annot">
+            <li>Green under budget, gold at the line, <b>coral over</b> — status colour, not the accent.</li>
+            <li>Uncategorised-budget spend (Shopping) is surfaced, not hidden.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Monthly report -->
+      <div class="screen">
+        <div class="device"><div class="scr">
+          <div class="statusbar"><span>9:41</span><span>&#9679;&#9679;&#9679; &#9203;</span></div>
+          <div class="appbody">
+            <div class="app-h"><div><div class="greet">Monthly report</div><div class="title" style="font-size:20px">April 2026</div></div><span class="pill a">Export</span></div>
+            <div class="card" style="align-items:center;text-align:center;display:flex;flex-direction:column">
+              <svg viewBox="0 0 120 120" width="112" height="112" style="transform:rotate(-90deg)">
+                <circle cx="60" cy="60" r="46" fill="none" stroke="#26402F" stroke-width="16"/>
+                <circle cx="60" cy="60" r="46" fill="none" stroke="var(--c-red)" stroke-width="16" stroke-dasharray="179 289" stroke-dashoffset="0"/>
+                <circle cx="60" cy="60" r="46" fill="none" stroke="var(--c-amber)" stroke-width="16" stroke-dasharray="77 289" stroke-dashoffset="-179"/>
+                <circle cx="60" cy="60" r="46" fill="none" stroke="var(--c-blue)" stroke-width="16" stroke-dasharray="21 289" stroke-dashoffset="-256"/>
+                <circle cx="60" cy="60" r="46" fill="none" stroke="var(--c-green)" stroke-width="16" stroke-dasharray="12 289" stroke-dashoffset="-277"/>
+              </svg>
+              <div style="margin-top:-72px;pointer-events:none"><div class="tnum" style="font-size:19px;font-weight:800">564,200</div><div style="font-size:8.5px;color:var(--app-muted)">spent · 7 txns</div></div>
+              <div style="height:56px"></div>
+            </div>
+            <div>
+              <div class="catrow"><span class="swatch" style="background:var(--c-red)"></span><span style="font-size:11px;font-weight:600">Loan / Debt</span><span class="amt tnum" style="font-size:11px">62%</span></div>
+              <div class="catrow"><span class="swatch" style="background:var(--c-amber)"></span><span style="font-size:11px;font-weight:600">Equipment</span><span class="amt tnum" style="font-size:11px">27%</span></div>
+              <div class="catrow"><span class="swatch" style="background:var(--c-blue)"></span><span style="font-size:11px;font-weight:600">Shopping</span><span class="amt tnum" style="font-size:11px">7%</span></div>
+              <div class="catrow"><span class="swatch" style="background:var(--c-green)"></span><span style="font-size:11px;font-weight:600">Gifts &amp; Groceries</span><span class="amt tnum" style="font-size:11px">4%</span></div>
+            </div>
+          </div>
+        </div></div>
+        <div class="cap">
+          <div class="st"><span class="step">13</span> Monthly report</div>
+          <div class="sd">Where the money went. Donut of expenses by category, the top-5 list, spending by payment method, and month-over-month change.</div>
+          <ul class="annot">
+            <li>Slices are direct-labelled with % — colour is never the only cue.</li>
+            <li>Real April split: Loan 62%, Equipment 27%, Shopping 7%.</li>
+            <li>Export to PDF / share sheet.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Yearly -->
+      <div class="screen">
+        <div class="device"><div class="scr">
+          <div class="statusbar"><span>9:41</span><span>&#9679;&#9679;&#9679; &#9203;</span></div>
+          <div class="appbody">
+            <div class="app-h"><div><div class="greet">Yearly overview</div><div class="title" style="font-size:20px">2026</div></div></div>
+            <div class="miniquad">
+              <div class="stat"><span class="lbl">YTD income</span><div class="v tnum pos" style="font-size:13px">1,691,821</div></div>
+              <div class="stat"><span class="lbl">YTD saved</span><div class="v tnum" style="font-size:13px">400,000</div></div>
+            </div>
+            <div class="card">
+              <div class="row between"><span class="lbl">Income vs expense · by month</span><span style="font-size:9px;color:var(--app-muted)">FCFA</span></div>
+              <svg viewBox="0 0 240 90" width="100%" height="90" style="margin-top:8px">
+                <!-- Mar -->
+                <rect x="34" y="20" width="10" height="60" rx="3" fill="var(--c-green)"/>
+                <rect x="46" y="45" width="10" height="35" rx="3" fill="var(--c-red)"/>
+                <!-- Apr -->
+                <rect x="86" y="25" width="10" height="55" rx="3" fill="var(--c-green)"/>
+                <rect x="98" y="42" width="10" height="38" rx="3" fill="var(--c-red)"/>
+                <!-- future faded -->
+                <rect x="138" y="66" width="10" height="14" rx="3" fill="#26402F"/><rect x="150" y="66" width="10" height="14" rx="3" fill="#26402F"/>
+                <rect x="190" y="66" width="10" height="14" rx="3" fill="#26402F"/><rect x="202" y="66" width="10" height="14" rx="3" fill="#26402F"/>
+                <text x="45" y="88" fill="#76867C" font-size="8" text-anchor="middle">Mar</text>
+                <text x="97" y="88" fill="#76867C" font-size="8" text-anchor="middle">Apr</text>
+                <text x="149" y="88" fill="#76867C" font-size="8" text-anchor="middle">May</text>
+                <text x="201" y="88" fill="#76867C" font-size="8" text-anchor="middle">Jun</text>
+              </svg>
+              <div class="row" style="gap:12px;margin-top:2px;font-size:8.5px;color:var(--app-ink-2)">
+                <span class="row" style="gap:4px"><span class="swatch" style="background:var(--c-green)"></span>Income</span>
+                <span class="row" style="gap:4px"><span class="swatch" style="background:var(--c-red)"></span>Expense</span>
+              </div>
+            </div>
+            <div class="card hero"><div class="row between"><span class="lbl">YTD savings rate</span><span class="tnum pos" style="font-weight:800;font-size:16px">23.6%</span></div></div>
+          </div>
+        </div></div>
+        <div class="cap">
+          <div class="st"><span class="step">14</span> Yearly overview</div>
+          <div class="sd">The 12-month picture. Grouped income/expense bars, YTD totals, and the annual savings rate — the "Yearly Overview" sheet condensed.</div>
+          <ul class="annot">
+            <li>One axis, two series, legend present — future months recede in grey.</li>
+            <li>Tap a month → jumps to that month's report.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== GROUP: SYSTEM ===== -->
+    <div class="group-label">System · Categories &amp; Settings</div>
+    <div class="screens">
+
+      <!-- Categories -->
+      <div class="screen">
+        <div class="device"><div class="scr">
+          <div class="statusbar"><span>9:41</span><span>&#9679;&#9679;&#9679; &#9203;</span></div>
+          <div class="appbody">
+            <div class="app-h"><div><div class="title" style="font-size:20px">Categories</div></div><div class="avatar" style="background:var(--app-gold);color:#20170a;font-size:18px">+</div></div>
+            <div class="lbl">Income</div>
+            <div class="card" style="padding:4px 13px">
+              <div class="catrow"><span class="swatch" style="background:var(--c-green)"></span><span style="font-size:12px;font-weight:600">Salary (Net)</span><span style="margin-left:auto;font-size:9px;color:var(--app-muted)">Bank Transfer</span></div>
+              <div class="catrow"><span class="swatch" style="background:#2FBF87"></span><span style="font-size:12px;font-weight:600">Freelance / Consulting</span></div>
+            </div>
+            <div class="lbl">Variable expense</div>
+            <div class="card" style="padding:4px 13px">
+              <div class="catrow"><span class="swatch" style="background:var(--c-red)"></span><span style="font-size:12px;font-weight:600">Groceries &amp; Food</span></div>
+              <div class="catrow"><span class="swatch" style="background:#D95A4E"></span><span style="font-size:12px;font-weight:600">Transport / Fuel</span></div>
+              <div class="catrow"><span class="swatch" style="background:#E97767"></span><span style="font-size:12px;font-weight:600">Tithe / Church Giving</span></div>
+            </div>
+            <div class="lbl">Savings &amp; Business</div>
+            <div class="card" style="padding:4px 13px">
+              <div class="catrow"><span class="swatch" style="background:var(--c-blue)"></span><span style="font-size:12px;font-weight:600">Emergency Fund</span></div>
+              <div class="catrow"><span class="swatch" style="background:var(--c-amber)"></span><span style="font-size:12px;font-weight:600">Software &amp; Tools</span></div>
+            </div>
+          </div>
+        </div></div>
+        <div class="cap">
+          <div class="st"><span class="step">15</span> Categories</div>
+          <div class="sd">Manage the 34 categories from your sheet across 5 types — Income, Fixed, Variable, Savings, Business. Colour and default payment method per category.</div>
+          <ul class="annot">
+            <li>Colours here drive every chart, so identity stays consistent.</li>
+            <li>Add / rename / archive; seeded from your spreadsheet on first launch.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Settings -->
+      <div class="screen">
+        <div class="device"><div class="scr">
+          <div class="statusbar"><span>9:41</span><span>&#9679;&#9679;&#9679; &#9203;</span></div>
+          <div class="appbody">
+            <div class="app-h"><div><div class="title" style="font-size:20px">Settings</div></div><div class="avatar">SN</div></div>
+            <div class="card" style="display:flex;align-items:center;gap:11px"><div class="avatar" style="width:38px;height:38px">SN</div><div><div style="font-size:13px;font-weight:700">Sam Njong</div><div style="font-size:10px;color:var(--app-muted)">sam@nyota.ltd</div></div></div>
+            <div class="lbl">Preferences</div>
+            <div class="card" style="padding:4px 13px">
+              <div class="catrow"><span style="font-size:12px">Currency</span><span style="margin-left:auto;font-size:11px;font-weight:700;color:var(--app-gold)">XAF · FCFA</span></div>
+              <div class="catrow"><span style="font-size:12px">Active month</span><span style="margin-left:auto;font-size:11px;font-weight:600">April 2026</span></div>
+              <div class="catrow"><span style="font-size:12px">Emergency fund goal</span><span style="margin-left:auto;font-size:11px;font-weight:600 tnum">0</span></div>
+            </div>
+            <div class="lbl">App</div>
+            <div class="card" style="padding:4px 13px">
+              <div class="catrow"><span style="font-size:12px">Dark theme</span><span class="toggle" style="margin-left:auto;transform:scale(.85)"></span></div>
+              <div class="catrow"><span style="font-size:12px">Biometric lock</span><span class="toggle" style="margin-left:auto;transform:scale(.85)"></span></div>
+              <div class="catrow"><span style="font-size:12px">Export data (CSV / Excel)</span><span style="margin-left:auto;font-size:11px;color:var(--app-gold)">&#8250;</span></div>
+            </div>
+            <div style="text-align:center;font-size:11px;color:var(--app-coral);font-weight:600;margin-top:2px">Sign out</div>
+          </div>
+        </div></div>
+        <div class="cap">
+          <div class="st"><span class="step">16</span> Settings</div>
+          <div class="sd">Currency, active month, and emergency-fund goal come straight from your Settings sheet. Plus theme, biometric lock, and an Excel export so you're never locked in.</div>
+          <ul class="annot">
+            <li>Biometric lock matters — this is your full financial picture.</li>
+            <li>Export back to Excel keeps continuity with your current workflow.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3. ARCHITECTURE ============ -->
+<section>
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">03</span><h2>How it's built underneath</h2></div>
+    <p class="sec-intro">You asked for an Expo monorepo with a DDD / CQRS approach on Supabase. Here's how those pieces map onto the screens above — kept light, so the UI stays the star.</p>
+    <div class="arch">
+      <div class="acard">
+        <h4>&#128241; App · Expo</h4>
+        <p>One React Native app, iOS + Android from a single codebase. <code>expo-router</code> for the tab + stack navigation you see in the mockups; <code>expo-av</code> for voice recording; <code>expo-camera</code> + <code>expo-image-picker</code> for scan &amp; upload.</p>
+      </div>
+      <div class="acard">
+        <h4>&#128230; Monorepo</h4>
+        <p>An npm-workspaces monorepo:</p>
+        <ul class="stack-list">
+          <li><b>apps/mobile</b> — the Expo app</li>
+          <li><b>packages/domain</b> — entities, value objects, rules</li>
+          <li><b>packages/application</b> — commands &amp; queries (CQRS)</li>
+          <li><b>packages/infra</b> — Supabase adapters</li>
+        </ul>
+      </div>
+      <div class="acard">
+        <h4>&#129513; DDD &amp; CQRS</h4>
+        <p><b>Commands</b> (<code>LogTransaction</code>, <code>ImportStatement</code>, <code>SetBudget</code>) write; <b>Queries</b> (<code>GetMonthlyReport</code>, <code>GetBudgetVsActual</code>) read. The <b>Transaction</b>, <b>Budget</b>, and <b>Category</b> aggregates hold the rules your spreadsheet encoded in formulas.</p>
+      </div>
+      <div class="acard">
+        <h4>&#9889; Supabase</h4>
+        <p>Postgres with Row-Level Security per user; <b>Auth</b> for email/phone/OAuth; <b>Storage</b> for voice notes and statement images; <b>Edge Functions</b> for OCR parsing and transcription. Offline-first, syncing when back online.</p>
+      </div>
+    </div>
+    <div class="callout">
+      <b>What the mockups deliberately don't show yet:</b> exact OCR accuracy per bank/MoMo format, and the on-device vs. server split for transcription. Both depend on which providers we wire in — I've drawn the review step (screen 10) so that <b>you always confirm before import</b>, which keeps the app trustworthy regardless of how good the parsing gets.
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    Rabbit Dairy — UI flow, v1. 16 screens across Entry, Core, Capture, Planning, and System. Numbers, categories, and payment methods sourced from <b>rabbit_dairy_v7.xlsx</b> (April 2026). Next: pick the two or three screens to prototype first, then scaffold the Expo monorepo.
+  </div>
+</footer>
