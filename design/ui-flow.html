@@ -65,7 +65,7 @@
   .sec-intro{color:var(--ink-2);max-width:68ch;font-size:16px;margin:14px 0 40px;}
 
   /* ---------- Flow map ---------- */
-  .flow{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;overflow-x:auto;}
+  .flow{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;overflow-x:auto;}
   .flow-col{display:flex;flex-direction:column;gap:10px;min-width:150px;}
   .flow-lab{font-size:11px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);
     padding-bottom:8px;border-bottom:1px dashed var(--line);margin-bottom:2px;}
@@ -194,7 +194,7 @@
     border-radius:0 12px 12px 0;padding:16px 18px;margin-top:22px;font-size:14px;color:var(--ink-2)}
   .callout b{color:var(--ink)}
   a{color:var(--accent-ink)}
-  @media(max-width:720px){.flow{grid-template-columns:repeat(5,minmax(150px,1fr))}}
+  @media(max-width:720px){.flow{grid-template-columns:repeat(6,minmax(150px,1fr))}}
 </style>
 
 <header class="mast">
@@ -206,7 +206,7 @@
       <span class="chip"><span class="dot"></span>React Native · <b>Expo</b></span>
       <span class="chip">iOS &amp; Android</span>
       <span class="chip">Currency <b>XAF · FCFA</b></span>
-      <span class="chip"><b>14</b> screens · 4 flows</span>
+      <span class="chip"><b>19</b> screens · 6 groups</span>
       <span class="chip">Supabase · <b>DDD / CQRS</b></span>
     </div>
   </div>
@@ -229,6 +229,12 @@
         <div class="node key"><div class="nt">Dashboard</div><div class="nd">Month summary, balances, recent activity</div></div>
         <div class="node"><div class="nt">Transactions</div><div class="nd">The Daily Log — searchable, filterable</div></div>
         <div class="node"><div class="nt">Transaction detail</div><div class="nd">Voice note, receipt, edit</div></div>
+      </div>
+      <div class="flow-col">
+        <div class="flow-lab">Accounts</div>
+        <div class="node"><div class="nt">Accounts</div><div class="nd">All balances: salary, savings, dormant, MoMo, cash</div></div>
+        <div class="node"><div class="nt">Account detail</div><div class="nd">One account's ledger &amp; balance history</div></div>
+        <div class="node"><div class="nt">Savings deposit / withdrawal</div><div class="nd">Snap the receipt to confirm</div></div>
       </div>
       <div class="flow-col">
         <div class="flow-lab">Capture · the ＋ button</div>
@@ -258,7 +264,7 @@
 <section>
   <div class="wrap">
     <div class="sec-head"><span class="sec-num">02</span><h2>Every screen</h2></div>
-    <p class="sec-intro">Fourteen screens, grouped by the four flows. Each mockup shows the live layout; the notes beside it call out behaviour and the data model behind it.</p>
+    <p class="sec-intro">Nineteen screens, grouped by the six flows. Each mockup shows the live layout; the notes beside it call out behaviour and the data model behind it.</p>
 
     <!-- ===== GROUP: ENTRY ===== -->
     <div class="group-label">Entry &amp; Authentication</div>
@@ -503,7 +509,7 @@
             <div style="text-align:center;margin-top:14px"><div class="lbl">Amount</div><div class="big tnum" style="font-size:34px;margin-top:4px">40,500<span style="opacity:.4">|</span></div><div class="cur">FCFA</div></div>
             <div class="row" style="gap:8px;margin-top:10px">
               <div class="field" style="flex:1;margin-top:0"><div class="fl">Category</div><div class="fv">Shopping</div></div>
-              <div class="field" style="flex:1;margin-top:0"><div class="fl">Method</div><div class="fv">&#128241; Mobile Money</div></div>
+              <div class="field" style="flex:1;margin-top:0"><div class="fl">Account</div><div class="fv">&#128241; MTN MoMo</div></div>
             </div>
             <div class="keypad">
               <div class="key">1</div><div class="key">2</div><div class="key">3</div>
@@ -765,6 +771,111 @@
       </div>
     </div>
 
+    <!-- ===== GROUP: ACCOUNTS ===== -->
+    <div class="group-label">Accounts · Multiple banks, savings &amp; cash</div>
+    <div class="screens">
+
+      <!-- Accounts overview -->
+      <div class="screen">
+        <div class="device"><div class="scr">
+          <div class="statusbar"><span>9:41</span><span>&#9679;&#9679;&#9679; &#9203;</span></div>
+          <div class="appbody">
+            <div class="app-h"><div><div class="greet">Across all accounts</div><div class="title" style="font-size:20px">Accounts</div></div><div class="avatar" style="background:var(--app-gold);color:#20170a;font-size:18px">+</div></div>
+            <div class="card hero"><span class="lbl">Total balance</span><div class="big tnum">1,247,621 <span class="cur">FCFA</span></div><div style="font-size:9.5px;color:var(--app-ink-2);margin-top:3px">5 accounts · 1 dormant</div></div>
+            <div class="lbl">Bank</div>
+            <div class="card" style="padding:6px 13px">
+              <div class="catrow"><div class="tico" style="width:28px;height:28px;border-radius:9px;font-size:13px">&#127974;</div><div><div style="font-size:12px;font-weight:650">Salary account</div><div style="font-size:9px;color:var(--app-muted)">Afriland · ••4821</div></div><div style="margin-left:auto;text-align:right"><div class="tnum" style="font-size:12px;font-weight:700">497,621</div><span class="pill g" style="font-size:8px">Primary</span></div></div>
+              <div class="catrow"><div class="tico" style="width:28px;height:28px;border-radius:9px;font-size:13px">&#127967;</div><div><div style="font-size:12px;font-weight:650">Savings account</div><div style="font-size:9px;color:var(--app-muted)">UBA · ••7130</div></div><div style="margin-left:auto;text-align:right"><div class="tnum" style="font-size:12px;font-weight:700">700,000</div><span class="pill a" style="font-size:8px">&#128247; snap</span></div></div>
+              <div class="catrow" style="opacity:.5"><div class="tico" style="width:28px;height:28px;border-radius:9px;font-size:13px">&#128564;</div><div><div style="font-size:12px;font-weight:650">Dormant account</div><div style="font-size:9px;color:var(--app-muted)">Ecobank · not in use</div></div><div style="margin-left:auto;text-align:right"><div class="tnum" style="font-size:12px;font-weight:700">0</div><span class="pill" style="font-size:8px;background:var(--app-card-2);color:var(--app-muted)">Hidden</span></div></div>
+            </div>
+            <div class="lbl">Mobile money &amp; cash</div>
+            <div class="card" style="padding:6px 13px">
+              <div class="catrow"><div class="tico" style="width:28px;height:28px;border-radius:9px;font-size:13px">&#128241;</div><div><div style="font-size:12px;font-weight:650">MTN MoMo</div></div><div style="margin-left:auto" class="tnum" style="font-size:12px;font-weight:700">42,000</div></div>
+              <div class="catrow"><div class="tico" style="width:28px;height:28px;border-radius:9px;font-size:13px">&#128181;</div><div><div style="font-size:12px;font-weight:650">Cash wallet</div></div><div style="margin-left:auto" class="tnum" style="font-size:12px;font-weight:700">8,000</div></div>
+            </div>
+          </div>
+        </div></div>
+        <div class="cap">
+          <div class="st"><span class="step">15</span> Accounts overview</div>
+          <div class="sd">All your money in one place — the three bank accounts plus mobile money and cash. Total net balance up top.</div>
+          <ul class="annot">
+            <li><b>Salary</b> is flagged Primary; <b>Savings</b> carries a <span style="color:var(--accent)">&#128247; snap</span> badge; the <b>dormant</b> account is dimmed and excluded from totals.</li>
+            <li>Every transaction is tagged to an account, so balances stay real.</li>
+            <li>Hide / reactivate the dormant account any time.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Account detail (savings) -->
+      <div class="screen">
+        <div class="device"><div class="scr">
+          <div class="statusbar"><span>9:41</span><span>&#9679;&#9679;&#9679; &#9203;</span></div>
+          <div class="appbody">
+            <div class="row between" style="margin-top:6px"><span style="font-size:11px;color:var(--app-gold);font-weight:700">&#8249; Accounts</span><span style="font-size:11px;color:var(--app-ink-2)">Edit</span></div>
+            <div class="card hero" style="margin-top:6px">
+              <div class="row between"><span class="row" style="gap:8px"><span class="tico" style="width:26px;height:26px;border-radius:8px;font-size:12px">&#127967;</span><span style="font-size:12px;font-weight:700">Savings · UBA ••7130</span></span><span class="pill a" style="font-size:8px">&#128247; snap</span></div>
+              <div class="big tnum" style="font-size:24px;margin-top:10px">700,000 <span class="cur">FCFA</span></div>
+              <svg viewBox="0 0 240 46" width="100%" height="46" style="margin-top:8px" preserveAspectRatio="none">
+                <polyline fill="none" stroke="var(--app-mint)" stroke-width="2.5" points="0,40 40,40 80,20 120,20 160,20 200,8 240,8"/>
+                <circle cx="240" cy="8" r="3.5" fill="var(--app-mint)"/>
+              </svg>
+              <div style="font-size:9px;color:var(--app-ink-2)">+300,000 saved since March</div>
+            </div>
+            <div class="row" style="gap:9px">
+              <div class="btn" style="flex:1;margin-top:0">&#8595; Deposit</div>
+              <div class="btn ghost" style="flex:1;margin-top:0">&#8593; Withdraw</div>
+            </div>
+            <div class="lbl">History</div>
+            <div>
+              <div class="txn"><div class="tico">&#8595;</div><div><div class="tn">Deposit</div><div class="tm">Apr 1 · <span style="color:var(--app-gold)">&#128247; receipt</span></div></div><span class="amt pos tnum">+300,000</span></div>
+              <div class="txn"><div class="tico">&#8595;</div><div><div class="tn">Deposit</div><div class="tm">Mar 2 · <span style="color:var(--app-gold)">&#128247; receipt</span></div></div><span class="amt pos tnum">+400,000</span></div>
+              <div class="txn"><div class="tico">&#8593;</div><div><div class="tn">Withdrawal</div><div class="tm">Mar 20 · school fees</div></div><span class="amt neg tnum">−0</span></div>
+            </div>
+          </div>
+        </div></div>
+        <div class="cap">
+          <div class="st"><span class="step">16</span> Account detail</div>
+          <div class="sd">One account's balance, its trend line, and its own ledger. Savings shows big <b>Deposit</b> / <b>Withdraw</b> actions, each openable to a receipt snap.</div>
+          <ul class="annot">
+            <li>Balance-over-time sparkline — endpoint emphasised, one series, no legend needed.</li>
+            <li>Rows logged from a receipt carry the <span style="color:var(--accent)">&#128247; receipt</span> tag.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Savings deposit + receipt snap -->
+      <div class="screen">
+        <div class="device"><div class="scr">
+          <div class="statusbar"><span>9:41</span><span>&#9679;&#9679;&#9679; &#9203;</span></div>
+          <div class="appbody">
+            <div class="row between" style="margin-top:6px"><span style="font-size:11px;color:var(--app-ink-2)">Cancel</span><span class="sheet-title" style="font-size:14px">Record deposit</span><span style="font-size:11px;color:var(--app-muted)">Save</span></div>
+            <div class="segctl" style="margin-top:6px"><div class="o on">&#8595; Deposit</div><div class="o">&#8593; Withdrawal</div></div>
+            <div style="text-align:center;margin-top:12px"><div class="lbl">Amount</div><div class="big tnum" style="font-size:30px;margin-top:3px">300,000</div><div class="cur">FCFA → Savings</div></div>
+            <div class="field"><div class="fl">Date</div><div class="fv">Apr 1, 2026</div></div>
+            <div class="lbl" style="margin-top:11px">Proof</div>
+            <div class="card" style="display:flex;gap:11px;align-items:center;border-color:rgba(233,180,76,.4)">
+              <div style="width:52px;height:64px;border-radius:9px;background:linear-gradient(160deg,#2c4a3a,#1a2e23);border:1px solid var(--app-line);display:flex;align-items:center;justify-content:center;font-size:20px;flex:0 0 52px">&#129534;</div>
+              <div style="flex:1"><div style="font-size:11px;font-weight:700;color:var(--app-mint)">&#10003; Receipt attached</div><div style="font-size:9.5px;color:var(--app-ink-2);margin-top:2px">deposit-slip-apr1.jpg · read 300,000</div><div style="font-size:9px;color:var(--app-gold);margin-top:4px;font-weight:600">Retake / remove</div></div>
+            </div>
+            <div class="row" style="gap:9px;margin-top:9px">
+              <div class="btn" style="flex:1;margin-top:0">&#128247; Snap</div>
+              <div class="btn ghost" style="flex:1;margin-top:0">&#128444; Upload</div>
+            </div>
+            <div class="btn">Save deposit</div>
+          </div>
+        </div></div>
+        <div class="cap">
+          <div class="st"><span class="step">17</span> Deposit / withdrawal + receipt</div>
+          <div class="sd">The savings flow you described: after a deposit or withdrawal, <b>snap the slip</b>. The image is attached and OCR pre-fills the amount for you to confirm.</div>
+          <ul class="annot">
+            <li>Same confirm-before-save principle as statement import.</li>
+            <li>Deposits/withdrawals also post to the linked bank account's ledger.</li>
+            <li>Receipt stored in Supabase Storage; visible on the transaction detail.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
     <!-- ===== GROUP: SYSTEM ===== -->
     <div class="group-label">System · Categories &amp; Settings</div>
     <div class="screens">
@@ -794,7 +905,7 @@
           </div>
         </div></div>
         <div class="cap">
-          <div class="st"><span class="step">15</span> Categories</div>
+          <div class="st"><span class="step">18</span> Categories</div>
           <div class="sd">Manage the 34 categories from your sheet across 5 types — Income, Fixed, Variable, Savings, Business. Colour and default payment method per category.</div>
           <ul class="annot">
             <li>Colours here drive every chart, so identity stays consistent.</li>
@@ -826,7 +937,7 @@
           </div>
         </div></div>
         <div class="cap">
-          <div class="st"><span class="step">16</span> Settings</div>
+          <div class="st"><span class="step">19</span> Settings</div>
           <div class="sd">Currency, active month, and emergency-fund goal come straight from your Settings sheet. Plus theme, biometric lock, and an Excel export so you're never locked in.</div>
           <ul class="annot">
             <li>Biometric lock matters — this is your full financial picture.</li>
@@ -860,7 +971,7 @@
       </div>
       <div class="acard">
         <h4>&#129513; DDD &amp; CQRS</h4>
-        <p><b>Commands</b> (<code>LogTransaction</code>, <code>ImportStatement</code>, <code>SetBudget</code>) write; <b>Queries</b> (<code>GetMonthlyReport</code>, <code>GetBudgetVsActual</code>) read. The <b>Transaction</b>, <b>Budget</b>, and <b>Category</b> aggregates hold the rules your spreadsheet encoded in formulas.</p>
+        <p><b>Commands</b> (<code>LogTransaction</code>, <code>ImportStatement</code>, <code>SetBudget</code>) write; <b>Queries</b> (<code>GetMonthlyReport</code>, <code>GetBudgetVsActual</code>) read. The <b>Transaction</b>, <b>Account</b>, <b>Budget</b>, and <b>Category</b> aggregates hold the rules your spreadsheet encoded in formulas. Each transaction references an <b>Account</b>, so posting a deposit updates that account's balance and the dormant one stays out of totals.</p>
       </div>
       <div class="acard">
         <h4>&#9889; Supabase</h4>
@@ -875,6 +986,6 @@
 
 <footer>
   <div class="wrap">
-    Rabbit Dairy — UI flow, v1. 16 screens across Entry, Core, Capture, Planning, and System. Numbers, categories, and payment methods sourced from <b>rabbit_dairy_v7.xlsx</b> (April 2026). Next: pick the two or three screens to prototype first, then scaffold the Expo monorepo.
+    Rabbit Dairy — UI flow, v2. 19 screens across Entry, Core, Accounts, Capture, Planning, and System. Numbers, categories, and payment methods sourced from <b>rabbit_dairy_v7.xlsx</b> (April 2026); accounts (salary / savings / dormant / mobile money / cash) added from your notes. Next: pick the two or three screens to prototype first, then scaffold the Expo monorepo.
   </div>
 </footer>
