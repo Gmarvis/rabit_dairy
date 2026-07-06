@@ -1,0 +1,98 @@
+import { Ionicons } from "@expo/vector-icons";
+import { useQuery } from "@tanstack/react-query";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import type { AccountListItem } from "@rabbit/application";
+import { Card, MoneyText, Pill, Row, SectionLabel } from "../../src/components/ui";
+import { getContainer } from "../../src/lib/container";
+import { colors, radius, space } from "../../src/theme/tokens";
+
+const ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
+  bank_salary: "business",
+  bank_savings: "shield-checkmark",
+  bank_other: "moon",
+  mobile_money: "phone-portrait",
+  cash: "cash",
+};
+
+export default function AccountsScreen() {
+  const insets = useSafeAreaInsets();
+  const c = getContainer();
+  const { data } = useQuery({
+    queryKey: ["accounts"],
+    queryFn: () => c.queries.accounts.execute(c.userId),
+  });
+
+  const banks = data?.accounts.filter((a) => a.type.startsWith("bank_")) ?? [];
+  const wallets = data?.accounts.filter((a) => !a.type.startsWith("bank_")) ?? [];
+
+  return (
+    <ScrollView
+      style={styles.screen}
+      contentContainerStyle={{ padding: space(4), paddingTop: insets.top + space(2), gap: space(3) }}
+    >
+      <Text style={styles.title}>Accounts</Text>
+
+      <Card hero>
+        <SectionLabel>Total balance</SectionLabel>
+        {data ? <MoneyText amount={data.totalBalance} size={28} style={{ marginTop: 4 }} /> : null}
+        <Text style={styles.sub}>
+          {data ? `${data.accountCount} accounts · ${data.dormantCount} dormant` : "…"}
+        </Text>
+      </Card>
+
+      <SectionLabel>Bank</SectionLabel>
+      <Card style={{ paddingVertical: space(1) }}>
+        {banks.map((a, i) => (
+          <AccountRow key={a.id} a={a} last={i === banks.length - 1} />
+        ))}
+      </Card>
+
+      <SectionLabel>Mobile money & cash</SectionLabel>
+      <Card style={{ paddingVertical: space(1) }}>
+        {wallets.map((a, i) => (
+          <AccountRow key={a.id} a={a} last={i === wallets.length - 1} />
+        ))}
+      </Card>
+    </ScrollView>
+  );
+}
+
+function AccountRow({ a, last }: { a: AccountListItem; last: boolean }) {
+  return (
+    <View style={[styles.row, !last && styles.rowBorder, a.isDormant && { opacity: 0.5 }]}>
+      <View style={styles.icon}>
+        <Ionicons name={ICON[a.type] ?? "wallet"} size={15} color={colors.ink} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.name}>{a.name}</Text>
+        {a.institution ? (
+          <Text style={styles.meta}>
+            {a.institution}
+            {a.mask ? ` · ••${a.mask}` : ""}
+          </Text>
+        ) : null}
+      </View>
+      <View style={{ alignItems: "flex-end", gap: 3 }}>
+        <MoneyText amount={a.balance} currency={false} size={13} />
+        {a.isPrimary ? <Pill tone="positive">Primary</Pill> : null}
+        {a.type === "bank_savings" ? <Pill tone="gold">📷 snap</Pill> : null}
+        {a.isDormant ? <Pill tone="muted">Hidden</Pill> : null}
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  screen: { backgroundColor: colors.bg },
+  title: { color: colors.ink, fontSize: 22, fontWeight: "800" },
+  sub: { color: colors.ink2, fontSize: 10, marginTop: 3 },
+  row: { flexDirection: "row", alignItems: "center", gap: space(2.5), paddingVertical: space(2.5) },
+  rowBorder: { borderBottomWidth: 1, borderBottomColor: colors.line },
+  icon: {
+    width: 30, height: 30, borderRadius: radius.sm, backgroundColor: colors.card2,
+    alignItems: "center", justifyContent: "center",
+  },
+  name: { color: colors.ink, fontSize: 13, fontWeight: "600" },
+  meta: { color: colors.muted, fontSize: 10, marginTop: 1 },
+});
