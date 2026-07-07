@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useRouter } from "expo-router";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { YearMonth } from "@rabbit/domain";
 import { Card, MoneyText, Pill, Row, SectionLabel } from "../../src/components/ui";
-import { signOut, useAuth, useContainer } from "../../src/lib/auth";
+import { useContainer } from "../../src/lib/auth";
 import { dayLabel, methodLabel, percent } from "../../src/lib/format";
 import { colors, radius, space } from "../../src/theme/tokens";
 
@@ -12,16 +13,8 @@ const PERIOD = YearMonth.of(2026, 4);
 
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
-  const { status } = useAuth();
+  const router = useRouter();
   const c = useContainer();
-
-  function onAvatarPress() {
-    if (status !== "authed") return; // demo mode has no session
-    Alert.alert("Sign out?", "You'll need to sign in again to see your data.", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Sign out", style: "destructive", onPress: () => void signOut() },
-    ]);
-  }
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard", PERIOD.toString()],
     queryFn: () => c.queries.dashboard.execute(c.userId, PERIOD),
@@ -39,9 +32,9 @@ export default function DashboardScreen() {
         </View>
         <Pressable
           style={styles.avatar}
-          onPress={onAvatarPress}
+          onPress={() => router.push("/settings")}
           accessibilityRole="button"
-          accessibilityLabel={status === "authed" ? "Account — sign out" : "Account"}
+          accessibilityLabel="Settings"
         >
           <Text style={styles.avatarText}>SN</Text>
         </Pressable>

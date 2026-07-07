@@ -13,6 +13,7 @@ import {
   GetBudgetVsActual,
   GetDashboard,
   GetEntryOptions,
+  GetExportRows,
   GetMonthlyReport,
   GetYearlyOverview,
   ImportStatement,
@@ -67,6 +68,7 @@ function build(userId: UserId) {
       yearlyOverview: new GetYearlyOverview(txns),
       entryOptions: new GetEntryOptions(categories, accounts),
       budgets: new GetBudgets(budgets, categories),
+      exportRows: new GetExportRows(txns, categories, accounts),
     },
     commands: {
       logTransaction: new LogTransaction(txns, categories, ids, clock),

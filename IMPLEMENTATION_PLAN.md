@@ -107,11 +107,14 @@ Account balance = `opening + Σ(in) − Σ(out)` over its transactions. Transfer
 - (Duplicate detection across already-logged rows remains a follow-up.)
 
 ### Phase 6 — Auth, sync, hardening (in progress)
-- ✅ Supabase Auth (email + password): sign-in/up screen, session-aware
-  composition root, auth gate. `supabase/config.toml` + `db push` workflow.
-- Phone OTP + OAuth; onboarding polish.
-- Offline-first cache + sync; biometric lock; Excel/CSV export.
-- E2E happy paths; ship to TestFlight / Play internal testing.
+- ✅ Supabase Auth (email + password) with friendly errors + resend-confirmation;
+  session-aware composition root + auth gate. `supabase/config.toml`.
+- ✅ Google sign-in (OAuth via system browser → `rabbitdiary://` deep link).
+- ✅ Settings screen: account, currency, sign out, and **CSV export** (share the
+  year's transactions to open in Excel/Sheets — continuity with the spreadsheet).
+- ⬜ Apple sign-in (App Store requires it alongside Google); biometric lock
+  (expo-local-authentication); offline cache so demo data persists across reloads.
+- ⬜ E2E happy paths; ship to TestFlight / Play internal testing.
 
 ---
 

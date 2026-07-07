@@ -40,4 +40,6 @@ export { GetAccountLedger } from "./queries/GetAccountLedger.js";
 export { GetMonthlyReport } from "./queries/GetMonthlyReport.js";
 export { GetYearlyOverview } from "./queries/GetYearlyOverview.js";
 export { GetBudgets } from "./queries/GetBudgets.js";
+export { GetExportRows } from "./queries/GetExportRows.js";
+export type { ExportRow } from "./queries/GetExportRows.js";
 export type * from "./queries/viewmodels.js";
