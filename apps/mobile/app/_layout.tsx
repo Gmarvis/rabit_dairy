@@ -5,7 +5,11 @@ import { useEffect } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider, useAuth } from "../src/lib/auth";
 import { PeriodProvider } from "../src/lib/period";
-import { ThemeProvider, useTheme } from "../src/theme/theme";
+import {
+  ThemeProvider,
+  useTheme,
+  useThemeControls,
+} from "../src/theme/ThemeProvider";
 
 const queryClient = new QueryClient();
 
@@ -28,14 +32,14 @@ function useAuthGate() {
 
 function RootNavigator() {
   useAuthGate();
-  const { c, isDark } = useTheme();
+  const theme = useTheme();
   return (
     <>
     <StatusBar style={isDark ? "light" : "dark"} />
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: c.bg },
+        contentStyle: { backgroundColor: theme.bg },
       }}
     >
       <Stack.Screen name="(tabs)" />
@@ -64,6 +68,11 @@ function RootNavigator() {
   );
 }
 
+function ThemedStatusBar() {
+  const { resolved } = useThemeControls();
+  return <StatusBar style={resolved === "light" ? "dark" : "light"} />;
+}
+
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
@@ -71,6 +80,7 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <PeriodProvider>
+              <ThemedStatusBar />
               <RootNavigator />
             </PeriodProvider>
           </AuthProvider>

@@ -17,20 +17,36 @@
     },
     "android": {
       "package": "ltd.nyota.rabbitdiary",
-      "adaptiveIcon": { "backgroundColor": "#14231C" }
+      "adaptiveIcon": {
+        "backgroundColor": "#14231C"
+      }
     },
     "plugins": [
       "expo-router",
-      ["expo-audio", { "microphonePermission": "Rabbit Dairy records a short voice note explaining why you made a purchase." }],
-      ["expo-image-picker", {
-        "photosPermission": "Rabbit Dairy reads bank or mobile-money statements you upload.",
-        "cameraPermission": "Rabbit Dairy scans bank or mobile-money statements and receipts."
-      }],
-      ["expo-speech-recognition", {
-        "microphonePermission": "Rabbit Dairy listens so you can log a purchase by voice.",
-        "speechRecognitionPermission": "Rabbit Dairy transcribes your spoken note on-device, live."
-      }]
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Rabbit Dairy records a short voice note explaining why you made a purchase."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Rabbit Dairy reads bank or mobile-money statements you upload.",
+          "cameraPermission": "Rabbit Dairy scans bank or mobile-money statements and receipts."
+        }
+      ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Rabbit Dairy listens so you can log a purchase by voice.",
+          "speechRecognitionPermission": "Rabbit Dairy transcribes your spoken note on-device, live."
+        }
+      ],
+      "expo-web-browser"
     ],
-    "experiments": { "typedRoutes": true }
+    "experiments": {
+      "typedRoutes": true
+    }
   }
 }
