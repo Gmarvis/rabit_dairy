@@ -11,10 +11,10 @@ function AddButton() {
     <Pressable
       accessibilityLabel="Add a transaction"
       accessibilityRole="button"
-      style={[styles.fab, { backgroundColor: c.gold, shadowColor: c.gold }]}
+      style={[styles.fab, { backgroundColor: c.gold, shadowColor: c.gold, borderColor: c.bg }]}
       onPress={() => router.push("/add")}
     >
-      <Ionicons name="add" size={26} color={c.goldInk} />
+      <Ionicons name="add" size={28} color={c.goldInk} />
     </Pressable>
   );
 }
@@ -27,7 +27,8 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarActiveTintColor: c.gold,
         tabBarInactiveTintColor: c.muted,
-        tabBarStyle: { backgroundColor: c.tabBar, borderTopColor: c.line, height: 84, paddingTop: 8 },
+        tabBarStyle: { backgroundColor: c.tabBar, borderTopColor: c.line, borderTopWidth: 1, height: 88, paddingTop: 10, paddingBottom: 10 },
+        tabBarItemStyle: { paddingTop: 4 },
         tabBarLabelStyle: styles.tabLabel,
       }}
     >
@@ -77,9 +78,10 @@ export default function TabsLayout() {
 
 const styles = StyleSheet.create({
   tabLabel: { fontSize: 10, fontWeight: "600" },
-  fabSlot: { flex: 1, alignItems: "center", justifyContent: "center" },
+  fabSlot: { flex: 1, alignItems: "center", justifyContent: "flex-start" },
   fab: {
-    width: 46, height: 46, borderRadius: 15, alignItems: "center", justifyContent: "center",
-    marginTop: -6, shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 6,
+    width: 58, height: 58, borderRadius: 29, alignItems: "center", justifyContent: "center",
+    marginTop: -22, borderWidth: 4,
+    shadowOpacity: 0.45, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 8,
   },
 });
