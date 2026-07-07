@@ -3,10 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Card, MoneyText, Pill, Row, SectionLabel } from "../../src/components/ui";
+import { MoneyText, Row, SectionLabel } from "../../src/components/ui";
 import { useContainer } from "../../src/lib/auth";
 import { usePeriod } from "../../src/lib/period";
-import { dayLabel, methodLabel, monthLabel, percent } from "../../src/lib/format";
+import { dayLabel, monthLabel, percent } from "../../src/lib/format";
 import { colors, radius, space } from "../../src/theme/tokens";
 
 export default function DashboardScreen() {
@@ -26,7 +26,7 @@ export default function DashboardScreen() {
     >
       <Row between>
         <View>
-          <Text style={styles.greet}>Rabbit Dairy</Text>
+          <Text style={styles.greet}>Rabbit Dairy{c.isDemo ? " · Demo" : ""}</Text>
           <Row style={{ gap: space(2) }}>
             <Pressable onPress={prev} hitSlop={10}><Ionicons name="chevron-back" size={18} color={colors.ink2} /></Pressable>
             <Text style={styles.title}>{monthLabel(period)}</Text>
@@ -45,40 +45,34 @@ export default function DashboardScreen() {
         </Pressable>
       </Row>
 
-      {c.isDemo ? <Pill tone="gold">Demo data</Pill> : null}
-
       {isLoading || !data ? (
-        <Card><Text style={styles.dim}>Loading…</Text></Card>
+        <Text style={styles.dim}>Loading…</Text>
       ) : (
         <>
-          <Card hero>
-            <Row between>
-              <SectionLabel>Net balance · this month</SectionLabel>
-              <Pill tone={data.summary.netBalance.isNegative ? "negative" : "positive"}>
-                {percent(1 - data.summary.expenseRate)} kept
-              </Pill>
-            </Row>
-            <MoneyText amount={data.summary.netBalance} size={28} style={{ marginTop: 4 }} />
+          {/* Net balance — the one number, said once. */}
+          <View style={styles.net}>
+            <SectionLabel>Net this month</SectionLabel>
+            <MoneyText amount={data.summary.netBalance} size={34} style={{ marginTop: 6 }} />
             <SplitBar expenseRate={data.summary.expenseRate} />
-            <Row between style={{ marginTop: 6 }}>
-              <Text style={styles.tiny}>Spent {percent(data.summary.expenseRate)}</Text>
-              <Text style={styles.tiny}>Kept {percent(1 - data.summary.expenseRate)}</Text>
-            </Row>
-          </Card>
+            <Text style={styles.cap}>
+              You kept <Text style={styles.capStrong}>{percent(1 - data.summary.expenseRate)}</Text> of what came in
+            </Text>
+          </View>
 
-          <Row style={{ gap: space(2.5) }}>
-            <Card style={styles.stat}>
+          {/* Income vs expenses — one row, hairline split, no boxes. */}
+          <Row style={styles.duo}>
+            <View style={styles.cell}>
               <SectionLabel>Income</SectionLabel>
-              <MoneyText amount={data.summary.income} signed currency={false} size={16} style={{ marginTop: 4 }} />
-            </Card>
-            <Card style={styles.stat}>
+              <MoneyText amount={data.summary.income} signed currency={false} size={16} style={{ marginTop: 5 }} />
+            </View>
+            <View style={[styles.cell, styles.cellDivider]}>
               <SectionLabel>Expenses</SectionLabel>
-              <MoneyText amount={data.summary.expenses.negated()} signed currency={false} size={16} style={{ marginTop: 4 }} />
-            </Card>
+              <MoneyText amount={data.summary.expenses.negated()} signed currency={false} size={16} style={{ marginTop: 5 }} />
+            </View>
           </Row>
 
-          <SectionLabel>Recent activity</SectionLabel>
-          <Card style={{ paddingVertical: space(1) }}>
+          <SectionLabel>Recent</SectionLabel>
+          <View>
             {data.recent.map((t, i) => (
               <Pressable
                 key={t.id}
@@ -90,7 +84,6 @@ export default function DashboardScreen() {
                   <Text style={styles.txnTitle}>{t.title}</Text>
                   <Text style={styles.txnMeta}>
                     {dayLabel(t.occurredAt)}
-                    {t.paymentMethod ? ` · ${methodLabel(t.paymentMethod)}` : ""}
                     {t.hasVoiceNote ? "  🎙" : ""}
                     {t.hasReceipt ? "  📷" : ""}
                   </Text>
@@ -98,7 +91,7 @@ export default function DashboardScreen() {
                 <MoneyText amount={t.signedAmount} signed currency={false} size={13} />
               </Pressable>
             ))}
-          </Card>
+          </View>
         </>
       )}
     </ScrollView>
@@ -125,11 +118,15 @@ const styles = StyleSheet.create({
   },
   avatarText: { color: colors.gold, fontWeight: "700", fontSize: 12 },
   dim: { color: colors.ink2 },
-  tiny: { color: colors.ink2, fontSize: 10 },
-  stat: { flex: 1 },
+  net: { marginTop: space(1) },
+  cap: { color: colors.ink2, fontSize: 12, marginTop: space(2) },
+  capStrong: { color: colors.ink, fontWeight: "700" },
+  duo: { alignItems: "stretch", gap: 0 },
+  cell: { flex: 1, paddingRight: space(4) },
+  cellDivider: { borderLeftWidth: 1, borderLeftColor: colors.line, paddingLeft: space(4), paddingRight: 0 },
   splitTrack: {
-    flexDirection: "row", height: 8, borderRadius: 4, overflow: "hidden",
-    marginTop: 12, gap: 3, backgroundColor: colors.card2,
+    flexDirection: "row", height: 6, borderRadius: 3, overflow: "hidden",
+    marginTop: 16, backgroundColor: "rgba(0,0,0,0.28)",
   },
   txn: { flexDirection: "row", alignItems: "center", gap: space(2.5), paddingVertical: space(2.5) },
   txnBorder: { borderBottomWidth: 1, borderBottomColor: colors.line },

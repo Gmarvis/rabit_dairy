@@ -173,10 +173,8 @@ export function Row({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.card,
-    borderColor: colors.line,
-    borderWidth: 1,
     borderRadius: radius.lg,
-    padding: space(3.5),
+    padding: space(4),
   },
   cardHero: { backgroundColor: colors.card2 },
   sectionLabel: {
