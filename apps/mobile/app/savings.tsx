@@ -3,10 +3,11 @@ import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { PrimaryButton, Row, ScreenHeader } from "../src/components/ui";
+import { ModalHeader, PrimaryButton, Row } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
+import { fullDate } from "../src/lib/format";
 import { useTheme } from "../src/theme/ThemeProvider";
 import { radius, space, type Palette } from "../src/theme/tokens";
 
@@ -33,6 +34,7 @@ export default function SavingsScreen() {
   const savingsCategory = options?.categories.find((cat) => cat.type === "savings");
   const amountMajor = parseInt(digits || "0", 10);
   const canSave = amountMajor > 0 && !!savingsAccount && !!savingsCategory;
+  const today = fullDate(new Date().toISOString());
 
   async function attachReceipt(from: "camera" | "library") {
     setError(null);
@@ -69,77 +71,83 @@ export default function SavingsScreen() {
     onError: (e) => setError(e instanceof Error ? e.message : "Could not save."),
   });
 
-  function press(key: string) {
-    setError(null);
-    if (key === "del") setDigits((d) => d.slice(0, -1));
-    else if (digits.length < 12) setDigits((d) => (d === "0" ? key : d + key));
-  }
-
   return (
     <View style={s.screen}>
       <View style={{ paddingHorizontal: space(4) }}>
-        <ScreenHeader
+        <ModalHeader
           title={kind === "deposit" ? "Record deposit" : "Record withdrawal"}
-          onClose={() => router.back()}
+          onCancel={() => router.back()}
           topInset={insets.top}
+          right={
+            <Pressable onPress={() => canSave && save.mutate()} hitSlop={10} disabled={!canSave}>
+              <Text style={[s.save, { opacity: canSave ? 1 : 0.4 }]}>Save</Text>
+            </Pressable>
+          }
         />
+      </View>
 
+      <ScrollView contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), gap: space(4) }}>
         <View style={s.segment}>
           {(["deposit", "withdrawal"] as Kind[]).map((k) => (
             <Pressable key={k} style={[s.seg, kind === k && s.segOn]} onPress={() => setKind(k)}>
-              <Ionicons
-                name={k === "deposit" ? "arrow-down" : "arrow-up"}
-                size={13}
-                color={kind === k ? t.goldInk : t.ink2}
-              />
+              <Ionicons name={k === "deposit" ? "arrow-down" : "arrow-up"} size={14} color={kind === k ? t.goldInk : t.ink2} />
               <Text style={[s.segText, kind === k && s.segTextOn]}>{k === "deposit" ? "Deposit" : "Withdrawal"}</Text>
             </Pressable>
           ))}
         </View>
 
-        <View style={s.amountBox}>
-          <Text style={s.amountLabel}>Amount</Text>
-          <Text style={[s.amount, amountMajor === 0 && s.amountZero]}>{amountMajor.toLocaleString("en-US")}</Text>
-          <Text style={s.cur}>FCFA → {savingsAccount?.name ?? "savings"}</Text>
+        <View style={{ alignItems: "center", marginTop: space(2) }}>
+          <Text style={s.label}>Amount</Text>
+          <TextInput
+            style={s.amount}
+            value={digits}
+            onChangeText={(v) => { setError(null); setDigits(v.replace(/[^0-9]/g, "")); }}
+            keyboardType="number-pad"
+            placeholder="0"
+            placeholderTextColor={t.muted}
+          />
+          <Text style={s.cur}>FCFA → {savingsAccount?.name ?? "Savings"}</Text>
         </View>
 
-        {receiptPath ? (
-          <Row between style={s.receipt}>
-            <Row style={{ gap: 6 }}>
-              <Ionicons name="checkmark-circle" size={15} color={t.positive} />
-              <Text style={[s.receiptText, { color: t.positive }]}>Receipt attached</Text>
+        <View style={s.field}>
+          <Text style={s.fieldLabel}>Date</Text>
+          <Text style={s.fieldValue}>{today}</Text>
+        </View>
+
+        <View>
+          <Text style={s.label}>Proof</Text>
+          {receiptPath ? (
+            <View style={[s.proofCard, { borderColor: t.goldBorder }]}>
+              <View style={s.thumb}><Ionicons name="receipt-outline" size={22} color={t.gold} /></View>
+              <View style={{ flex: 1 }}>
+                <Row style={{ gap: 6 }}>
+                  <Ionicons name="checkmark-circle" size={15} color={t.positive} />
+                  <Text style={[s.proofTitle, { color: t.positive }]}>Receipt attached</Text>
+                </Row>
+                <Pressable onPress={() => setReceiptPath(null)}><Text style={s.proofClear}>Retake / remove</Text></Pressable>
+              </View>
+            </View>
+          ) : (
+            <Row style={{ gap: space(3) }}>
+              <Pressable style={s.proofBtn} onPress={() => attachReceipt("camera")}>
+                <Ionicons name="camera" size={16} color={t.ink} />
+                <Text style={s.proofBtnText}>Snap</Text>
+              </Pressable>
+              <Pressable style={s.proofBtn} onPress={() => attachReceipt("library")}>
+                <Ionicons name="image" size={16} color={t.ink} />
+                <Text style={s.proofBtnText}>Upload</Text>
+              </Pressable>
             </Row>
-            <Pressable onPress={() => setReceiptPath(null)}><Text style={s.receiptClear}>Remove</Text></Pressable>
-          </Row>
-        ) : (
-          <Row style={{ gap: space(2.5) }}>
-            <Pressable style={s.receiptBtn} onPress={() => attachReceipt("camera")}>
-              <Ionicons name="camera" size={15} color={t.ink} />
-              <Text style={s.receiptBtnText}>Snap receipt</Text>
-            </Pressable>
-            <Pressable style={s.receiptBtn} onPress={() => attachReceipt("library")}>
-              <Ionicons name="image" size={15} color={t.ink} />
-              <Text style={s.receiptBtnText}>Upload</Text>
-            </Pressable>
-          </Row>
-        )}
+          )}
+        </View>
 
         {!savingsAccount || !savingsCategory ? (
           <Text style={s.error}>Add a savings account and a savings category first.</Text>
         ) : null}
         {error ? <Text style={s.error}>{error}</Text> : null}
-      </View>
+      </ScrollView>
 
-      <View style={{ flex: 1 }} />
-
-      <View style={[s.bottom, { paddingBottom: insets.bottom + space(2) }]}>
-        <View style={s.keypad}>
-          {["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "del"].map((k, i) => (
-            <Pressable key={i} style={[s.key, k === "" && s.keyBlank]} onPress={() => k && press(k)} disabled={k === ""}>
-              <Text style={s.keyText}>{k === "del" ? "⌫" : k}</Text>
-            </Pressable>
-          ))}
-        </View>
+      <View style={[s.footer, { paddingBottom: insets.bottom + space(3) }]}>
         <PrimaryButton
           label={kind === "deposit" ? "Save deposit" : "Save withdrawal"}
           onPress={() => save.mutate()}
@@ -153,25 +161,24 @@ export default function SavingsScreen() {
 
 const makeStyles = (c: Palette) => StyleSheet.create({
   screen: { flex: 1, backgroundColor: c.bg },
+  save: { color: c.gold, fontSize: 15, fontWeight: "700" },
   segment: { flexDirection: "row", backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: radius.md, padding: 3 },
-  seg: { flex: 1, flexDirection: "row", gap: 5, paddingVertical: space(2), borderRadius: radius.sm, alignItems: "center", justifyContent: "center" },
+  seg: { flex: 1, flexDirection: "row", gap: 6, paddingVertical: space(2.5), borderRadius: radius.sm, alignItems: "center", justifyContent: "center" },
   segOn: { backgroundColor: c.gold },
-  segText: { color: c.ink2, fontSize: 12, fontWeight: "700" },
+  segText: { color: c.ink2, fontSize: 13, fontWeight: "700" },
   segTextOn: { color: c.goldInk },
-  amountBox: { alignItems: "center", marginVertical: space(4) },
-  amountLabel: { color: c.muted, fontSize: 10, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase" },
-  amount: { color: c.ink, fontSize: 40, fontWeight: "800", marginTop: 4, fontVariant: ["tabular-nums"], letterSpacing: -1 },
-  amountZero: { color: c.muted },
-  cur: { color: c.ink2, fontSize: 12, fontWeight: "600" },
-  receipt: { backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: radius.md, paddingHorizontal: space(3.5), paddingVertical: space(3) },
-  receiptText: { color: c.ink2, fontSize: 12, fontWeight: "600" },
-  receiptClear: { color: c.gold, fontSize: 11, fontWeight: "700" },
-  receiptBtn: { flex: 1, flexDirection: "row", gap: 6, backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: radius.md, paddingVertical: space(3), alignItems: "center", justifyContent: "center" },
-  receiptBtnText: { color: c.ink, fontSize: 12, fontWeight: "700" },
-  error: { color: c.negative, fontSize: 12, marginTop: space(2), textAlign: "center" },
-  bottom: { paddingHorizontal: space(4), gap: space(3) },
-  keypad: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: space(2) },
-  key: { width: "31%", backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: radius.md, paddingVertical: space(3), alignItems: "center" },
-  keyBlank: { backgroundColor: "transparent", borderColor: "transparent" },
-  keyText: { color: c.ink, fontSize: 20, fontWeight: "700" },
+  label: { color: c.muted, fontSize: 11, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase", marginBottom: space(2) },
+  amount: { color: c.ink, fontSize: 44, fontWeight: "800", textAlign: "center", fontVariant: ["tabular-nums"], letterSpacing: -1, minWidth: 180 },
+  cur: { color: c.ink2, fontSize: 13, fontWeight: "600", marginTop: 2 },
+  field: { backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: radius.md, paddingHorizontal: space(4), paddingVertical: space(3), flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  fieldLabel: { color: c.muted, fontSize: 11, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase" },
+  fieldValue: { color: c.ink, fontSize: 14, fontWeight: "600" },
+  proofCard: { flexDirection: "row", alignItems: "center", gap: space(3), backgroundColor: c.card, borderWidth: 1, borderRadius: radius.md, padding: space(3) },
+  thumb: { width: 48, height: 56, borderRadius: 9, backgroundColor: c.card2, alignItems: "center", justifyContent: "center" },
+  proofTitle: { fontSize: 13, fontWeight: "800" },
+  proofClear: { color: c.gold, fontSize: 12, fontWeight: "700", marginTop: 4 },
+  proofBtn: { flex: 1, flexDirection: "row", gap: 8, backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: radius.md, paddingVertical: space(3.5), alignItems: "center", justifyContent: "center" },
+  proofBtnText: { color: c.ink, fontSize: 14, fontWeight: "700" },
+  error: { color: c.negative, fontSize: 13, textAlign: "center" },
+  footer: { paddingHorizontal: space(4), paddingTop: space(2) },
 });
