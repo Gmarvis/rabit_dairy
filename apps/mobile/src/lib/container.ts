@@ -8,6 +8,7 @@ import {
   GetAccountsOverview,
   GetBudgetVsActual,
   GetDashboard,
+  GetEntryOptions,
   LogTransaction,
   RecordSavingsMovement,
   SetBudget,
@@ -46,6 +47,7 @@ function build(userId: UserId) {
       dashboard: new GetDashboard(txns, categories, accounts),
       accounts: new GetAccountsOverview(accounts),
       budgetVsActual: new GetBudgetVsActual(txns, budgets, categories),
+      entryOptions: new GetEntryOptions(categories, accounts),
     },
     commands: {
       logTransaction: new LogTransaction(txns, categories, ids, clock),

@@ -26,4 +26,10 @@ export type { SetBudgetInput } from "./commands/SetBudget.js";
 export { GetDashboard } from "./queries/GetDashboard.js";
 export { GetAccountsOverview } from "./queries/GetAccountsOverview.js";
 export { GetBudgetVsActual } from "./queries/GetBudgetVsActual.js";
+export { GetEntryOptions } from "./queries/GetEntryOptions.js";
+export type {
+  EntryOptions,
+  EntryCategoryOption,
+  EntryAccountOption,
+} from "./queries/GetEntryOptions.js";
 export type * from "./queries/viewmodels.js";

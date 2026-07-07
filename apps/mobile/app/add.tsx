@@ -32,8 +32,10 @@ export default function AddHub() {
             key={o.key}
             accessibilityRole="button"
             style={[styles.option, o.highlight && styles.optionHi]}
-            // Capture flows land in Phase 3–5; for now they return to the hub.
-            onPress={() => router.back()}
+            // Manual entry is built; voice & scan land in Phase 4–5.
+            onPress={() =>
+              o.key === "manual" ? router.replace("/manual") : router.back()
+            }
           >
             <View style={styles.icon}>
               <Ionicons name={o.icon} size={18} color={colors.gold} />
