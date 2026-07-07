@@ -87,8 +87,10 @@ Account balance = `opening + Σ(in) − Σ(out)` over its transactions. Transfer
 - OCR Edge Function → parsed rows; the **Import review** screen; duplicate
   detection; confirm-before-import. Savings deposit/withdrawal receipt flow.
 
-### Phase 6 — Auth, sync, hardening
-- Supabase Auth (email + phone OTP + OAuth); onboarding.
+### Phase 6 — Auth, sync, hardening (in progress)
+- ✅ Supabase Auth (email + password): sign-in/up screen, session-aware
+  composition root, auth gate. `supabase/config.toml` + `db push` workflow.
+- Phone OTP + OAuth; onboarding polish.
 - Offline-first cache + sync; biometric lock; Excel/CSV export.
 - E2E happy paths; ship to TestFlight / Play internal testing.
 

@@ -1,28 +1,57 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Stack } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { useEffect } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { AuthProvider, useAuth } from "../src/lib/auth";
 import { colors } from "../src/theme/tokens";
 
 const queryClient = new QueryClient();
+
+/** Redirects to /auth when signed out, and away from it once signed in. */
+function useAuthGate() {
+  const { status } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === "loading") return;
+    const onAuthScreen = segments[0] === "auth";
+    if (status === "signed_out" && !onAuthScreen) {
+      router.replace("/auth");
+    } else if ((status === "authed" || status === "demo") && onAuthScreen) {
+      router.replace("/");
+    }
+  }, [status, segments, router]);
+}
+
+function RootNavigator() {
+  useAuthGate();
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: colors.bg },
+      }}
+    >
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="auth" />
+      <Stack.Screen
+        name="add"
+        options={{ presentation: "modal", animation: "slide_from_bottom" }}
+      />
+    </Stack>
+  );
+}
 
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
-        <StatusBar style="light" />
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: colors.bg },
-          }}
-        >
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen
-            name="add"
-            options={{ presentation: "modal", animation: "slide_from_bottom" }}
-          />
-        </Stack>
+        <AuthProvider>
+          <StatusBar style="light" />
+          <RootNavigator />
+        </AuthProvider>
       </QueryClientProvider>
     </SafeAreaProvider>
   );

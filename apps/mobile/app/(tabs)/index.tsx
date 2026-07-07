@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { YearMonth } from "@rabbit/domain";
 import { Card, MoneyText, Pill, Row, SectionLabel } from "../../src/components/ui";
-import { getContainer } from "../../src/lib/container";
+import { signOut, useAuth, useContainer } from "../../src/lib/auth";
 import { dayLabel, methodLabel, percent } from "../../src/lib/format";
 import { colors, radius, space } from "../../src/theme/tokens";
 
@@ -12,7 +12,16 @@ const PERIOD = YearMonth.of(2026, 4);
 
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
-  const c = getContainer();
+  const { status } = useAuth();
+  const c = useContainer();
+
+  function onAvatarPress() {
+    if (status !== "authed") return; // demo mode has no session
+    Alert.alert("Sign out?", "You'll need to sign in again to see your data.", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Sign out", style: "destructive", onPress: () => void signOut() },
+    ]);
+  }
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard", PERIOD.toString()],
     queryFn: () => c.queries.dashboard.execute(c.userId, PERIOD),
@@ -28,9 +37,14 @@ export default function DashboardScreen() {
           <Text style={styles.greet}>Good evening, Sam</Text>
           <Text style={styles.title}>{data?.periodLabel ?? "…"}</Text>
         </View>
-        <View style={styles.avatar}>
+        <Pressable
+          style={styles.avatar}
+          onPress={onAvatarPress}
+          accessibilityRole="button"
+          accessibilityLabel={status === "authed" ? "Account — sign out" : "Account"}
+        >
           <Text style={styles.avatarText}>SN</Text>
-        </View>
+        </Pressable>
       </Row>
 
       {c.isDemo ? <Pill tone="gold">Demo data · April 2026</Pill> : null}

@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { YearMonth } from "@rabbit/domain";
 import { Card, MoneyText, Pill, Row, SectionLabel } from "../../src/components/ui";
-import { getContainer } from "../../src/lib/container";
+import { useContainer } from "../../src/lib/auth";
 import { percent } from "../../src/lib/format";
 import { colors, space } from "../../src/theme/tokens";
 
@@ -18,7 +18,7 @@ const STATUS_TONE = {
 
 export default function InsightsScreen() {
   const insets = useSafeAreaInsets();
-  const c = getContainer();
+  const c = useContainer();
   const { data } = useQuery({
     queryKey: ["budget-vs-actual", PERIOD.toString()],
     queryFn: () => c.queries.budgetVsActual.execute(c.userId, PERIOD),

@@ -36,9 +36,26 @@ until you configure Supabase. Copy `apps/mobile/.env.example` to
 `apps/mobile/.env` and fill the two `EXPO_PUBLIC_SUPABASE_*` values to switch to a
 live backend.
 
-### Supabase
+### Connect your Supabase project
 
-```bash
-supabase start        # local stack (Docker)
-supabase db reset     # apply supabase/migrations + seed on signup
-```
+1. **Apply the schema** to your linked project:
+   ```bash
+   supabase link --project-ref <your-project-ref>   # once
+   supabase db push                                 # applies supabase/migrations
+   ```
+   (Or `supabase start` + `supabase db reset` for the local Docker stack.)
+   The migrations create the tables, Row-Level Security, storage buckets, and a
+   signup trigger that seeds each new user with the 34 categories + 5 accounts.
+
+2. **Point the app at it** — copy `apps/mobile/.env.example` to
+   `apps/mobile/.env` and fill from *Project Settings → API*:
+   ```
+   EXPO_PUBLIC_SUPABASE_URL=https://<ref>.supabase.co
+   EXPO_PUBLIC_SUPABASE_ANON_KEY=<anon public key>
+   ```
+   These are the publishable client keys — safe in the app. Never put the
+   service-role key or DB password here.
+
+3. **Restart Expo** (`npm run start -w @rabbit/mobile`). The app now shows a
+   sign-in screen; create an account and you'll land on an empty Dashboard with
+   your seeded categories/accounts. Leaving `.env` blank keeps the demo data.

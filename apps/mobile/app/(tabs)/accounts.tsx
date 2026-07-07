@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { AccountListItem } from "@rabbit/application";
 import { Card, MoneyText, Pill, Row, SectionLabel } from "../../src/components/ui";
-import { getContainer } from "../../src/lib/container";
+import { useContainer } from "../../src/lib/auth";
 import { colors, radius, space } from "../../src/theme/tokens";
 
 const ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
@@ -17,7 +17,7 @@ const ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
 
 export default function AccountsScreen() {
   const insets = useSafeAreaInsets();
-  const c = getContainer();
+  const c = useContainer();
   const { data } = useQuery({
     queryKey: ["accounts"],
     queryFn: () => c.queries.accounts.execute(c.userId),

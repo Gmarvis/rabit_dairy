@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { YearMonth } from "@rabbit/domain";
 import type { TransactionListItem } from "@rabbit/application";
 import { Card, MoneyText } from "../../src/components/ui";
-import { getContainer } from "../../src/lib/container";
+import { useContainer } from "../../src/lib/auth";
 import { dayLabel, methodLabel } from "../../src/lib/format";
 import { colors, radius, space } from "../../src/theme/tokens";
 
@@ -13,7 +13,7 @@ const PERIOD = YearMonth.of(2026, 4);
 
 export default function ActivityScreen() {
   const insets = useSafeAreaInsets();
-  const c = getContainer();
+  const c = useContainer();
   const { data } = useQuery({
     queryKey: ["activity", PERIOD.toString()],
     queryFn: () => c.queries.dashboard.execute(c.userId, PERIOD, 100),
