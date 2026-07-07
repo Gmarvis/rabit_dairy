@@ -44,7 +44,7 @@ export default function AuthScreen() {
       } else {
         const { confirmed } = await signUp(email.trim(), password);
         if (!confirmed) {
-          setInfo("Account created. This project still requires email confirmation — check your inbox, or turn off “Confirm email” in Supabase for instant sign-in.");
+          setInfo("Account created! Check your email for a confirmation link, then come back and sign in.");
           setShowResend(true);
         }
       }
