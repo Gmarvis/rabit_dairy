@@ -90,7 +90,8 @@ create index budgets_user_period_idx on budgets (user_id, year, month);
 
 -- ---------- read model: account balances ----------
 -- opening_balance + signed sum of the account's transactions.
-create view account_balances as
+-- security_invoker so the querying user's RLS applies (not the view owner's).
+create view account_balances with (security_invoker = true) as
 select
   a.id as account_id,
   a.user_id,
