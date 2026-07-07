@@ -130,8 +130,24 @@ Account balance = `opening + Σ(in) − Σ(out)` over its transactions. Transfer
   `transcribe` Edge Function (text mode, gpt-4o-mini) to fill amount, category &
   a clean note; on-device word parser is the instant/offline fallback.
 - ⬜ Apple sign-in (App Store requires it alongside Google); biometric lock
-  (expo-local-authentication); offline cache so demo data persists across reloads.
+  (expo-local-authentication — Settings toggle exists & persists, not yet
+  enforced); offline cache so demo data persists across reloads.
 - ⬜ E2E happy paths; ship to TestFlight / Play internal testing.
+
+### Phase 7 — Light/dark theming + full redesign (in progress)
+Driven by `design/Rabbit Dairy Redesign.html` (the 19-screen mock set).
+- ✅ Dual **light + dark** palettes; `ThemeProvider` + `useTheme` /
+  `useThemeControls`; persisted mode (System/Light/Dark) wired to Settings.
+- ✅ Domain→Ionicons icon map (no emojis anywhere); shared theme-aware UI
+  (`Card`, `Pill`, `MoneyText`, `Tico`, `ModalHeader`, `PageHeader`, `Toggle`…).
+- ✅ Screens matched to the mocks: Welcome, Auth, Dashboard, Transactions,
+  Transaction detail (read-only + edit), Add hub, Manual, Voice (record→review),
+  Scan + OCR review, Accounts, Account detail, Budgets, Budget-vs-Actual,
+  Monthly report, Yearly, Settings. Tab bar with raised circular FAB.
+- ✅ LottieFiles wired (voice waveform); modal top-inset/spacing bugs fixed;
+  type scale calibrated to the doc's values.
+- ⬜ **Categories screen (mock 18)** — not built yet (no route/entry point).
+- ⬜ Final visual QA pass on a device across both themes.
 
 ---
 
