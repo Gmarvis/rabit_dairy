@@ -1,12 +1,14 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Card, MoneyText, Pill, Row, ScreenHeader, SectionLabel } from "../src/components/ui";
+import { Card, MoneyText, Pill, Row, ScreenHeader, SectionLabel, withAlpha } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
 import { usePeriod } from "../src/lib/period";
 import { monthLabel, percent } from "../src/lib/format";
-import { colors, space } from "../src/theme/tokens";
+import { space, type Palette } from "../src/theme/tokens";
+import { useTheme } from "../src/theme/theme";
 
 const STATUS_TONE = {
   under: "positive",
@@ -19,6 +21,8 @@ export default function BudgetScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const c = useContainer();
+  const { c: t } = useTheme();
+  const s = makeStyles(t);
   const { period } = usePeriod();
   const { data } = useQuery({
     queryKey: ["budget-vs-actual", period.toString()],
@@ -27,36 +31,37 @@ export default function BudgetScreen() {
 
   return (
     <ScrollView
-      style={styles.screen}
+      style={s.screen}
       contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), gap: space(3) }}
     >
       <ScreenHeader title={`Budget · ${monthLabel(period)}`} onClose={() => router.back()} closeLabel="Done" topInset={insets.top} />
-      <Pressable onPress={() => router.push("/budgets")} style={styles.editRow}>
-        <Text style={styles.edit}>✎ Edit budgets</Text>
+      <Pressable onPress={() => router.push("/budgets")} style={s.editRow}>
+        <Ionicons name="pencil" size={13} color={t.gold} />
+        <Text style={s.edit}>Edit budgets</Text>
       </Pressable>
 
       {data?.lines.length === 0 ? (
-        <Card><Text style={styles.dim}>No spending or budgets set for this month yet.</Text></Card>
+        <Card><Text style={s.dim}>No spending or budgets set for this month yet.</Text></Card>
       ) : null}
 
       {data?.lines.map((l) => {
         const pct = Math.max(0, Math.min(1, l.percentUsed));
         const barColor =
-          l.status === "over" ? colors.negative : l.status === "at" ? colors.gold : colors.positive;
+          l.status === "over" ? t.negative : l.status === "at" ? t.gold : t.positive;
         return (
-          <Card key={l.categoryId}>
+          <Card key={l.categoryId} style={l.status === "over" ? { borderColor: withAlpha(t.negative, 0.4) } : undefined}>
             <Row between>
-              <Text style={styles.cat}>{l.categoryName}</Text>
+              <Text style={s.cat}>{l.categoryName}</Text>
               <Pill tone={STATUS_TONE[l.status]}>
                 {l.status === "over" ? "over" : l.status === "no_budget" ? "no budget" : percent(l.percentUsed, 0)}
               </Pill>
             </Row>
-            <View style={styles.track}>
+            <View style={s.track}>
               <View style={{ width: `${pct * 100}%`, backgroundColor: barColor, height: "100%", borderRadius: 4 }} />
             </View>
             <Row between style={{ marginTop: 5 }}>
-              <Text style={styles.meta}>{l.actual.format()} spent</Text>
-              <Text style={styles.meta}>
+              <Text style={s.meta}>{l.actual.format()} spent</Text>
+              <Text style={s.meta}>
                 {l.budget.isZero ? "no budget set" : `of ${l.budget.format({ withCode: false })}`}
               </Text>
             </Row>
@@ -68,12 +73,12 @@ export default function BudgetScreen() {
         <Card hero>
           <Row between>
             <SectionLabel>Spent of budget</SectionLabel>
-            <Text style={styles.overall}>
+            <Text style={s.overall}>
               {data.totalBudget.isZero ? "—" : percent(data.overallPercentUsed, 0)}
             </Text>
           </Row>
           <Row between style={{ marginTop: 6 }}>
-            <Text style={styles.meta}>Total spent</Text>
+            <Text style={s.meta}>Total spent</Text>
             <MoneyText amount={data.totalActual} currency={false} size={14} />
           </Row>
         </Card>
@@ -82,16 +87,14 @@ export default function BudgetScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { backgroundColor: colors.bg },
-  greet: { color: colors.ink2, fontSize: 12 },
-  title: { color: colors.ink, fontSize: 20, fontWeight: "800", marginTop: 2 },
-  close: { color: colors.gold, fontSize: 13, fontWeight: "700" },
-  edit: { color: colors.gold, fontSize: 13, fontWeight: "700" },
-  editRow: { alignSelf: "flex-start", marginTop: -space(1) },
-  dim: { color: colors.ink2 },
-  cat: { color: colors.ink, fontSize: 12, fontWeight: "600" },
-  track: { height: 7, borderRadius: 4, backgroundColor: colors.card2, overflow: "hidden", marginTop: 8 },
-  meta: { color: colors.muted, fontSize: 10 },
-  overall: { color: colors.positive, fontSize: 15, fontWeight: "800" },
-});
+const makeStyles = (c: Palette) =>
+  StyleSheet.create({
+    screen: { backgroundColor: c.bg },
+    edit: { color: c.gold, fontSize: 13, fontWeight: "700" },
+    editRow: { flexDirection: "row", alignItems: "center", gap: 4, alignSelf: "flex-start", marginTop: -space(1) },
+    dim: { color: c.ink2 },
+    cat: { color: c.ink, fontSize: 12, fontWeight: "600" },
+    track: { height: 7, borderRadius: 4, backgroundColor: c.card2, overflow: "hidden", marginTop: 8 },
+    meta: { color: c.muted, fontSize: 10 },
+    overall: { color: c.positive, fontSize: 15, fontWeight: "800" },
+  });

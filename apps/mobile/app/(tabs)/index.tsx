@@ -3,16 +3,20 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { MoneyText, Row, SectionLabel } from "../../src/components/ui";
+import { Card, MoneyText, Pill, Row, SectionLabel, Tico } from "../../src/components/ui";
 import { useContainer } from "../../src/lib/auth";
 import { usePeriod } from "../../src/lib/period";
 import { dayLabel, monthLabel, percent } from "../../src/lib/format";
-import { colors, radius, space } from "../../src/theme/tokens";
+import { iconForCategory } from "../../src/theme/icons";
+import { useTheme } from "../../src/theme/theme";
+import { space, type Palette } from "../../src/theme/tokens";
 
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const c = useContainer();
+  const { c: t } = useTheme();
+  const s = makeStyles(t);
   const { period, next, prev, isCurrent } = usePeriod();
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard", period.toString()],
@@ -21,74 +25,83 @@ export default function DashboardScreen() {
 
   return (
     <ScrollView
-      style={styles.screen}
+      style={s.screen}
       contentContainerStyle={{ padding: space(4), paddingTop: insets.top + space(2), gap: space(3) }}
     >
       <Row between>
         <View>
-          <Text style={styles.greet}>Rabbit Dairy{c.isDemo ? " · Demo" : ""}</Text>
+          <Text style={s.greet}>Rabbit Dairy{c.isDemo ? " · Demo" : ""}</Text>
           <Row style={{ gap: space(2) }}>
-            <Pressable onPress={prev} hitSlop={10}><Ionicons name="chevron-back" size={18} color={colors.ink2} /></Pressable>
-            <Text style={styles.title}>{monthLabel(period)}</Text>
+            <Pressable onPress={prev} hitSlop={10}><Ionicons name="chevron-back" size={18} color={t.ink2} /></Pressable>
+            <Text style={s.title}>{monthLabel(period)}</Text>
             <Pressable onPress={next} hitSlop={10} disabled={isCurrent}>
-              <Ionicons name="chevron-forward" size={18} color={isCurrent ? colors.muted : colors.ink2} />
+              <Ionicons name="chevron-forward" size={18} color={isCurrent ? t.muted : t.ink2} />
             </Pressable>
           </Row>
         </View>
         <Pressable
-          style={styles.avatar}
+          style={s.avatar}
           onPress={() => router.push("/settings")}
           accessibilityRole="button"
           accessibilityLabel="Settings"
         >
-          <Text style={styles.avatarText}>SN</Text>
+          <Text style={s.avatarText}>SN</Text>
         </Pressable>
       </Row>
 
       {isLoading || !data ? (
-        <Text style={styles.dim}>Loading…</Text>
+        <Text style={s.dim}>Loading…</Text>
       ) : (
         <>
           {/* Net balance — the one number, said once. */}
-          <View style={styles.net}>
-            <SectionLabel>Net this month</SectionLabel>
-            <MoneyText amount={data.summary.netBalance} size={34} style={{ marginTop: 6 }} />
-            <SplitBar expenseRate={data.summary.expenseRate} />
-            <Text style={styles.cap}>
-              You kept <Text style={styles.capStrong}>{percent(1 - data.summary.expenseRate)}</Text> of what came in
-            </Text>
-          </View>
+          <Card hero>
+            <Row between>
+              <SectionLabel>Net balance · this month</SectionLabel>
+              <Pill tone="positive">+{percent(data.summary.savingsRate)}</Pill>
+            </Row>
+            <MoneyText amount={data.summary.netBalance} size={30} style={{ marginTop: 6 }} />
+            <SplitBar expenseRate={data.summary.expenseRate} c={t} />
+            <Row between style={{ marginTop: 7 }}>
+              <Text style={s.cap}>Spent {percent(data.summary.expenseRate)}</Text>
+              <Text style={s.cap}>Kept {percent(1 - data.summary.expenseRate)}</Text>
+            </Row>
+          </Card>
 
-          {/* Income vs expenses — one row, hairline split, no boxes. */}
-          <Row style={styles.duo}>
-            <View style={styles.cell}>
+          {/* Income vs expenses — a two-card mini-quad. */}
+          <Row style={{ gap: space(3), alignItems: "stretch" }}>
+            <Card style={{ flex: 1 }}>
               <SectionLabel>Income</SectionLabel>
               <MoneyText amount={data.summary.income} signed currency={false} size={16} style={{ marginTop: 5 }} />
-            </View>
-            <View style={[styles.cell, styles.cellDivider]}>
+            </Card>
+            <Card style={{ flex: 1 }}>
               <SectionLabel>Expenses</SectionLabel>
               <MoneyText amount={data.summary.expenses.negated()} signed currency={false} size={16} style={{ marginTop: 5 }} />
-            </View>
+            </Card>
           </Row>
 
-          <SectionLabel>Recent</SectionLabel>
+          <Row between style={{ marginTop: space(1) }}>
+            <SectionLabel>Recent activity</SectionLabel>
+            <Pressable onPress={() => router.push("/activity")} hitSlop={8}>
+              <Text style={s.seeAll}>See all</Text>
+            </Pressable>
+          </Row>
           <View>
-            {data.recent.map((t, i) => (
+            {data.recent.map((t2, i) => (
               <Pressable
-                key={t.id}
-                style={[styles.txn, i < data.recent.length - 1 && styles.txnBorder]}
-                onPress={() => router.push(`/transaction/${t.id}`)}
+                key={t2.id}
+                style={[s.txn, i < data.recent.length - 1 && s.txnBorder]}
+                onPress={() => router.push(`/transaction/${t2.id}`)}
               >
-                <View style={[styles.dot, { backgroundColor: t.categoryColor }]} />
+                <Tico icon={iconForCategory(t2.categoryName, t2.categoryType)} color={t2.categoryColor} />
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.txnTitle}>{t.title}</Text>
-                  <Text style={styles.txnMeta}>
-                    {dayLabel(t.occurredAt)}
-                    {t.hasVoiceNote ? "  🎙" : ""}
-                    {t.hasReceipt ? "  📷" : ""}
-                  </Text>
+                  <Text style={s.txnTitle}>{t2.title}</Text>
+                  <Row style={{ gap: 5 }}>
+                    <Text style={s.txnMeta}>{dayLabel(t2.occurredAt)}</Text>
+                    {t2.hasVoiceNote ? <Ionicons name="mic" size={11} color={t.gold} /> : null}
+                    {t2.hasReceipt ? <Ionicons name="camera" size={11} color={t.gold} /> : null}
+                  </Row>
                 </View>
-                <MoneyText amount={t.signedAmount} signed currency={false} size={13} />
+                <MoneyText amount={t2.signedAmount} signed currency={false} size={13} />
               </Pressable>
             ))}
           </View>
@@ -98,39 +111,37 @@ export default function DashboardScreen() {
   );
 }
 
-function SplitBar({ expenseRate }: { expenseRate: number }) {
+function SplitBar({ expenseRate, c }: { expenseRate: number; c: Palette }) {
   const spent = Math.max(0, Math.min(1, expenseRate));
   return (
-    <View style={styles.splitTrack}>
-      <View style={{ flex: spent, backgroundColor: colors.negative }} />
-      <View style={{ flex: 1 - spent, backgroundColor: colors.positive }} />
+    <View style={[styles.splitTrack, { backgroundColor: c.card2 }]}>
+      <View style={{ flex: spent, backgroundColor: c.negative }} />
+      <View style={{ flex: 1 - spent, backgroundColor: c.positive }} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { backgroundColor: colors.bg },
-  greet: { color: colors.ink2, fontSize: 12 },
-  title: { color: colors.ink, fontSize: 22, fontWeight: "800", marginTop: 2 },
-  avatar: {
-    width: 34, height: 34, borderRadius: 17, backgroundColor: "#243B2E",
-    borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center",
-  },
-  avatarText: { color: colors.gold, fontWeight: "700", fontSize: 12 },
-  dim: { color: colors.ink2 },
-  net: { marginTop: space(1) },
-  cap: { color: colors.ink2, fontSize: 12, marginTop: space(2) },
-  capStrong: { color: colors.ink, fontWeight: "700" },
-  duo: { alignItems: "stretch", gap: 0 },
-  cell: { flex: 1, paddingRight: space(4) },
-  cellDivider: { borderLeftWidth: 1, borderLeftColor: colors.line, paddingLeft: space(4), paddingRight: 0 },
   splitTrack: {
-    flexDirection: "row", height: 6, borderRadius: 3, overflow: "hidden",
-    marginTop: 16, backgroundColor: "rgba(0,0,0,0.28)",
+    flexDirection: "row", height: 6, borderRadius: 3, overflow: "hidden", marginTop: 16,
   },
-  txn: { flexDirection: "row", alignItems: "center", gap: space(2.5), paddingVertical: space(2.5) },
-  txnBorder: { borderBottomWidth: 1, borderBottomColor: colors.line },
-  dot: { width: 10, height: 10, borderRadius: 3 },
-  txnTitle: { color: colors.ink, fontSize: 13, fontWeight: "600" },
-  txnMeta: { color: colors.muted, fontSize: 10, marginTop: 1 },
 });
+
+const makeStyles = (c: Palette) =>
+  StyleSheet.create({
+    screen: { backgroundColor: c.bg },
+    greet: { color: c.ink2, fontSize: 12 },
+    title: { color: c.ink, fontSize: 22, fontWeight: "800", marginTop: 2 },
+    avatar: {
+      width: 34, height: 34, borderRadius: 17, backgroundColor: c.avatarBg,
+      borderWidth: 1, borderColor: c.line, alignItems: "center", justifyContent: "center",
+    },
+    avatarText: { color: c.gold, fontWeight: "700", fontSize: 12 },
+    dim: { color: c.ink2 },
+    cap: { color: c.ink2, fontSize: 10 },
+    seeAll: { color: c.gold, fontSize: 10, fontWeight: "700" },
+    txn: { flexDirection: "row", alignItems: "center", gap: space(2.5), paddingVertical: space(2.5) },
+    txnBorder: { borderBottomWidth: 1, borderBottomColor: c.line },
+    txnTitle: { color: c.ink, fontSize: 13, fontWeight: "600" },
+    txnMeta: { color: c.muted, fontSize: 10, marginTop: 1 },
+  });

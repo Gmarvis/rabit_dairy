@@ -7,7 +7,8 @@ import type { AccountType, CategoryType, PaymentMethod } from "@rabbit/domain";
 import type { EntryAccountOption } from "@rabbit/application";
 import { PrimaryButton, ScreenHeader } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
-import { colors, radius, space } from "../src/theme/tokens";
+import { useTheme } from "../src/theme/theme";
+import { radius, space, type Palette } from "../src/theme/tokens";
 
 type Group = "income" | "expense" | "savings";
 const GROUP_TYPES: Record<Group, CategoryType[]> = {
@@ -26,6 +27,8 @@ export default function ManualEntryScreen() {
   const router = useRouter();
   const qc = useQueryClient();
   const c = useContainer();
+  const { c: pal } = useTheme();
+  const s = makeStyles(pal);
 
   const [group, setGroup] = useState<Group>("expense");
   const [digits, setDigits] = useState("");
@@ -70,52 +73,52 @@ export default function ManualEntryScreen() {
   }
 
   return (
-    <View style={styles.screen}>
+    <View style={s.screen}>
       <View style={{ paddingHorizontal: space(4) }}>
         <ScreenHeader title="New transaction" onClose={() => router.back()} topInset={insets.top} />
 
-        <View style={styles.segment}>
+        <View style={s.segment}>
           {(["income", "expense", "savings"] as Group[]).map((g) => (
-            <Pressable key={g} style={[styles.seg, group === g && styles.segOn]} onPress={() => { setGroup(g); setCategoryId(null); }}>
-              <Text style={[styles.segText, group === g && styles.segTextOn]}>{g[0]!.toUpperCase() + g.slice(1)}</Text>
+            <Pressable key={g} style={[s.seg, group === g && s.segOn]} onPress={() => { setGroup(g); setCategoryId(null); }}>
+              <Text style={[s.segText, group === g && s.segTextOn]}>{g[0]!.toUpperCase() + g.slice(1)}</Text>
             </Pressable>
           ))}
         </View>
 
-        <View style={styles.amountBox}>
-          <Text style={styles.amountLabel}>Amount</Text>
-          <Text style={[styles.amount, amountMajor === 0 && styles.amountZero]}>{amountMajor.toLocaleString("en-US")}</Text>
-          <Text style={styles.cur}>FCFA</Text>
+        <View style={s.amountBox}>
+          <Text style={s.amountLabel}>Amount</Text>
+          <Text style={[s.amount, amountMajor === 0 && s.amountZero]}>{amountMajor.toLocaleString("en-US")}</Text>
+          <Text style={s.cur}>FCFA</Text>
         </View>
 
         <View>
-          <Text style={styles.label}>Category</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+          <Text style={s.label}>Category</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips}>
             {categories.map((cat) => (
-              <Chip key={cat.id} label={cat.name} color={cat.color} selected={categoryId === cat.id} onPress={() => setCategoryId(cat.id)} />
+              <Chip key={cat.id} s={s} label={cat.name} color={cat.color} selected={categoryId === cat.id} onPress={() => setCategoryId(cat.id)} />
             ))}
           </ScrollView>
         </View>
 
         <View style={{ marginTop: space(3) }}>
-          <Text style={styles.label}>Account</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+          <Text style={s.label}>Account</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips}>
             {accounts.map((a) => (
-              <Chip key={a.id} label={a.name} selected={effectiveAccountId === a.id} onPress={() => setAccountId(a.id)} />
+              <Chip key={a.id} s={s} label={a.name} selected={effectiveAccountId === a.id} onPress={() => setAccountId(a.id)} />
             ))}
           </ScrollView>
         </View>
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {error ? <Text style={s.error}>{error}</Text> : null}
       </View>
 
       <View style={{ flex: 1 }} />
 
-      <View style={[styles.bottom, { paddingBottom: insets.bottom + space(2) }]}>
-        <View style={styles.keypad}>
+      <View style={[s.bottom, { paddingBottom: insets.bottom + space(2) }]}>
+        <View style={s.keypad}>
           {["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "del"].map((k, i) => (
-            <Pressable key={i} style={[styles.key, k === "" && styles.keyBlank]} onPress={() => k && press(k)} disabled={k === ""}>
-              <Text style={styles.keyText}>{k === "del" ? "⌫" : k}</Text>
+            <Pressable key={i} style={[s.key, k === "" && s.keyBlank]} onPress={() => k && press(k)} disabled={k === ""}>
+              <Text style={s.keyText}>{k === "del" ? "⌫" : k}</Text>
             </Pressable>
           ))}
         </View>
@@ -130,38 +133,39 @@ function accountMethod(accounts: EntryAccountOption[], id: string | null): Payme
   return a ? methodForAccount(a.type) : "cash";
 }
 
-function Chip({ label, color, selected, onPress }: { label: string; color?: string; selected: boolean; onPress: () => void }) {
+function Chip({ s, label, color, selected, onPress }: { s: ReturnType<typeof makeStyles>; label: string; color?: string; selected: boolean; onPress: () => void }) {
   return (
-    <Pressable style={[styles.chip, selected && styles.chipOn]} onPress={onPress}>
-      {color ? <View style={[styles.dot, { backgroundColor: color }]} /> : null}
-      <Text style={[styles.chipText, selected && styles.chipTextOn]}>{label}</Text>
+    <Pressable style={[s.chip, selected && s.chipOn]} onPress={onPress}>
+      {color ? <View style={[s.dot, { backgroundColor: color }]} /> : null}
+      <Text style={[s.chipText, selected && s.chipTextOn]}>{label}</Text>
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.bg },
-  segment: { flexDirection: "row", backgroundColor: colors.card, borderColor: colors.line, borderWidth: 1, borderRadius: radius.md, padding: 3 },
-  seg: { flex: 1, paddingVertical: space(2), borderRadius: radius.sm, alignItems: "center" },
-  segOn: { backgroundColor: colors.gold },
-  segText: { color: colors.ink2, fontSize: 12, fontWeight: "700" },
-  segTextOn: { color: colors.goldInk },
-  amountBox: { alignItems: "center", marginVertical: space(4) },
-  amountLabel: { color: colors.muted, fontSize: 10, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase" },
-  amount: { color: colors.ink, fontSize: 40, fontWeight: "800", marginTop: 4, fontVariant: ["tabular-nums"], letterSpacing: -1 },
-  amountZero: { color: colors.muted },
-  cur: { color: colors.ink2, fontSize: 12, fontWeight: "600" },
-  label: { color: colors.muted, fontSize: 10, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase", marginBottom: space(2) },
-  chips: { gap: space(2), paddingRight: space(4) },
-  chip: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: colors.card, borderColor: colors.line, borderWidth: 1, borderRadius: radius.pill, paddingHorizontal: space(3), paddingVertical: space(2) },
-  chipOn: { backgroundColor: colors.gold, borderColor: colors.gold },
-  chipText: { color: colors.ink2, fontSize: 12, fontWeight: "600" },
-  chipTextOn: { color: colors.goldInk },
-  dot: { width: 9, height: 9, borderRadius: 3 },
-  error: { color: colors.negative, fontSize: 12, marginTop: space(2) },
-  bottom: { paddingHorizontal: space(4), gap: space(3) },
-  keypad: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: space(2) },
-  key: { width: "31%", backgroundColor: colors.card, borderColor: colors.line, borderWidth: 1, borderRadius: radius.md, paddingVertical: space(3), alignItems: "center" },
-  keyBlank: { backgroundColor: "transparent", borderColor: "transparent" },
-  keyText: { color: colors.ink, fontSize: 20, fontWeight: "700" },
-});
+const makeStyles = (c: Palette) =>
+  StyleSheet.create({
+    screen: { flex: 1, backgroundColor: c.bg },
+    segment: { flexDirection: "row", backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: radius.md, padding: 3 },
+    seg: { flex: 1, paddingVertical: space(2), borderRadius: radius.sm, alignItems: "center" },
+    segOn: { backgroundColor: c.gold },
+    segText: { color: c.ink2, fontSize: 12, fontWeight: "700" },
+    segTextOn: { color: c.goldInk },
+    amountBox: { alignItems: "center", marginVertical: space(4) },
+    amountLabel: { color: c.muted, fontSize: 10, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase" },
+    amount: { color: c.ink, fontSize: 40, fontWeight: "800", marginTop: 4, fontVariant: ["tabular-nums"], letterSpacing: -1 },
+    amountZero: { color: c.muted },
+    cur: { color: c.ink2, fontSize: 12, fontWeight: "600" },
+    label: { color: c.muted, fontSize: 10, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase", marginBottom: space(2) },
+    chips: { gap: space(2), paddingRight: space(4) },
+    chip: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: radius.pill, paddingHorizontal: space(3), paddingVertical: space(2) },
+    chipOn: { backgroundColor: c.gold, borderColor: c.gold },
+    chipText: { color: c.ink2, fontSize: 12, fontWeight: "600" },
+    chipTextOn: { color: c.goldInk },
+    dot: { width: 9, height: 9, borderRadius: 3 },
+    error: { color: c.negative, fontSize: 12, marginTop: space(2) },
+    bottom: { paddingHorizontal: space(4), gap: space(3) },
+    keypad: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: space(2) },
+    key: { width: "31%", backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: radius.md, paddingVertical: space(3), alignItems: "center" },
+    keyBlank: { backgroundColor: "transparent", borderColor: "transparent" },
+    keyText: { color: c.ink, fontSize: 20, fontWeight: "700" },
+  });

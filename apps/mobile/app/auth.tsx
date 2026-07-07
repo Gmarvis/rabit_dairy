@@ -10,7 +10,8 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { resendConfirmation, signIn, signUp } from "../src/lib/auth";
 import { googleAvailable, signInWithGoogle } from "../src/lib/google";
-import { colors, radius, space } from "../src/theme/tokens";
+import { useTheme } from "../src/theme/theme";
+import { radius, space, type Palette } from "../src/theme/tokens";
 
 /** Turn Supabase's terse auth errors into something a person can act on. */
 function friendly(message: string): string {
@@ -24,6 +25,8 @@ function friendly(message: string): string {
 
 export default function AuthScreen() {
   const insets = useSafeAreaInsets();
+  const { c } = useTheme();
+  const styles = makeStyles(c);
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -98,7 +101,7 @@ export default function AuthScreen() {
           value={email}
           onChangeText={setEmail}
           placeholder="you@example.com"
-          placeholderTextColor={colors.muted}
+          placeholderTextColor={c.muted}
           keyboardType="email-address"
           autoCapitalize="none"
           autoCorrect={false}
@@ -111,7 +114,7 @@ export default function AuthScreen() {
           value={password}
           onChangeText={setPassword}
           placeholder="••••••••"
-          placeholderTextColor={colors.muted}
+          placeholderTextColor={c.muted}
           secureTextEntry
           style={styles.input}
         />
@@ -127,7 +130,7 @@ export default function AuthScreen() {
 
       <Pressable style={styles.button} onPress={submit} disabled={busy}>
         {busy ? (
-          <ActivityIndicator color={colors.goldInk} />
+          <ActivityIndicator color={c.goldInk} />
         ) : (
           <Text style={styles.buttonText}>
             {mode === "signin" ? "Sign in" : "Create account"}
@@ -165,36 +168,37 @@ export default function AuthScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.bg, padding: space(6) },
-  logo: {
-    width: 46, height: 46, borderRadius: radius.md, backgroundColor: colors.card2,
-    alignItems: "center", justifyContent: "center", marginBottom: space(5),
-  },
-  title: { color: colors.ink, fontSize: 24, fontWeight: "800" },
-  sub: { color: colors.ink2, fontSize: 13, marginTop: 4, marginBottom: space(5) },
-  field: { marginBottom: space(3) },
-  label: {
-    color: colors.muted, fontSize: 10, fontWeight: "700", letterSpacing: 0.8,
-    textTransform: "uppercase", marginBottom: 6,
-  },
-  input: {
-    backgroundColor: colors.card, borderColor: colors.line, borderWidth: 1,
-    borderRadius: radius.md, paddingHorizontal: space(3.5), paddingVertical: space(3),
-    color: colors.ink, fontSize: 15,
-  },
-  error: { color: colors.negative, fontSize: 12, marginBottom: space(2) },
-  info: { color: colors.ink2, fontSize: 12, lineHeight: 17, marginBottom: space(2) },
-  resend: { color: colors.gold, fontSize: 13, fontWeight: "700" },
-  divider: { flexDirection: "row", alignItems: "center", gap: space(3), marginTop: space(4) },
-  line: { flex: 1, height: 1, backgroundColor: colors.line },
-  or: { color: colors.muted, fontSize: 11 },
-  google: { marginTop: space(4), borderWidth: 1, borderColor: colors.line, borderRadius: radius.md, paddingVertical: space(3.5), alignItems: "center", backgroundColor: colors.card },
-  googleText: { color: colors.ink, fontSize: 15, fontWeight: "700" },
-  button: {
-    backgroundColor: colors.gold, borderRadius: radius.md, padding: space(3.5),
-    alignItems: "center", marginTop: space(2),
-  },
-  buttonText: { color: colors.goldInk, fontWeight: "800", fontSize: 15 },
-  switch: { color: colors.gold, fontSize: 13, textAlign: "center", fontWeight: "600" },
-});
+const makeStyles = (c: Palette) =>
+  StyleSheet.create({
+    screen: { flex: 1, backgroundColor: c.bg, padding: space(6) },
+    logo: {
+      width: 46, height: 46, borderRadius: radius.md, backgroundColor: c.card2,
+      alignItems: "center", justifyContent: "center", marginBottom: space(5),
+    },
+    title: { color: c.ink, fontSize: 24, fontWeight: "800" },
+    sub: { color: c.ink2, fontSize: 13, marginTop: 4, marginBottom: space(5) },
+    field: { marginBottom: space(3) },
+    label: {
+      color: c.muted, fontSize: 10, fontWeight: "700", letterSpacing: 0.8,
+      textTransform: "uppercase", marginBottom: 6,
+    },
+    input: {
+      backgroundColor: c.card, borderColor: c.line, borderWidth: 1,
+      borderRadius: radius.md, paddingHorizontal: space(3.5), paddingVertical: space(3),
+      color: c.ink, fontSize: 15,
+    },
+    error: { color: c.negative, fontSize: 12, marginBottom: space(2) },
+    info: { color: c.ink2, fontSize: 12, lineHeight: 17, marginBottom: space(2) },
+    resend: { color: c.gold, fontSize: 13, fontWeight: "700" },
+    divider: { flexDirection: "row", alignItems: "center", gap: space(3), marginTop: space(4) },
+    line: { flex: 1, height: 1, backgroundColor: c.line },
+    or: { color: c.muted, fontSize: 11 },
+    google: { marginTop: space(4), borderWidth: 1, borderColor: c.line, borderRadius: radius.md, paddingVertical: space(3.5), alignItems: "center", backgroundColor: c.card },
+    googleText: { color: c.ink, fontSize: 15, fontWeight: "700" },
+    button: {
+      backgroundColor: c.gold, borderRadius: radius.md, padding: space(3.5),
+      alignItems: "center", marginTop: space(2),
+    },
+    buttonText: { color: c.goldInk, fontWeight: "800", fontSize: 15 },
+    switch: { color: c.gold, fontSize: 13, textAlign: "center", fontWeight: "600" },
+  });

@@ -2,8 +2,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { Fragment, useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -17,7 +15,8 @@ import { Card, PrimaryButton, Row, ScreenHeader, SectionLabel } from "../src/com
 import { useContainer } from "../src/lib/auth";
 import { usePeriod } from "../src/lib/period";
 import { monthLabel } from "../src/lib/format";
-import { colors, radius, space } from "../src/theme/tokens";
+import { space, type Palette } from "../src/theme/tokens";
+import { useTheme } from "../src/theme/theme";
 
 const TYPE_LABEL: Record<CategoryType, string> = {
   income: "Income",
@@ -35,6 +34,8 @@ export default function BudgetsScreen() {
   const router = useRouter();
   const qc = useQueryClient();
   const c = useContainer();
+  const { c: t } = useTheme();
+  const s = makeStyles(t);
   const { period } = usePeriod();
 
   const { data } = useQuery({
@@ -86,7 +87,7 @@ export default function BudgetsScreen() {
   );
 
   return (
-    <View style={styles.screen}>
+    <View style={s.screen}>
       <ScrollView contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), gap: space(3) }}>
         <ScreenHeader title={`Budgets · ${monthLabel(period)}`} onClose={() => router.back()} topInset={insets.top} />
 
@@ -98,18 +99,18 @@ export default function BudgetsScreen() {
             <SectionLabel>{TYPE_LABEL[type]}</SectionLabel>
             <Card style={{ paddingVertical: space(1) }}>
               {items.map((it, i) => (
-                <View key={it.categoryId} style={[styles.row, i < items.length - 1 && styles.border]}>
-                  <View style={[styles.dot, { backgroundColor: it.color }]} />
-                  <Text style={styles.cat}>{it.name}</Text>
+                <View key={it.categoryId} style={[s.row, i < items.length - 1 && s.border]}>
+                  <View style={[s.dot, { backgroundColor: it.color }]} />
+                  <Text style={s.cat}>{it.name}</Text>
                   <TextInput
-                    style={styles.input}
+                    style={s.input}
                     value={amounts[it.categoryId] ?? ""}
-                    onChangeText={(t) =>
-                      setAmounts((p) => ({ ...p, [it.categoryId]: t.replace(/[^0-9]/g, "") }))
+                    onChangeText={(txt) =>
+                      setAmounts((p) => ({ ...p, [it.categoryId]: txt.replace(/[^0-9]/g, "") }))
                     }
                     keyboardType="number-pad"
                     placeholder="0"
-                    placeholderTextColor={colors.muted}
+                    placeholderTextColor={t.muted}
                   />
                 </View>
               ))}
@@ -121,28 +122,29 @@ export default function BudgetsScreen() {
         <Card hero>
           <Row between>
             <SectionLabel>Total budgeted</SectionLabel>
-            <Text style={styles.total}>{total.toLocaleString("en-US")} FCFA</Text>
+            <Text style={s.total}>{total.toLocaleString("en-US")} FCFA</Text>
           </Row>
         </Card>
       </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: insets.bottom + space(2) }]}>
+      <View style={[s.footer, { paddingBottom: insets.bottom + space(2) }]}>
         <PrimaryButton label="Save budgets" onPress={() => save.mutate()} loading={save.isPending} />
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.bg },
-  footer: { paddingHorizontal: space(4), paddingTop: space(2), borderTopWidth: 1, borderTopColor: colors.line, backgroundColor: colors.bg },
-  row: { flexDirection: "row", alignItems: "center", gap: space(2.5), paddingVertical: space(2) },
-  border: { borderBottomWidth: 1, borderBottomColor: colors.line },
-  dot: { width: 10, height: 10, borderRadius: 3 },
-  cat: { color: colors.ink, fontSize: 12, fontWeight: "600", flex: 1 },
-  input: {
-    color: colors.ink, fontSize: 13, fontWeight: "700", textAlign: "right",
-    minWidth: 90, fontVariant: ["tabular-nums"], paddingVertical: 4,
-  },
-  total: { color: colors.ink, fontSize: 15, fontWeight: "800", fontVariant: ["tabular-nums"] },
-});
+const makeStyles = (c: Palette) =>
+  StyleSheet.create({
+    screen: { flex: 1, backgroundColor: c.bg },
+    footer: { paddingHorizontal: space(4), paddingTop: space(2), borderTopWidth: 1, borderTopColor: c.line, backgroundColor: c.bg },
+    row: { flexDirection: "row", alignItems: "center", gap: space(2.5), paddingVertical: space(2) },
+    border: { borderBottomWidth: 1, borderBottomColor: c.line },
+    dot: { width: 10, height: 10, borderRadius: 3 },
+    cat: { color: c.ink, fontSize: 12, fontWeight: "600", flex: 1 },
+    input: {
+      color: c.ink, fontSize: 13, fontWeight: "700", textAlign: "right",
+      minWidth: 90, fontVariant: ["tabular-nums"], paddingVertical: 4,
+    },
+    total: { color: c.ink, fontSize: 15, fontWeight: "800", fontVariant: ["tabular-nums"] },
+  });
