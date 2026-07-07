@@ -192,6 +192,25 @@ export function Row({
   );
 }
 
+/** iOS-style pill toggle matching the redesign (gold track when on). */
+export function Toggle({ value, onValueChange }: { value: boolean; onValueChange: (v: boolean) => void }) {
+  const c = useTheme();
+  return (
+    <Pressable
+      accessibilityRole="switch"
+      accessibilityState={{ checked: value }}
+      onPress={() => onValueChange(!value)}
+      style={{
+        width: 46, height: 28, borderRadius: 999, padding: 3,
+        backgroundColor: value ? c.gold : c.card2,
+        alignItems: value ? "flex-end" : "flex-start", justifyContent: "center",
+      }}
+    >
+      <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: value ? c.goldInk : c.muted }} />
+    </Pressable>
+  );
+}
+
 /** Small helper: apply an alpha channel to a #rrggbb colour. */
 export function withAlpha(hex: string, alpha: number): string {
   if (!hex.startsWith("#") || hex.length !== 7) return hex;

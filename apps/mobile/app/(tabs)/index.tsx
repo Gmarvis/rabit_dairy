@@ -1,20 +1,28 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Card, MoneyText, Pill, Row, SectionLabel, Tico } from "../../src/components/ui";
-import { useContainer } from "../../src/lib/auth";
+import { useAuth, useContainer } from "../../src/lib/auth";
 import { usePeriod } from "../../src/lib/period";
-import { dayLabel, monthLabel, percent } from "../../src/lib/format";
+import { greeting, monthLabel, percent, shortDate } from "../../src/lib/format";
 import { iconForCategory } from "../../src/theme/icons";
 import { useTheme } from "../../src/theme/ThemeProvider";
 import { space, type Palette } from "../../src/theme/tokens";
+
+/** First name for the greeting, from the signed-in email (fallback "there"). */
+function firstName(email: string | null): string {
+  if (!email) return "there";
+  const local = email.split("@")[0]!.replace(/[._-]+/g, " ").trim().split(" ")[0]!;
+  return local ? local[0]!.toUpperCase() + local.slice(1) : "there";
+}
 
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const c = useContainer();
+  const { email } = useAuth();
   const t = useTheme();
   const s = makeStyles(t);
   const { period, next, prev, isCurrent } = usePeriod();
@@ -23,6 +31,15 @@ export default function DashboardScreen() {
     queryFn: () => c.queries.dashboard.execute(c.userId, period),
   });
 
+  function pickMonth() {
+    const buttons = [
+      { text: "Previous month", onPress: prev },
+      ...(!isCurrent ? [{ text: "Next month", onPress: next }] : []),
+      { text: "Cancel", style: "cancel" as const },
+    ];
+    Alert.alert("Change month", monthLabel(period), buttons);
+  }
+
   return (
     <ScrollView
       style={s.screen}
@@ -30,14 +47,13 @@ export default function DashboardScreen() {
     >
       <Row between>
         <View>
-          <Text style={s.greet}>Rabbit Dairy{c.isDemo ? " · Demo" : ""}</Text>
-          <Row style={{ gap: space(2) }}>
-            <Pressable onPress={prev} hitSlop={10}><Ionicons name="chevron-back" size={18} color={t.ink2} /></Pressable>
-            <Text style={s.title}>{monthLabel(period)}</Text>
-            <Pressable onPress={next} hitSlop={10} disabled={isCurrent}>
-              <Ionicons name="chevron-forward" size={18} color={isCurrent ? t.muted : t.ink2} />
-            </Pressable>
-          </Row>
+          <Text style={s.greet}>{greeting()}, {firstName(email)}</Text>
+          <Pressable onPress={pickMonth} hitSlop={8}>
+            <Row style={{ gap: space(1.5) }}>
+              <Text style={s.title}>{monthLabel(period)}</Text>
+              <Ionicons name="chevron-down" size={18} color={t.ink2} />
+            </Row>
+          </Pressable>
         </View>
         <Pressable
           style={s.avatar}
@@ -45,7 +61,7 @@ export default function DashboardScreen() {
           accessibilityRole="button"
           accessibilityLabel="Settings"
         >
-          <Text style={s.avatarText}>SN</Text>
+          <Text style={s.avatarText}>{firstName(email).slice(0, 2).toUpperCase()}</Text>
         </Pressable>
       </Row>
 
@@ -67,15 +83,15 @@ export default function DashboardScreen() {
             </Row>
           </Card>
 
-          {/* Income vs expenses — a two-card mini-quad. */}
+          {/* Income vs expenses — a two-card mini-quad; colour carries the sign. */}
           <Row style={{ gap: space(3), alignItems: "stretch" }}>
             <Card style={{ flex: 1 }}>
               <SectionLabel>Income</SectionLabel>
-              <MoneyText amount={data.summary.income} signed currency={false} size={16} style={{ marginTop: 5 }} />
+              <Text style={[s.statVal, { color: t.positive }]}>{data.summary.income.format({ withCode: false })}</Text>
             </Card>
             <Card style={{ flex: 1 }}>
               <SectionLabel>Expenses</SectionLabel>
-              <MoneyText amount={data.summary.expenses.negated()} signed currency={false} size={16} style={{ marginTop: 5 }} />
+              <Text style={[s.statVal, { color: t.negative }]}>{data.summary.expenses.format({ withCode: false })}</Text>
             </Card>
           </Row>
 
@@ -96,7 +112,7 @@ export default function DashboardScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={s.txnTitle}>{t2.title}</Text>
                   <Row style={{ gap: 5 }}>
-                    <Text style={s.txnMeta}>{dayLabel(t2.occurredAt)}</Text>
+                    <Text style={s.txnMeta}>{t2.categoryName} · {shortDate(t2.occurredAt)}</Text>
                     {t2.hasVoiceNote ? <Ionicons name="mic" size={11} color={t.gold} /> : null}
                     {t2.hasReceipt ? <Ionicons name="camera" size={11} color={t.gold} /> : null}
                   </Row>
@@ -138,6 +154,7 @@ const makeStyles = (c: Palette) =>
     },
     avatarText: { color: c.gold, fontWeight: "700", fontSize: 12 },
     dim: { color: c.ink2 },
+    statVal: { fontSize: 18, fontWeight: "800", marginTop: 5, fontVariant: ["tabular-nums"] },
     cap: { color: c.ink2, fontSize: 10 },
     seeAll: { color: c.gold, fontSize: 10, fontWeight: "700" },
     txn: { flexDirection: "row", alignItems: "center", gap: space(2.5), paddingVertical: space(2.5) },

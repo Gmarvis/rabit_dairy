@@ -4,10 +4,10 @@ import { Fragment, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { TransactionListItem } from "@rabbit/application";
-import { Card, MoneyText, Tico } from "../../src/components/ui";
+import { MoneyText, Row, Tico } from "../../src/components/ui";
 import { useContainer } from "../../src/lib/auth";
 import { usePeriod } from "../../src/lib/period";
-import { dayLabel, methodLabel, monthLabel } from "../../src/lib/format";
+import { dayHeader, methodLabel } from "../../src/lib/format";
 import { iconForCategory } from "../../src/theme/icons";
 import { useTheme } from "../../src/theme/ThemeProvider";
 import { radius, space, type Palette } from "../../src/theme/tokens";
@@ -50,7 +50,7 @@ export default function ActivityScreen() {
   const groups = new Map<string, TransactionListItem[]>();
   for (const tx of data?.recent ?? []) {
     if (!matchesFilter(tx.categoryType, filter)) continue;
-    const key = dayLabel(tx.occurredAt);
+    const key = dayHeader(tx.occurredAt);
     const bucket = groups.get(key) ?? [];
     bucket.push(tx);
     groups.set(key, bucket);
@@ -61,13 +61,17 @@ export default function ActivityScreen() {
       style={s.screen}
       contentContainerStyle={{ padding: space(4), paddingTop: insets.top + space(2), gap: space(2) }}
     >
-      <Text style={s.title}>Transactions</Text>
-      <Text style={s.month}>{monthLabel(period)}</Text>
+      <Row between>
+        <Text style={s.title}>Transactions</Text>
+        <Pressable style={s.iconBtn} accessibilityLabel="Search" accessibilityRole="button">
+          <Ionicons name="search" size={16} color={t.ink} />
+        </Pressable>
+      </Row>
 
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ gap: space(2), paddingVertical: space(1) }}
+        contentContainerStyle={{ gap: space(2), paddingVertical: space(1.5) }}
       >
         {FILTERS.map((f) => {
           const on = f.key === filter;
@@ -79,31 +83,34 @@ export default function ActivityScreen() {
         })}
       </ScrollView>
 
+      {groups.size === 0 ? (
+        <Text style={[s.meta, { marginTop: space(4) }]}>No transactions this month.</Text>
+      ) : null}
+
       {[...groups.entries()].map(([day, items]) => (
         <Fragment key={day}>
           <Text style={s.day}>{day}</Text>
-          <Card style={{ paddingVertical: space(1) }}>
-            {items.map((tx, i) => (
-              <Pressable
-                key={tx.id}
-                style={[s.txn, i < items.length - 1 && s.border]}
-                onPress={() => router.push(`/transaction/${tx.id}`)}
-              >
-                <Tico icon={iconForCategory(tx.categoryName, tx.categoryType)} color={tx.categoryColor} />
-                <View style={{ flex: 1 }}>
-                  <Text style={s.txnTitle}>{tx.title}</Text>
-                  <View style={s.metaRow}>
-                    <Text style={s.meta}>
-                      {tx.categoryName}
-                      {tx.paymentMethod ? ` · ${methodLabel(tx.paymentMethod)}` : ""}
-                    </Text>
-                    {tx.hasVoiceNote ? <Ionicons name="mic" size={11} color={t.gold} /> : null}
-                  </View>
+          {items.map((tx, i) => (
+            <Pressable
+              key={tx.id}
+              style={[s.txn, i < items.length - 1 && s.border]}
+              onPress={() => router.push(`/transaction/${tx.id}`)}
+            >
+              <Tico icon={iconForCategory(tx.categoryName, tx.categoryType)} color={tx.categoryColor} />
+              <View style={{ flex: 1 }}>
+                <Text style={s.txnTitle}>{tx.title}</Text>
+                <View style={s.metaRow}>
+                  <Text style={s.meta}>
+                    {tx.categoryName}
+                    {tx.paymentMethod ? ` · ${methodLabel(tx.paymentMethod)}` : ""}
+                  </Text>
+                  {tx.hasVoiceNote ? <Ionicons name="mic" size={11} color={t.gold} /> : null}
+                  {tx.hasReceipt ? <Ionicons name="camera" size={11} color={t.gold} /> : null}
                 </View>
-                <MoneyText amount={tx.signedAmount} signed currency={false} size={13} />
-              </Pressable>
-            ))}
-          </Card>
+              </View>
+              <MoneyText amount={tx.signedAmount} signed currency={false} size={13} />
+            </Pressable>
+          ))}
         </Fragment>
       ))}
     </ScrollView>
@@ -114,7 +121,7 @@ const makeStyles = (c: Palette) =>
   StyleSheet.create({
     screen: { backgroundColor: c.bg },
     title: { color: c.ink, fontSize: 22, fontWeight: "800" },
-    month: { color: c.ink2, fontSize: 12, marginBottom: space(1) },
+    iconBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: c.card, borderWidth: 1, borderColor: c.line, alignItems: "center", justifyContent: "center" },
     chip: {
       paddingHorizontal: space(3), paddingVertical: space(1.5), borderRadius: radius.pill,
       borderWidth: 1, borderColor: c.line, backgroundColor: c.card,

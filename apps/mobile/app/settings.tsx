@@ -1,14 +1,16 @@
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { ExportRow } from "@rabbit/application";
-import { Card, Row, ScreenHeader, SectionLabel } from "../src/components/ui";
+import { Card, Row, ScreenHeader, SectionLabel, Toggle } from "../src/components/ui";
 import { signOut, useAuth, useContainer } from "../src/lib/auth";
 import { usePeriod } from "../src/lib/period";
-import { useTheme, useThemeControls, type ThemeMode } from "../src/theme/ThemeProvider";
-import { radius, space, type Palette } from "../src/theme/tokens";
+import { monthLabel } from "../src/lib/format";
+import { useTheme, useThemeControls } from "../src/theme/ThemeProvider";
+import { space, type Palette } from "../src/theme/tokens";
 
 function toCsv(rows: ExportRow[]): string {
   const header = ["Date", "Type", "Category", "Description", "Amount (XAF)", "Direction", "Method", "Account"];
@@ -20,11 +22,14 @@ function toCsv(rows: ExportRow[]): string {
   return lines.join("\n");
 }
 
-const THEME_OPTIONS: { key: ThemeMode; label: string }[] = [
-  { key: "system", label: "System" },
-  { key: "light", label: "Light" },
-  { key: "dark", label: "Dark" },
-];
+/** Display name from the signed-in email, e.g. "sam@nyota.ltd" → "Sam". */
+function displayName(email: string | null): string {
+  if (!email) return "Demo user";
+  const local = email.split("@")[0]!.replace(/[._-]+/g, " ").trim();
+  return local.replace(/\b\w/g, (m) => m.toUpperCase());
+}
+
+const BIOMETRIC_KEY = "rabbit.biometricLock";
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -32,12 +37,22 @@ export default function SettingsScreen() {
   const { status, email } = useAuth();
   const c = useContainer();
   const t = useTheme();
-  const { mode, setMode } = useThemeControls();
+  const { resolved, setMode } = useThemeControls();
   const s = makeStyles(t);
   const { period } = usePeriod();
   const year = period.year;
   const [exporting, setExporting] = useState(false);
   const [note, setNote] = useState<string | null>(null);
+  const [biometric, setBiometric] = useState(false);
+
+  useEffect(() => {
+    AsyncStorage.getItem(BIOMETRIC_KEY).then((v) => setBiometric(v === "1")).catch(() => {});
+  }, []);
+
+  function toggleBiometric(v: boolean) {
+    setBiometric(v);
+    AsyncStorage.setItem(BIOMETRIC_KEY, v ? "1" : "0").catch(() => {});
+  }
 
   async function exportCsv() {
     setNote(null);
@@ -48,10 +63,7 @@ export default function SettingsScreen() {
         setNote("No transactions to export yet.");
         return;
       }
-      await Share.share({
-        title: `Rabbit Dairy ${year} export`,
-        message: toCsv(rows),
-      });
+      await Share.share({ title: `Rabbit Dairy ${year} export`, message: toCsv(rows) });
     } catch {
       setNote("Couldn't export right now.");
     } finally {
@@ -67,6 +79,8 @@ export default function SettingsScreen() {
     ]);
   }
 
+  const initials = displayName(email).split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
+
   return (
     <ScrollView
       style={s.screen}
@@ -74,56 +88,43 @@ export default function SettingsScreen() {
     >
       <ScreenHeader title="Settings" onClose={() => router.back()} closeLabel="Done" topInset={insets.top} />
 
+      {/* Profile */}
       <Card>
         <Row style={{ gap: space(3) }}>
-          <View style={s.avatar}><Text style={s.avatarText}>{(email ?? "You")[0]!.toUpperCase()}</Text></View>
+          <View style={s.avatar}><Text style={s.avatarText}>{initials || "You"}</Text></View>
           <View style={{ flex: 1 }}>
-            <Text style={s.name}>{email ?? "Demo mode"}</Text>
-            <Text style={s.meta}>{status === "authed" ? "Signed in" : "Preview data — sign in to save for real"}</Text>
+            <Text style={s.name}>{displayName(email)}</Text>
+            <Text style={s.meta}>{email ?? "Preview data — sign in to save for real"}</Text>
           </View>
         </Row>
       </Card>
 
+      {/* Preferences */}
       <SectionLabel>Preferences</SectionLabel>
       <Card style={{ paddingVertical: space(1) }}>
         <Row between style={s.row}><Text style={s.rowText}>Currency</Text><Text style={s.rowVal}>XAF · FCFA</Text></Row>
-        <Row between style={[s.row, s.border]}><Text style={s.rowText}>Active year</Text><Text style={s.rowVal}>{year}</Text></Row>
+        <Row between style={[s.row, s.border]}><Text style={s.rowText}>Active month</Text><Text style={s.rowMuted}>{monthLabel(period)}</Text></Row>
+        <Row between style={[s.row, s.border]}><Text style={s.rowText}>Emergency fund goal</Text><Text style={s.rowMuted}>0</Text></Row>
       </Card>
 
-      <SectionLabel>Appearance</SectionLabel>
-      <Card>
-        <Text style={s.rowText}>Theme</Text>
-        <Text style={s.meta}>System follows your phone’s light or dark setting.</Text>
-        <View style={s.segment}>
-          {THEME_OPTIONS.map((o) => (
-            <Pressable
-              key={o.key}
-              style={[s.seg, mode === o.key && s.segOn]}
-              onPress={() => setMode(o.key)}
-              accessibilityRole="button"
-              accessibilityState={{ selected: mode === o.key }}
-            >
-              <Text style={[s.segText, mode === o.key && s.segTextOn]}>{o.label}</Text>
-            </Pressable>
-          ))}
-        </View>
-      </Card>
-
-      <SectionLabel>Your data</SectionLabel>
-      <Pressable onPress={exportCsv} disabled={exporting}>
-        <Card>
-          <Row between>
-            <Row style={{ gap: space(3) }}>
-              <View style={s.icon}><Ionicons name="download-outline" size={18} color={t.gold} /></View>
-              <View>
-                <Text style={s.rowText}>Export {year} to CSV</Text>
-                <Text style={s.meta}>Open it in Excel or Sheets</Text>
-              </View>
-            </Row>
-            <Ionicons name="chevron-forward" size={16} color={t.muted} />
+      {/* App */}
+      <SectionLabel>App</SectionLabel>
+      <Card style={{ paddingVertical: space(1) }}>
+        <Row between style={s.row}>
+          <Text style={s.rowText}>Dark theme</Text>
+          <Toggle value={resolved === "dark"} onValueChange={(v) => setMode(v ? "dark" : "light")} />
+        </Row>
+        <Row between style={[s.row, s.border]}>
+          <Text style={s.rowText}>Biometric lock</Text>
+          <Toggle value={biometric} onValueChange={toggleBiometric} />
+        </Row>
+        <Pressable onPress={exportCsv} disabled={exporting}>
+          <Row between style={[s.row, s.border]}>
+            <Text style={s.rowText}>Export data (CSV / Excel)</Text>
+            <Ionicons name="chevron-forward" size={16} color={t.gold} />
           </Row>
-        </Card>
-      </Pressable>
+        </Pressable>
+      </Card>
       {note ? <Text style={s.note}>{note}</Text> : null}
 
       {status === "authed" ? (
@@ -147,13 +148,8 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   border: { borderTopWidth: 1, borderTopColor: c.line },
   rowText: { color: c.ink, fontSize: 13, fontWeight: "600" },
   rowVal: { color: c.gold, fontSize: 13, fontWeight: "700" },
-  icon: { width: 40, height: 40, borderRadius: radius.md, backgroundColor: c.goldSoft, alignItems: "center", justifyContent: "center" },
+  rowMuted: { color: c.ink2, fontSize: 13, fontWeight: "600" },
   note: { color: c.ink2, fontSize: 12 },
   signOut: { color: c.negative, fontSize: 14, fontWeight: "700", textAlign: "center", paddingVertical: space(2) },
   version: { color: c.muted, fontSize: 11, textAlign: "center", marginTop: space(3) },
-  segment: { flexDirection: "row", backgroundColor: c.card2, borderRadius: radius.md, padding: 3, marginTop: space(2.5) },
-  seg: { flex: 1, paddingVertical: space(2), borderRadius: radius.sm, alignItems: "center" },
-  segOn: { backgroundColor: c.gold },
-  segText: { color: c.ink2, fontSize: 12, fontWeight: "700" },
-  segTextOn: { color: c.goldInk },
 });

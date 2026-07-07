@@ -6,6 +6,22 @@ export function dayLabel(iso: string): string {
   return dayjs(iso).format("ddd · D MMM");
 }
 
+/** Compact date like "Apr 4" for list-row meta. */
+export function shortDate(iso: string): string {
+  return dayjs(iso).format("MMM D");
+}
+
+/** Uppercase day header like "SAT · APR 4". */
+export function dayHeader(iso: string): string {
+  return dayjs(iso).format("ddd · MMM D").toUpperCase();
+}
+
+/** Time-of-day greeting. */
+export function greeting(): string {
+  const h = dayjs().hour();
+  return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
+}
+
 /** "July 2026" for a period. */
 export function monthLabel(period: YearMonth): string {
   return `${period.monthName} ${period.year}`;
