@@ -13,7 +13,7 @@ import {
 
 const queryClient = new QueryClient();
 
-/** Redirects to /auth when signed out, and away from it once signed in. */
+/** Sends signed-out users to Welcome (which leads to Sign in), and away once in. */
 function useAuthGate() {
   const { status } = useAuth();
   const segments = useSegments();
@@ -21,10 +21,10 @@ function useAuthGate() {
 
   useEffect(() => {
     if (status === "loading") return;
-    const onAuthScreen = segments[0] === "auth";
-    if (status === "signed_out" && !onAuthScreen) {
-      router.replace("/auth");
-    } else if ((status === "authed" || status === "demo") && onAuthScreen) {
+    const onEntry = segments[0] === "auth" || segments[0] === "welcome";
+    if (status === "signed_out" && !onEntry) {
+      router.replace("/welcome");
+    } else if ((status === "authed" || status === "demo") && onEntry) {
       router.replace("/");
     }
   }, [status, segments, router]);
@@ -41,6 +41,7 @@ function RootNavigator() {
       }}
     >
       <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="welcome" />
       <Stack.Screen name="auth" />
       <Stack.Screen
         name="add"

@@ -30,7 +30,10 @@ export default function AccountsScreen() {
       contentContainerStyle={{ padding: space(4), paddingTop: insets.top + space(2), gap: space(3) }}
     >
       <Row between>
-        <Text style={s.title}>Accounts</Text>
+        <View>
+          <Text style={s.eyebrow}>Across all accounts</Text>
+          <Text style={s.title}>Accounts</Text>
+        </View>
         <Pressable style={s.add} onPress={() => router.push("/account-new")} hitSlop={8}>
           <Ionicons name="add" size={20} color={t.goldInk} />
         </Pressable>
@@ -97,8 +100,9 @@ function AccountRow({ a, last }: { a: AccountListItem; last: boolean }) {
 const makeStyles = (c: Palette) =>
   StyleSheet.create({
     screen: { backgroundColor: c.bg },
-    title: { color: c.ink, fontSize: 22, fontWeight: "800" },
-    add: { width: 34, height: 34, borderRadius: 12, backgroundColor: c.gold, alignItems: "center", justifyContent: "center" },
+    eyebrow: { color: c.ink2, fontSize: 12 },
+    title: { color: c.ink, fontSize: 22, fontWeight: "800", marginTop: 1 },
+    add: { width: 40, height: 40, borderRadius: 20, backgroundColor: c.gold, alignItems: "center", justifyContent: "center" },
     sub: { color: c.ink2, fontSize: 10, marginTop: 3 },
     row: { flexDirection: "row", alignItems: "center", gap: space(2.5), paddingVertical: space(2.5) },
     rowBorder: { borderBottomWidth: 1, borderBottomColor: c.line },

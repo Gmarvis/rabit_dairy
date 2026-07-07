@@ -87,8 +87,8 @@ export function Card({
   return (
     <View
       style={[
-        { backgroundColor: c.card, borderRadius: radius.lg, padding: space(4), borderWidth: 1, borderColor: c.line },
-        hero && { backgroundColor: c.heroFrom, borderColor: c.line },
+        { backgroundColor: c.card, borderRadius: 18, padding: 18, borderWidth: 1, borderColor: c.line },
+        hero && { backgroundColor: c.heroFrom, borderColor: c.line, borderRadius: 20, padding: 20 },
         style,
       ]}
     >
@@ -100,7 +100,7 @@ export function Card({
 export function SectionLabel({ children, style }: { children: ReactNode; style?: StyleProp<TextStyle> }) {
   const c = useTheme();
   return (
-    <Text style={[{ color: c.muted, fontSize: 10, fontWeight: "700", letterSpacing: 1.2, textTransform: "uppercase" }, style]}>
+    <Text style={[{ color: c.muted, fontSize: 11, fontWeight: "700", letterSpacing: 1.3, textTransform: "uppercase" }, style]}>
       {children}
     </Text>
   );
@@ -118,8 +118,8 @@ export function Pill({ children, tone = "gold" }: { children: ReactNode; tone?: 
   };
   const { bg, fg } = map[tone];
   return (
-    <View style={{ borderRadius: radius.pill, paddingHorizontal: 8, paddingVertical: 2, alignSelf: "flex-start", backgroundColor: bg }}>
-      <Text style={{ fontSize: 10, fontWeight: "700", color: fg }}>{children}</Text>
+    <View style={{ borderRadius: radius.pill, paddingHorizontal: 9, paddingVertical: 3, alignSelf: "flex-start", backgroundColor: bg }}>
+      <Text style={{ fontSize: 11, fontWeight: "800", color: fg }}>{children}</Text>
     </View>
   );
 }

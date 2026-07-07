@@ -75,7 +75,7 @@ export default function DashboardScreen() {
               <SectionLabel>Net balance · this month</SectionLabel>
               <Pill tone="positive">+{percent(data.summary.savingsRate)}</Pill>
             </Row>
-            <MoneyText amount={data.summary.netBalance} size={30} style={{ marginTop: 6 }} />
+            <MoneyText amount={data.summary.netBalance} size={40} style={{ marginTop: 8 }} />
             <SplitBar expenseRate={data.summary.expenseRate} c={t} />
             <Row between style={{ marginTop: 7 }}>
               <Text style={s.cap}>Spent {percent(data.summary.expenseRate)}</Text>
@@ -108,16 +108,16 @@ export default function DashboardScreen() {
                 style={[s.txn, i < data.recent.length - 1 && s.txnBorder]}
                 onPress={() => router.push(`/transaction/${t2.id}`)}
               >
-                <Tico icon={iconForCategory(t2.categoryName, t2.categoryType)} color={t2.categoryColor} />
+                <Tico icon={iconForCategory(t2.categoryName, t2.categoryType)} color={t2.categoryColor} size={40} />
                 <View style={{ flex: 1 }}>
                   <Text style={s.txnTitle}>{t2.title}</Text>
                   <Row style={{ gap: 5 }}>
                     <Text style={s.txnMeta}>{t2.categoryName} · {shortDate(t2.occurredAt)}</Text>
-                    {t2.hasVoiceNote ? <Ionicons name="mic" size={11} color={t.gold} /> : null}
-                    {t2.hasReceipt ? <Ionicons name="camera" size={11} color={t.gold} /> : null}
+                    {t2.hasVoiceNote ? <Ionicons name="mic" size={12} color={t.gold} /> : null}
+                    {t2.hasReceipt ? <Ionicons name="camera" size={12} color={t.gold} /> : null}
                   </Row>
                 </View>
-                <MoneyText amount={t2.signedAmount} signed currency={false} size={13} />
+                <MoneyText amount={t2.signedAmount} signed currency={false} size={15} />
               </Pressable>
             ))}
           </View>
@@ -159,6 +159,6 @@ const makeStyles = (c: Palette) =>
     seeAll: { color: c.gold, fontSize: 10, fontWeight: "700" },
     txn: { flexDirection: "row", alignItems: "center", gap: space(2.5), paddingVertical: space(2.5) },
     txnBorder: { borderBottomWidth: 1, borderBottomColor: c.line },
-    txnTitle: { color: c.ink, fontSize: 13, fontWeight: "600" },
-    txnMeta: { color: c.muted, fontSize: 10, marginTop: 1 },
+    txnTitle: { color: c.ink, fontSize: 15, fontWeight: "600" },
+    txnMeta: { color: c.muted, fontSize: 12, marginTop: 2 },
   });
