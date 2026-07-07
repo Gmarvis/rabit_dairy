@@ -20,10 +20,7 @@
       "adaptiveIcon": { "backgroundColor": "#14231C" }
     },
     "plugins": [
-      "expo-router",
-      ["expo-av", { "microphonePermission": "Rabbit Dairy records a short voice note explaining why you made a purchase." }],
-      ["expo-image-picker", { "photosPermission": "Rabbit Dairy reads your uploaded bank or mobile-money statements." }],
-      ["expo-camera", { "cameraPermission": "Rabbit Dairy scans your bank or mobile-money statements." }]
+      "expo-router"
     ],
     "experiments": { "typedRoutes": true }
   }
