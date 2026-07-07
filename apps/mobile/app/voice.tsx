@@ -22,6 +22,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { AccountType, CategoryType, PaymentMethod } from "@rabbit/domain";
 import { Card, Row } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
+import { transcribeNote } from "../src/lib/transcribe";
 import { colors, radius, space } from "../src/theme/tokens";
 
 type Group = "income" | "expense" | "savings";
@@ -49,6 +50,9 @@ export default function VoiceScreen() {
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const recState = useAudioRecorderState(recorder);
   const [uri, setUri] = useState<string | null>(null);
+  const [voicePath, setVoicePath] = useState<string | null>(null);
+  const [transcribing, setTranscribing] = useState(false);
+  const [transcript, setTranscript] = useState<string | null>(null);
   const player = useAudioPlayer(uri ? { uri } : undefined);
 
   const [group, setGroup] = useState<Group>("expense");
@@ -77,7 +81,9 @@ export default function VoiceScreen() {
     try {
       if (recState.isRecording) {
         await recorder.stop();
-        setUri(recorder.uri ?? null);
+        const recorded = recorder.uri ?? null;
+        setUri(recorded);
+        if (recorded) void handleRecorded(recorded);
         return;
       }
       const perm = await requestRecordingPermissionsAsync();
@@ -94,14 +100,45 @@ export default function VoiceScreen() {
     }
   }
 
+  // After a take: upload it, then (when live) transcribe and pre-fill the fields.
+  async function handleRecorded(localUri: string) {
+    let path = localUri;
+    try {
+      path = (await c.storage.upload("voice-notes", localUri, "audio/m4a")).path;
+    } catch {
+      /* keep the local uri if upload fails */
+    }
+    setVoicePath(path);
+    if (c.isDemo) return;
+    try {
+      setTranscribing(true);
+      const draft = await transcribeNote(path, categories.map((cat) => cat.name));
+      if (draft) {
+        setTranscript(draft.transcript || null);
+        if (draft.amountMajor) setDigits(String(draft.amountMajor));
+        if (draft.categoryHint) {
+          const hint = draft.categoryHint.toLowerCase();
+          const match = (options?.categories ?? []).find(
+            (cx) => cx.name.toLowerCase().includes(hint) || hint.includes(cx.name.toLowerCase()),
+          );
+          if (match) setCategoryId(match.id);
+        }
+      }
+    } catch {
+      setError("Couldn't transcribe — fill the details in below.");
+    } finally {
+      setTranscribing(false);
+    }
+  }
+
   const save = useMutation({
     mutationFn: async () => {
-      let voicePath: string | null = null;
-      if (uri) {
+      let path = voicePath;
+      if (!path && uri) {
         try {
-          voicePath = (await c.storage.upload("voice-notes", uri, "audio/m4a")).path;
+          path = (await c.storage.upload("voice-notes", uri, "audio/m4a")).path;
         } catch {
-          voicePath = uri; // keep the local reference if upload fails
+          path = uri;
         }
       }
       const res = await c.commands.logTransaction.execute({
@@ -110,7 +147,8 @@ export default function VoiceScreen() {
         categoryId: categoryId as never,
         amountMajor,
         source: "voice",
-        voiceNotePath: voicePath,
+        voiceNotePath: path,
+        voiceTranscript: transcript,
         paymentMethod: accountMethod(accounts, effectiveAccountId),
       });
       if (!res.ok) throw new Error(res.error.message);
@@ -154,9 +192,17 @@ export default function VoiceScreen() {
       </View>
 
       <Card style={{ backgroundColor: "rgba(233,180,76,0.08)", borderColor: "rgba(233,180,76,0.3)" }}>
-        <Text style={styles.note}>
-          🎙 Your note is saved with the transaction. Auto-transcription (filling the fields for you) arrives next — for now, confirm the details below.
-        </Text>
+        {transcribing ? (
+          <Text style={styles.note}>🎙 Transcribing your note…</Text>
+        ) : transcript ? (
+          <Text style={styles.note}>
+            🎙 “{transcript}”{"\n"}Fields pre-filled — check them below.
+          </Text>
+        ) : (
+          <Text style={styles.note}>
+            🎙 Your note is saved with the transaction. Record, then confirm the details below (they auto-fill once your Supabase transcribe function is set up).
+          </Text>
+        )}
       </Card>
 
       {/* Confirm fields */}
