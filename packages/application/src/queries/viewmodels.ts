@@ -1,11 +1,31 @@
 import type {
   AccountType,
   CategoryType,
+  Direction,
   Money,
   PaymentMethod,
   PeriodSummary,
   TransactionSource,
 } from "@rabbit/domain";
+
+/** The full transaction, as loaded into the edit screen. */
+export interface TransactionDetailView {
+  id: string;
+  amountMajor: number;
+  direction: Direction;
+  categoryId: string;
+  categoryName: string;
+  categoryColor: string;
+  categoryType: CategoryType;
+  accountId: string;
+  accountName: string;
+  occurredAt: string;
+  description: string | null;
+  paymentMethod: PaymentMethod | null;
+  source: TransactionSource;
+  voiceTranscript: string | null;
+  hasReceipt: boolean;
+}
 
 /** A row as shown in the ledger / recent-activity lists. */
 export interface TransactionListItem {

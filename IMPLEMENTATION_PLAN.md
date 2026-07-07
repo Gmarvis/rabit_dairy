@@ -120,6 +120,15 @@ Account balance = `opening + Σ(in) − Σ(out)` over its transactions. Transfer
   "next" disabled once you reach the current month). Date formatting moved to
   **dayjs**. Demo data is now anchored to the live current + previous month, so
   the dashboard is never empty regardless of when the app is opened.
+- ✅ **Edit & delete transactions**: tap any row (dashboard, activity, account
+  ledger) → detail screen preloaded with its fields (keypad + category/account
+  pickers + note). `EditTransaction` rebuilds the aggregate from its snapshot so
+  invariants re-check and the category type/direction re-denormalise on a move;
+  `DeleteTransaction` removes it (with a confirm). `GetTransaction` loads the
+  detail. Covered by unit tests.
+- ✅ **Smart voice parse**: the live transcript is sent to the deployed
+  `transcribe` Edge Function (text mode, gpt-4o-mini) to fill amount, category &
+  a clean note; on-device word parser is the instant/offline fallback.
 - ⬜ Apple sign-in (App Store requires it alongside Google); biometric lock
   (expo-local-authentication); offline cache so demo data persists across reloads.
 - ⬜ E2E happy paths; ship to TestFlight / Play internal testing.

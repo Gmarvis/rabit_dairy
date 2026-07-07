@@ -80,9 +80,10 @@ export default function DashboardScreen() {
           <SectionLabel>Recent activity</SectionLabel>
           <Card style={{ paddingVertical: space(1) }}>
             {data.recent.map((t, i) => (
-              <View
+              <Pressable
                 key={t.id}
                 style={[styles.txn, i < data.recent.length - 1 && styles.txnBorder]}
+                onPress={() => router.push(`/transaction/${t.id}`)}
               >
                 <View style={[styles.dot, { backgroundColor: t.categoryColor }]} />
                 <View style={{ flex: 1 }}>
@@ -95,7 +96,7 @@ export default function DashboardScreen() {
                   </Text>
                 </View>
                 <MoneyText amount={t.signedAmount} signed currency={false} size={13} />
-              </View>
+              </Pressable>
             ))}
           </Card>
         </>

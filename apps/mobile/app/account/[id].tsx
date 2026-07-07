@@ -68,7 +68,11 @@ export default function AccountDetailScreen() {
               <Text style={[styles.dim, { paddingVertical: space(2) }]}>No transactions yet.</Text>
             ) : (
               data.transactions.map((t, i) => (
-                <View key={t.id} style={[styles.txn, i < data.transactions.length - 1 && styles.border]}>
+                <Pressable
+                  key={t.id}
+                  style={[styles.txn, i < data.transactions.length - 1 && styles.border]}
+                  onPress={() => router.push(`/transaction/${t.id}`)}
+                >
                   <View style={[styles.dot, { backgroundColor: t.categoryColor }]} />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.txnTitle}>{t.title}</Text>
@@ -80,7 +84,7 @@ export default function AccountDetailScreen() {
                     </Text>
                   </View>
                   <MoneyText amount={t.signedAmount} signed currency={false} size={13} />
-                </View>
+                </Pressable>
               ))
             )}
           </Card>

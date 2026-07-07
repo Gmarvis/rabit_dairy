@@ -17,6 +17,10 @@ export type {
 // Commands
 export { LogTransaction } from "./commands/LogTransaction.js";
 export type { LogTransactionInput } from "./commands/LogTransaction.js";
+export { EditTransaction } from "./commands/EditTransaction.js";
+export type { EditTransactionInput } from "./commands/EditTransaction.js";
+export { DeleteTransaction } from "./commands/DeleteTransaction.js";
+export type { DeleteTransactionInput } from "./commands/DeleteTransaction.js";
 export { RecordSavingsMovement } from "./commands/RecordSavingsMovement.js";
 export type { RecordSavingsMovementInput } from "./commands/RecordSavingsMovement.js";
 export { SetBudget } from "./commands/SetBudget.js";
@@ -28,6 +32,7 @@ export type { ImportStatementInput, ImportEntry } from "./commands/ImportStateme
 
 // Queries
 export { GetDashboard } from "./queries/GetDashboard.js";
+export { GetTransaction } from "./queries/GetTransaction.js";
 export { GetAccountsOverview } from "./queries/GetAccountsOverview.js";
 export { GetBudgetVsActual } from "./queries/GetBudgetVsActual.js";
 export { GetEntryOptions } from "./queries/GetEntryOptions.js";

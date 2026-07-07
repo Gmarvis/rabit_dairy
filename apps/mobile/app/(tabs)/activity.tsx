@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "expo-router";
 import { Fragment } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { TransactionListItem } from "@rabbit/application";
 import { Card, MoneyText } from "../../src/components/ui";
@@ -11,6 +12,7 @@ import { colors, radius, space } from "../../src/theme/tokens";
 
 export default function ActivityScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const c = useContainer();
   const { period } = usePeriod();
   const { data } = useQuery({
@@ -39,7 +41,11 @@ export default function ActivityScreen() {
           <Text style={styles.day}>{day}</Text>
           <Card style={{ paddingVertical: space(1) }}>
             {items.map((t, i) => (
-              <View key={t.id} style={[styles.txn, i < items.length - 1 && styles.border]}>
+              <Pressable
+                key={t.id}
+                style={[styles.txn, i < items.length - 1 && styles.border]}
+                onPress={() => router.push(`/transaction/${t.id}`)}
+              >
                 <View style={[styles.dot, { backgroundColor: t.categoryColor }]} />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.txnTitle}>{t.title}</Text>
@@ -50,7 +56,7 @@ export default function ActivityScreen() {
                   </Text>
                 </View>
                 <MoneyText amount={t.signedAmount} signed currency={false} size={13} />
-              </View>
+              </Pressable>
             ))}
           </Card>
         </Fragment>

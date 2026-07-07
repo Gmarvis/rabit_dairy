@@ -7,6 +7,8 @@ import { asUserId, type UserId } from "@rabbit/domain";
 import type { FileStorage } from "@rabbit/application";
 import {
   CreateAccount,
+  DeleteTransaction,
+  EditTransaction,
   GetAccountLedger,
   GetAccountsOverview,
   GetBudgets,
@@ -15,6 +17,7 @@ import {
   GetEntryOptions,
   GetExportRows,
   GetMonthlyReport,
+  GetTransaction,
   GetYearlyOverview,
   ImportStatement,
   LogTransaction,
@@ -69,9 +72,12 @@ function build(userId: UserId) {
       entryOptions: new GetEntryOptions(categories, accounts),
       budgets: new GetBudgets(budgets, categories),
       exportRows: new GetExportRows(txns, categories, accounts),
+      transaction: new GetTransaction(txns, categories, accounts),
     },
     commands: {
       logTransaction: new LogTransaction(txns, categories, ids, clock),
+      editTransaction: new EditTransaction(txns, categories),
+      deleteTransaction: new DeleteTransaction(txns),
       recordSavings: new RecordSavingsMovement(txns, ids, clock),
       setBudget: new SetBudget(budgets, ids),
       createAccount: new CreateAccount(accounts, ids),
