@@ -124,7 +124,7 @@ export default function TransactionScreen() {
   return (
     <View style={s.screen}>
       {/* Nav: Back on the left, Edit / Cancel-Save on the right. */}
-      <Row between style={[s.nav, { paddingTop: insets.top + space(2) }]}>
+      <Row between style={[s.nav, { paddingTop: Math.min(insets.top, space(2)) + space(2) }]}>
         <Pressable onPress={() => (editing ? setEditing(false) : router.back())} hitSlop={10} style={s.navBtn}>
           <Ionicons name="chevron-back" size={18} color={t.gold} />
           <Text style={s.navText}>{editing ? "Cancel" : "Back"}</Text>

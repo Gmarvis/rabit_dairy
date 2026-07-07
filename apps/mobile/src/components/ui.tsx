@@ -31,7 +31,7 @@ export function ScreenHeader({
 }) {
   const c = useTheme();
   return (
-    <View style={{ paddingTop: topInset + space(2), marginBottom: space(4) }}>
+    <View style={{ paddingTop: Math.min(topInset, space(2)) + space(2), marginBottom: space(4) }}>
       <Pressable onPress={onClose} hitSlop={14} style={{ alignSelf: "flex-start", paddingVertical: space(1) }}>
         <Text style={{ color: c.gold, fontSize: 15, fontWeight: "600" }}>{closeLabel}</Text>
       </Pressable>
@@ -60,7 +60,7 @@ export function PageHeader({
 }) {
   const c = useTheme();
   return (
-    <View style={{ paddingTop: topInset + space(2), marginBottom: space(3), flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between" }}>
+    <View style={{ paddingTop: Math.min(topInset, space(2)) + space(2), marginBottom: space(3), flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between" }}>
       <View>
         {eyebrow ? <Text style={{ color: c.ink2, fontSize: 12 }}>{eyebrow}</Text> : null}
         <Text style={{ color: c.ink, fontSize: 26, fontWeight: "800", letterSpacing: -0.5, marginTop: 2 }}>{title}</Text>
@@ -87,7 +87,7 @@ export function ModalHeader({
 }) {
   const c = useTheme();
   return (
-    <View style={{ paddingTop: topInset + space(2), paddingBottom: space(3), flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+    <View style={{ paddingTop: Math.min(topInset, space(2)) + space(2), paddingBottom: space(3), flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
       <Pressable onPress={onCancel} hitSlop={10} style={{ minWidth: 64 }}>
         <Text style={{ color: c.gold, fontSize: 15, fontWeight: "600" }}>Cancel</Text>
       </Pressable>

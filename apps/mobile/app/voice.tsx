@@ -166,7 +166,7 @@ export default function VoiceScreen() {
   return (
     <View style={s.screen}>
       {/* Header: Cancel + live timer */}
-      <Row between style={[s.header, { paddingTop: insets.top + space(2) }]}>
+      <Row between style={[s.header, { paddingTop: Math.min(insets.top, space(2)) + space(2) }]}>
         <Pressable onPress={() => router.back()} hitSlop={10}>
           <Text style={s.cancel}>Cancel</Text>
         </Pressable>
