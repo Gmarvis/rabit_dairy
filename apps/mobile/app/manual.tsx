@@ -126,15 +126,15 @@ export default function ManualEntryScreen() {
 
       <View style={styles.amountBox}>
         <Text style={styles.amountLabel}>Amount</Text>
-        <Text style={styles.amount}>
+        <Text style={[styles.amount, amountMajor === 0 && styles.amountZero]}>
           {amountMajor.toLocaleString("en-US")}
-          <Text style={styles.cursor}>|</Text>
         </Text>
         <Text style={styles.cur}>FCFA</Text>
       </View>
 
-      <ScrollView style={{ flexGrow: 0 }} contentContainerStyle={{ gap: space(3) }}>
-        <Picker label="Category">
+      <View style={{ gap: space(3) }}>
+        <View>
+          <Text style={styles.sectionLabel}>Category</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
             {categories.map((cat) => (
               <Chip
@@ -147,9 +147,10 @@ export default function ManualEntryScreen() {
             ))}
             {categories.length === 0 ? <Text style={styles.dim}>No categories yet</Text> : null}
           </ScrollView>
-        </Picker>
+        </View>
 
-        <Picker label="Account">
+        <View>
+          <Text style={styles.sectionLabel}>Account</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
             {accounts.map((a) => (
               <Chip
@@ -160,10 +161,12 @@ export default function ManualEntryScreen() {
               />
             ))}
           </ScrollView>
-        </Picker>
-      </ScrollView>
+        </View>
+      </View>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
+
+      <View style={{ flex: 1, minHeight: space(3) }} />
 
       <View style={[styles.keypad, { marginBottom: insets.bottom + space(2) }]}>
         {["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "del"].map((k, i) => (
@@ -187,15 +190,6 @@ function accountMethod(
 ): PaymentMethod {
   const a = accounts.find((x) => x.id === id);
   return a ? methodForAccount(a.type) : "cash";
-}
-
-function Picker({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <View>
-      <Text style={styles.sectionLabel}>{label}</Text>
-      {children}
-    </View>
-  );
 }
 
 function Chip({
@@ -238,10 +232,10 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   amount: {
-    color: colors.ink, fontSize: 40, fontWeight: "800", marginTop: 4,
-    fontVariant: ["tabular-nums"],
+    color: colors.ink, fontSize: 44, fontWeight: "800", marginTop: 4,
+    fontVariant: ["tabular-nums"], letterSpacing: -1,
   },
-  cursor: { color: colors.gold },
+  amountZero: { color: colors.muted },
   cur: { color: colors.ink2, fontSize: 12, fontWeight: "600" },
   sectionLabel: {
     color: colors.muted, fontSize: 10, fontWeight: "700", letterSpacing: 1,
