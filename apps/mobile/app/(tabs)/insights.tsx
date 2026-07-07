@@ -7,7 +7,8 @@ import { Card, MoneyText, Row, SectionLabel } from "../../src/components/ui";
 import { useContainer } from "../../src/lib/auth";
 import { usePeriod } from "../../src/lib/period";
 import { monthLabel, percent } from "../../src/lib/format";
-import { colors, radius, space } from "../../src/theme/tokens";
+import { useTheme } from "../../src/theme/theme";
+import { radius, space, type Palette } from "../../src/theme/tokens";
 
 const LINKS: { href: Href; icon: keyof typeof Ionicons.glyphMap; title: string; sub: string }[] = [
   { href: "/report", icon: "pie-chart", title: "Monthly report", sub: "Where the money went this month" },
@@ -19,6 +20,8 @@ export default function InsightsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const c = useContainer();
+  const { c: t } = useTheme();
+  const s = makeStyles(t);
   const { period } = usePeriod();
 
   const { data } = useQuery({
@@ -28,17 +31,17 @@ export default function InsightsScreen() {
 
   return (
     <ScrollView
-      style={styles.screen}
+      style={s.screen}
       contentContainerStyle={{ padding: space(4), paddingTop: insets.top + space(2), gap: space(3) }}
     >
-      <Text style={styles.title}>Insights</Text>
+      <Text style={s.title}>Insights</Text>
 
       <Card hero>
         <SectionLabel>Kept · {monthLabel(period)}</SectionLabel>
         {data ? (
           <>
             <MoneyText amount={data.summary.netBalance} signed size={24} style={{ marginTop: 4 }} />
-            <Text style={styles.sub}>
+            <Text style={s.sub}>
               {percent(data.summary.savingsRate)} saved · {percent(data.summary.expenseRate)} spent
             </Text>
           </>
@@ -49,14 +52,14 @@ export default function InsightsScreen() {
         <Pressable key={l.title} onPress={() => router.push(l.href)}>
           <Card>
             <Row style={{ gap: space(3) }}>
-              <View style={styles.icon}>
-                <Ionicons name={l.icon} size={18} color={colors.gold} />
+              <View style={s.icon}>
+                <Ionicons name={l.icon} size={18} color={t.gold} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.linkTitle}>{l.title}</Text>
-                <Text style={styles.linkSub}>{l.sub}</Text>
+                <Text style={s.linkTitle}>{l.title}</Text>
+                <Text style={s.linkSub}>{l.sub}</Text>
               </View>
-              <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+              <Ionicons name="chevron-forward" size={16} color={t.muted} />
             </Row>
           </Card>
         </Pressable>
@@ -65,11 +68,11 @@ export default function InsightsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { backgroundColor: colors.bg },
-  title: { color: colors.ink, fontSize: 22, fontWeight: "800" },
-  sub: { color: colors.ink2, fontSize: 11, marginTop: 4 },
-  icon: { width: 40, height: 40, borderRadius: radius.md, backgroundColor: "rgba(233,180,76,0.16)", alignItems: "center", justifyContent: "center" },
-  linkTitle: { color: colors.ink, fontSize: 14, fontWeight: "700" },
-  linkSub: { color: colors.ink2, fontSize: 11, marginTop: 2 },
+const makeStyles = (c: Palette) => StyleSheet.create({
+  screen: { backgroundColor: c.bg },
+  title: { color: c.ink, fontSize: 22, fontWeight: "800" },
+  sub: { color: c.ink2, fontSize: 11, marginTop: 4 },
+  icon: { width: 40, height: 40, borderRadius: radius.md, backgroundColor: c.goldSoft, alignItems: "center", justifyContent: "center" },
+  linkTitle: { color: c.ink, fontSize: 14, fontWeight: "700" },
+  linkSub: { color: c.ink2, fontSize: 11, marginTop: 2 },
 });

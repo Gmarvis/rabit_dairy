@@ -10,7 +10,8 @@ import type { EntryCategoryOption } from "@rabbit/application";
 import { Card, Row, ScreenHeader } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
 import { parseStatement, type ParsedRow } from "../src/lib/parseStatement";
-import { colors, radius, space } from "../src/theme/tokens";
+import { useTheme } from "../src/theme/theme";
+import { radius, space, type Palette } from "../src/theme/tokens";
 
 interface ReviewRow {
   row: ParsedRow;
@@ -41,6 +42,8 @@ export default function ScanScreen() {
   const router = useRouter();
   const qc = useQueryClient();
   const c = useContainer();
+  const { c: t } = useTheme();
+  const s = makeStyles(t);
 
   const [rows, setRows] = useState<ReviewRow[] | null>(null);
   const [busy, setBusy] = useState(false);
@@ -121,22 +124,22 @@ export default function ScanScreen() {
 
   return (
     <ScrollView
-      style={styles.screen}
+      style={s.screen}
       contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), gap: space(3) }}
     >
       <ScreenHeader title="Scan statement" onClose={() => router.back()} topInset={insets.top} />
 
       {!rows ? (
         <>
-          <View style={styles.frame}>
-            <Ionicons name="camera" size={28} color={colors.ink2} />
-            <Text style={styles.frameTitle}>Snap or upload a statement</Text>
-            <Text style={styles.frameSub}>A bank SMS, MoMo history, or a screenshot of your bank app.</Text>
+          <View style={s.frame}>
+            <Ionicons name="camera" size={28} color={t.ink2} />
+            <Text style={s.frameTitle}>Snap or upload a statement</Text>
+            <Text style={s.frameSub}>A bank SMS, MoMo history, or a screenshot of your bank app.</Text>
           </View>
           {busy ? (
             <Row style={{ gap: space(2), justifyContent: "center" }}>
-              <ActivityIndicator color={colors.gold} />
-              <Text style={styles.dim}>Reading the statement…</Text>
+              <ActivityIndicator color={t.gold} />
+              <Text style={s.dim}>Reading the statement…</Text>
             </Row>
           ) : (
             <Row style={{ gap: space(2.5) }}>
@@ -144,45 +147,48 @@ export default function ScanScreen() {
               <Action label="Gallery" onPress={() => pick("library")} />
             </Row>
           )}
-          <Text style={styles.privacy}>The image isn't stored — only the rows you confirm are saved. 🔒</Text>
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+          <Row style={{ gap: 5, justifyContent: "center" }}>
+            <Ionicons name="lock-closed" size={11} color={t.muted} />
+            <Text style={s.privacy}>The image isn't stored — only the rows you confirm are saved.</Text>
+          </Row>
+          {error ? <Text style={s.error}>{error}</Text> : null}
         </>
       ) : (
         <>
-          <Text style={styles.dim}>Uncheck any row you don't want, then import. Add them to:</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+          <Text style={s.dim}>Uncheck any row you don't want, then import. Add them to:</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips}>
             {accounts.map((a) => (
-              <Pressable key={a.id} style={[styles.chip, effectiveAccountId === a.id && styles.chipOn]} onPress={() => setAccountId(a.id)}>
-                <Text style={[styles.chipText, effectiveAccountId === a.id && styles.chipTextOn]}>{a.name}</Text>
+              <Pressable key={a.id} style={[s.chip, effectiveAccountId === a.id && s.chipOn]} onPress={() => setAccountId(a.id)}>
+                <Text style={[s.chipText, effectiveAccountId === a.id && s.chipTextOn]}>{a.name}</Text>
               </Pressable>
             ))}
           </ScrollView>
 
           <Card style={{ paddingVertical: space(1) }}>
             {rows.map((r, i) => (
-              <Pressable key={i} style={[styles.rowItem, i < rows.length - 1 && styles.border]} onPress={() => toggle(i)}>
-                <Ionicons name={r.include ? "checkbox" : "square-outline"} size={20} color={r.include ? colors.gold : colors.muted} />
+              <Pressable key={i} style={[s.rowItem, i < rows.length - 1 && s.border]} onPress={() => toggle(i)}>
+                <Ionicons name={r.include ? "checkbox" : "square-outline"} size={20} color={r.include ? t.gold : t.muted} />
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.rowTitle}>{r.row.description}</Text>
-                  <Text style={styles.rowMeta}>{nameFor(r.categoryId)}{r.row.date ? ` · ${r.row.date}` : ""}</Text>
+                  <Text style={s.rowTitle}>{r.row.description}</Text>
+                  <Text style={s.rowMeta}>{nameFor(r.categoryId)}{r.row.date ? ` · ${r.row.date}` : ""}</Text>
                 </View>
-                <Text style={[styles.amt, { color: r.row.direction === "out" ? colors.negative : colors.positive }]}>
+                <Text style={[s.amt, { color: r.row.direction === "out" ? t.negative : t.positive }]}>
                   {r.row.direction === "out" ? "−" : "+"}{r.row.amountMajor.toLocaleString("en-US")}
                 </Text>
               </Pressable>
             ))}
           </Card>
 
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+          {error ? <Text style={s.error}>{error}</Text> : null}
           <Pressable
-            style={[styles.importBtn, selected.length === 0 && styles.importOff]}
+            style={[s.importBtn, selected.length === 0 && s.importOff]}
             onPress={() => selected.length && importMut.mutate()}
             disabled={selected.length === 0 || importMut.isPending}
           >
             {importMut.isPending ? (
-              <ActivityIndicator color={colors.goldInk} />
+              <ActivityIndicator color={t.goldInk} />
             ) : (
-              <Text style={styles.importText}>Import {selected.length} transaction{selected.length === 1 ? "" : "s"}</Text>
+              <Text style={s.importText}>Import {selected.length} transaction{selected.length === 1 ? "" : "s"}</Text>
             )}
           </Pressable>
         </>
@@ -192,42 +198,44 @@ export default function ScanScreen() {
 }
 
 function Action({ label, primary, onPress }: { label: string; primary?: boolean; onPress: () => void }) {
+  const { c } = useTheme();
+  const s = makeStyles(c);
   return (
-    <Pressable style={[styles.action, primary && styles.actionPrimary]} onPress={onPress}>
-      <Text style={[styles.actionText, primary && styles.actionTextPrimary]}>{label}</Text>
+    <Pressable style={[s.action, primary && s.actionPrimary]} onPress={onPress}>
+      <Text style={[s.actionText, primary && s.actionTextPrimary]}>{label}</Text>
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { backgroundColor: colors.bg },
-  cancel: { color: colors.ink2, fontSize: 13 },
-  title: { color: colors.ink, fontSize: 15, fontWeight: "800" },
-  dim: { color: colors.ink2, fontSize: 12 },
+const makeStyles = (c: Palette) => StyleSheet.create({
+  screen: { backgroundColor: c.bg },
+  cancel: { color: c.ink2, fontSize: 13 },
+  title: { color: c.ink, fontSize: 15, fontWeight: "800" },
+  dim: { color: c.ink2, fontSize: 12 },
   frame: {
-    borderWidth: 2, borderColor: "rgba(255,255,255,0.18)", borderStyle: "dashed",
+    borderWidth: 2, borderColor: c.line, borderStyle: "dashed",
     borderRadius: radius.lg, alignItems: "center", justifyContent: "center",
     gap: space(2), paddingVertical: space(8), paddingHorizontal: space(5),
   },
-  frameTitle: { color: colors.ink, fontSize: 13, fontWeight: "700" },
-  frameSub: { color: colors.ink2, fontSize: 11, textAlign: "center" },
-  privacy: { color: colors.muted, fontSize: 10, textAlign: "center" },
-  error: { color: colors.negative, fontSize: 12, textAlign: "center" },
-  action: { flex: 1, backgroundColor: colors.card, borderColor: colors.line, borderWidth: 1, borderRadius: radius.md, paddingVertical: space(3.5), alignItems: "center" },
-  actionPrimary: { backgroundColor: colors.gold, borderColor: colors.gold },
-  actionText: { color: colors.ink, fontWeight: "700", fontSize: 13 },
-  actionTextPrimary: { color: colors.goldInk },
+  frameTitle: { color: c.ink, fontSize: 13, fontWeight: "700" },
+  frameSub: { color: c.ink2, fontSize: 11, textAlign: "center" },
+  privacy: { color: c.muted, fontSize: 10, textAlign: "center" },
+  error: { color: c.negative, fontSize: 12, textAlign: "center" },
+  action: { flex: 1, backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: radius.md, paddingVertical: space(3.5), alignItems: "center" },
+  actionPrimary: { backgroundColor: c.gold, borderColor: c.gold },
+  actionText: { color: c.ink, fontWeight: "700", fontSize: 13 },
+  actionTextPrimary: { color: c.goldInk },
   chips: { gap: space(2), paddingRight: space(4) },
-  chip: { backgroundColor: colors.card, borderColor: colors.line, borderWidth: 1, borderRadius: radius.pill, paddingHorizontal: space(3), paddingVertical: space(2) },
-  chipOn: { backgroundColor: colors.gold, borderColor: colors.gold },
-  chipText: { color: colors.ink2, fontSize: 12, fontWeight: "600" },
-  chipTextOn: { color: colors.goldInk },
+  chip: { backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: radius.pill, paddingHorizontal: space(3), paddingVertical: space(2) },
+  chipOn: { backgroundColor: c.gold, borderColor: c.gold },
+  chipText: { color: c.ink2, fontSize: 12, fontWeight: "600" },
+  chipTextOn: { color: c.goldInk },
   rowItem: { flexDirection: "row", alignItems: "center", gap: space(2.5), paddingVertical: space(2.5) },
-  border: { borderBottomWidth: 1, borderBottomColor: colors.line },
-  rowTitle: { color: colors.ink, fontSize: 12, fontWeight: "600" },
-  rowMeta: { color: colors.muted, fontSize: 10, marginTop: 1 },
+  border: { borderBottomWidth: 1, borderBottomColor: c.line },
+  rowTitle: { color: c.ink, fontSize: 12, fontWeight: "600" },
+  rowMeta: { color: c.muted, fontSize: 10, marginTop: 1 },
   amt: { fontSize: 13, fontWeight: "800", fontVariant: ["tabular-nums"] },
-  importBtn: { backgroundColor: colors.gold, borderRadius: radius.md, paddingVertical: space(3.5), alignItems: "center" },
+  importBtn: { backgroundColor: c.gold, borderRadius: radius.md, paddingVertical: space(3.5), alignItems: "center" },
   importOff: { opacity: 0.5 },
-  importText: { color: colors.goldInk, fontWeight: "800", fontSize: 14 },
+  importText: { color: c.goldInk, fontWeight: "800", fontSize: 14 },
 });

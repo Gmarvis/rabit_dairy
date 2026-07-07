@@ -6,7 +6,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { AccountType } from "@rabbit/domain";
 import { PrimaryButton, Row, ScreenHeader } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
-import { colors, radius, space } from "../src/theme/tokens";
+import { useTheme } from "../src/theme/theme";
+import { radius, space, type Palette } from "../src/theme/tokens";
 
 const TYPES: { key: AccountType; label: string }[] = [
   { key: "bank_salary", label: "Salary" },
@@ -21,6 +22,8 @@ export default function NewAccountScreen() {
   const router = useRouter();
   const qc = useQueryClient();
   const c = useContainer();
+  const { c: pal } = useTheme();
+  const s = makeStyles(pal);
 
   const [name, setName] = useState("");
   const [type, setType] = useState<AccountType>("bank_savings");
@@ -49,20 +52,21 @@ export default function NewAccountScreen() {
   });
 
   return (
-    <View style={styles.screen}>
+    <View style={s.screen}>
       <ScrollView contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), gap: space(3) }}>
         <ScreenHeader title="New account" onClose={() => router.back()} topInset={insets.top} />
 
-        <Field label="Name">
-          <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="e.g. UBA savings" placeholderTextColor={colors.muted} />
-        </Field>
+        <View>
+          <Text style={s.label}>Name</Text>
+          <TextInput style={s.input} value={name} onChangeText={setName} placeholder="e.g. UBA savings" placeholderTextColor={pal.muted} />
+        </View>
 
         <View>
-          <Text style={styles.label}>Type</Text>
-          <View style={styles.chipsWrap}>
-            {TYPES.map((t) => (
-              <Pressable key={t.key} style={[styles.chip, type === t.key && styles.chipOn]} onPress={() => setType(t.key)}>
-                <Text style={[styles.chipText, type === t.key && styles.chipTextOn]}>{t.label}</Text>
+          <Text style={s.label}>Type</Text>
+          <View style={s.chipsWrap}>
+            {TYPES.map((opt) => (
+              <Pressable key={opt.key} style={[s.chip, type === opt.key && s.chipOn]} onPress={() => setType(opt.key)}>
+                <Text style={[s.chipText, type === opt.key && s.chipTextOn]}>{opt.label}</Text>
               </Pressable>
             ))}
           </View>
@@ -70,47 +74,41 @@ export default function NewAccountScreen() {
 
         {isBank ? (
           <Row style={{ gap: space(2.5) }}>
-            <Field label="Institution" style={{ flex: 1 }}>
-              <TextInput style={styles.input} value={institution} onChangeText={setInstitution} placeholder="Afriland" placeholderTextColor={colors.muted} />
-            </Field>
-            <Field label="Last 4" style={{ flex: 1 }}>
-              <TextInput style={styles.input} value={mask} onChangeText={(t) => setMask(t.replace(/[^0-9]/g, "").slice(0, 4))} keyboardType="number-pad" placeholder="4821" placeholderTextColor={colors.muted} />
-            </Field>
+            <View style={{ flex: 1 }}>
+              <Text style={s.label}>Institution</Text>
+              <TextInput style={s.input} value={institution} onChangeText={setInstitution} placeholder="Afriland" placeholderTextColor={pal.muted} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={s.label}>Last 4</Text>
+              <TextInput style={s.input} value={mask} onChangeText={(v) => setMask(v.replace(/[^0-9]/g, "").slice(0, 4))} keyboardType="number-pad" placeholder="4821" placeholderTextColor={pal.muted} />
+            </View>
           </Row>
         ) : null}
 
-        <Field label="Opening balance (FCFA)">
-          <TextInput style={styles.input} value={opening} onChangeText={(t) => setOpening(t.replace(/[^0-9]/g, ""))} keyboardType="number-pad" placeholder="0" placeholderTextColor={colors.muted} />
-        </Field>
+        <View>
+          <Text style={s.label}>Opening balance (FCFA)</Text>
+          <TextInput style={s.input} value={opening} onChangeText={(v) => setOpening(v.replace(/[^0-9]/g, ""))} keyboardType="number-pad" placeholder="0" placeholderTextColor={pal.muted} />
+        </View>
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {error ? <Text style={s.error}>{error}</Text> : null}
       </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: insets.bottom + space(2) }]}>
+      <View style={[s.footer, { paddingBottom: insets.bottom + space(2) }]}>
         <PrimaryButton label="Add account" onPress={() => save.mutate()} disabled={!canSave} loading={save.isPending} />
       </View>
     </View>
   );
 }
 
-function Field({ label, children, style }: { label: string; children: React.ReactNode; style?: object }) {
-  return (
-    <View style={style}>
-      <Text style={styles.label}>{label}</Text>
-      {children}
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.bg },
-  label: { color: colors.muted, fontSize: 10, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase", marginBottom: 6 },
-  input: { backgroundColor: colors.card, borderColor: colors.line, borderWidth: 1, borderRadius: radius.md, paddingHorizontal: space(3.5), paddingVertical: space(3), color: colors.ink, fontSize: 15 },
+const makeStyles = (c: Palette) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.bg },
+  label: { color: c.muted, fontSize: 10, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase", marginBottom: 6 },
+  input: { backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: radius.md, paddingHorizontal: space(3.5), paddingVertical: space(3), color: c.ink, fontSize: 15 },
   chipsWrap: { flexDirection: "row", flexWrap: "wrap", gap: space(2) },
-  chip: { backgroundColor: colors.card, borderColor: colors.line, borderWidth: 1, borderRadius: radius.pill, paddingHorizontal: space(3), paddingVertical: space(2) },
-  chipOn: { backgroundColor: colors.gold, borderColor: colors.gold },
-  chipText: { color: colors.ink2, fontSize: 12, fontWeight: "600" },
-  chipTextOn: { color: colors.goldInk },
-  error: { color: colors.negative, fontSize: 12 },
-  footer: { paddingHorizontal: space(4), paddingTop: space(2), borderTopWidth: 1, borderTopColor: colors.line, backgroundColor: colors.bg },
+  chip: { backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: radius.pill, paddingHorizontal: space(3), paddingVertical: space(2) },
+  chipOn: { backgroundColor: c.gold, borderColor: c.gold },
+  chipText: { color: c.ink2, fontSize: 12, fontWeight: "600" },
+  chipTextOn: { color: c.goldInk },
+  error: { color: c.negative, fontSize: 12 },
+  footer: { paddingHorizontal: space(4), paddingTop: space(2), borderTopWidth: 1, borderTopColor: c.line, backgroundColor: c.bg },
 });
