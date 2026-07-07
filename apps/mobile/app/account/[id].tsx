@@ -32,8 +32,9 @@ export default function AccountDetailScreen() {
     >
       <Stack.Screen options={{ headerShown: false }} />
       <Row between>
-        <Pressable onPress={() => router.back()} hitSlop={10}>
-          <Text style={s.back}>‹ Accounts</Text>
+        <Pressable onPress={() => router.back()} hitSlop={10} style={s.backBtn}>
+          <Ionicons name="chevron-back" size={18} color={t.gold} />
+          <Text style={s.back}>Accounts</Text>
         </Pressable>
       </Row>
 
@@ -133,7 +134,8 @@ function Action({ label, icon, primary, onPress }: { label: string; icon: keyof 
 
 const makeStyles = (c: Palette) => StyleSheet.create({
   screen: { backgroundColor: c.bg },
-  back: { color: c.gold, fontSize: 13, fontWeight: "700" },
+  backBtn: { flexDirection: "row", alignItems: "center", gap: 2 },
+  back: { color: c.gold, fontSize: 15, fontWeight: "700" },
   dim: { color: c.ink2 },
   name: { color: c.ink, fontSize: 13, fontWeight: "700" },
   txn: { flexDirection: "row", alignItems: "center", gap: space(2.5), paddingVertical: space(2.5) },

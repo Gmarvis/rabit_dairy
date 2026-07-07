@@ -11,6 +11,11 @@ export function shortDate(iso: string): string {
   return dayjs(iso).format("MMM D");
 }
 
+/** Full date like "Apr 3, 2026" for detail rows. */
+export function fullDate(iso: string): string {
+  return dayjs(iso).format("MMM D, YYYY");
+}
+
 /** Uppercase day header like "SAT · APR 4". */
 export function dayHeader(iso: string): string {
   return dayjs(iso).format("ddd · MMM D").toUpperCase();
