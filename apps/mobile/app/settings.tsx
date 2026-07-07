@@ -6,9 +6,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { ExportRow } from "@rabbit/application";
 import { Card, Row, ScreenHeader, SectionLabel } from "../src/components/ui";
 import { signOut, useAuth, useContainer } from "../src/lib/auth";
+import { usePeriod } from "../src/lib/period";
 import { colors, radius, space } from "../src/theme/tokens";
-
-const YEAR = 2026;
 
 function toCsv(rows: ExportRow[]): string {
   const header = ["Date", "Type", "Category", "Description", "Amount (XAF)", "Direction", "Method", "Account"];
@@ -25,6 +24,8 @@ export default function SettingsScreen() {
   const router = useRouter();
   const { status, email } = useAuth();
   const c = useContainer();
+  const { period } = usePeriod();
+  const year = period.year;
   const [exporting, setExporting] = useState(false);
   const [note, setNote] = useState<string | null>(null);
 
@@ -32,13 +33,13 @@ export default function SettingsScreen() {
     setNote(null);
     setExporting(true);
     try {
-      const rows = await c.queries.exportRows.execute(c.userId, YEAR);
+      const rows = await c.queries.exportRows.execute(c.userId, year);
       if (rows.length === 0) {
         setNote("No transactions to export yet.");
         return;
       }
       await Share.share({
-        title: `Rabbit Dairy ${YEAR} export`,
+        title: `Rabbit Dairy ${year} export`,
         message: toCsv(rows),
       });
     } catch {
@@ -76,7 +77,7 @@ export default function SettingsScreen() {
       <SectionLabel>Preferences</SectionLabel>
       <Card style={{ paddingVertical: space(1) }}>
         <Row between style={styles.row}><Text style={styles.rowText}>Currency</Text><Text style={styles.rowVal}>XAF · FCFA</Text></Row>
-        <Row between style={[styles.row, styles.border]}><Text style={styles.rowText}>Active year</Text><Text style={styles.rowVal}>{YEAR}</Text></Row>
+        <Row between style={[styles.row, styles.border]}><Text style={styles.rowText}>Active year</Text><Text style={styles.rowVal}>{year}</Text></Row>
       </Card>
 
       <SectionLabel>Your data</SectionLabel>
@@ -86,7 +87,7 @@ export default function SettingsScreen() {
             <Row style={{ gap: space(3) }}>
               <View style={styles.icon}><Ionicons name="download-outline" size={18} color={colors.gold} /></View>
               <View>
-                <Text style={styles.rowText}>Export {YEAR} to CSV</Text>
+                <Text style={styles.rowText}>Export {year} to CSV</Text>
                 <Text style={styles.meta}>Open it in Excel or Sheets</Text>
               </View>
             </Row>

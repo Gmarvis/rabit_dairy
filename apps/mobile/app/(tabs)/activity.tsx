@@ -2,21 +2,20 @@ import { useQuery } from "@tanstack/react-query";
 import { Fragment } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { YearMonth } from "@rabbit/domain";
 import type { TransactionListItem } from "@rabbit/application";
 import { Card, MoneyText } from "../../src/components/ui";
 import { useContainer } from "../../src/lib/auth";
-import { dayLabel, methodLabel } from "../../src/lib/format";
+import { usePeriod } from "../../src/lib/period";
+import { dayLabel, methodLabel, monthLabel } from "../../src/lib/format";
 import { colors, radius, space } from "../../src/theme/tokens";
-
-const PERIOD = YearMonth.of(2026, 4);
 
 export default function ActivityScreen() {
   const insets = useSafeAreaInsets();
   const c = useContainer();
+  const { period } = usePeriod();
   const { data } = useQuery({
-    queryKey: ["activity", PERIOD.toString()],
-    queryFn: () => c.queries.dashboard.execute(c.userId, PERIOD, 100),
+    queryKey: ["activity", period.toString()],
+    queryFn: () => c.queries.dashboard.execute(c.userId, period, 100),
   });
 
   // Group by day for the day headers.
@@ -34,6 +33,7 @@ export default function ActivityScreen() {
       contentContainerStyle={{ padding: space(4), paddingTop: insets.top + space(2), gap: space(2) }}
     >
       <Text style={styles.title}>Transactions</Text>
+      <Text style={styles.month}>{monthLabel(period)}</Text>
       {[...groups.entries()].map(([day, items]) => (
         <Fragment key={day}>
           <Text style={styles.day}>{day}</Text>
@@ -61,7 +61,8 @@ export default function ActivityScreen() {
 
 const styles = StyleSheet.create({
   screen: { backgroundColor: colors.bg },
-  title: { color: colors.ink, fontSize: 22, fontWeight: "800", marginBottom: space(1) },
+  title: { color: colors.ink, fontSize: 22, fontWeight: "800" },
+  month: { color: colors.ink2, fontSize: 12, marginBottom: space(1) },
   day: { color: colors.muted, fontSize: 10, fontWeight: "700", letterSpacing: 0.5, textTransform: "uppercase", marginTop: space(2) },
   txn: { flexDirection: "row", alignItems: "center", gap: space(2.5), paddingVertical: space(2.5) },
   border: { borderBottomWidth: 1, borderBottomColor: colors.line },

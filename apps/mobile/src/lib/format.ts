@@ -1,9 +1,14 @@
-/** Short day label like "Sat · Apr 4". */
+import dayjs from "dayjs";
+import type { YearMonth } from "@rabbit/domain";
+
+/** Short day label like "Sat · 4 Apr". */
 export function dayLabel(iso: string): string {
-  const d = new Date(iso);
-  const wd = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getUTCDay()];
-  const mo = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][d.getUTCMonth()];
-  return `${wd} · ${mo} ${d.getUTCDate()}`;
+  return dayjs(iso).format("ddd · D MMM");
+}
+
+/** "July 2026" for a period. */
+export function monthLabel(period: YearMonth): string {
+  return `${period.monthName} ${period.year}`;
 }
 
 export function percent(x: number, digits = 1): string {

@@ -112,6 +112,14 @@ Account balance = `opening + Σ(in) − Σ(out)` over its transactions. Transfer
 - ✅ Google sign-in (OAuth via system browser → `rabbitdiary://` deep link).
 - ✅ Settings screen: account, currency, sign out, and **CSV export** (share the
   year's transactions to open in Excel/Sheets — continuity with the spreadsheet).
+- ✅ **Live period / real date-time management**: removed every hardcoded
+  `YearMonth.of(2026, 4)` / `const YEAR = 2026`. A shared `PeriodProvider`
+  (`src/lib/period.tsx`) defaults to the real current month (`YearMonth.fromDate(new Date())`)
+  and drives the dashboard, activity, insights, report, budget(s), yearly and
+  settings screens. The dashboard header carries a month switcher (prev/next,
+  "next" disabled once you reach the current month). Date formatting moved to
+  **dayjs**. Demo data is now anchored to the live current + previous month, so
+  the dashboard is never empty regardless of when the app is opened.
 - ⬜ Apple sign-in (App Store requires it alongside Google); biometric lock
   (expo-local-authentication); offline cache so demo data persists across reloads.
 - ⬜ E2E happy paths; ship to TestFlight / Play internal testing.
@@ -122,11 +130,12 @@ Account balance = `opening + Σ(in) − Σ(out)` over its transactions. Transfer
 
 | Concern | Choice |
 |---|---|
-| App framework | Expo SDK 51+, expo-router (file-based nav) |
+| App framework | Expo SDK 54, expo-router v6 (file-based nav) |
 | Language | TypeScript throughout, strict mode |
 | State/data | TanStack Query over the application-layer queries |
+| Dates | dayjs (formatting) + domain `YearMonth` (accounting period) |
 | Backend | Supabase — Postgres, Auth, Storage, Edge Functions |
-| Audio / camera | expo-av, expo-camera, expo-image-picker |
+| Voice / camera | expo-speech-recognition (live STT), expo-image-picker, lottie-react-native |
 | Testing | Vitest for domain/application; Maestro for app E2E |
 | Monorepo | npm workspaces (no extra tooling to start) |
 

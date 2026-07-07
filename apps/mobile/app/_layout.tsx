@@ -4,6 +4,7 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider, useAuth } from "../src/lib/auth";
+import { PeriodProvider } from "../src/lib/period";
 import { colors } from "../src/theme/tokens";
 
 const queryClient = new QueryClient();
@@ -63,8 +64,10 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <StatusBar style="light" />
-          <RootNavigator />
+          <PeriodProvider>
+            <StatusBar style="light" />
+            <RootNavigator />
+          </PeriodProvider>
         </AuthProvider>
       </QueryClientProvider>
     </SafeAreaProvider>

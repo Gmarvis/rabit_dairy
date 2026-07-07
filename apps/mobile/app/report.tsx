@@ -3,23 +3,22 @@ import { useRouter } from "expo-router";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Circle } from "react-native-svg";
-import { YearMonth } from "@rabbit/domain";
 import type { CategorySlice } from "@rabbit/application";
 import { Card, MoneyText, Pill, Row, ScreenHeader, SectionLabel } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
-import { percent } from "../src/lib/format";
+import { usePeriod } from "../src/lib/period";
+import { monthLabel, percent } from "../src/lib/format";
 import { colors, space } from "../src/theme/tokens";
-
-const PERIOD = YearMonth.of(2026, 4);
 
 export default function MonthlyReportScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const c = useContainer();
+  const { period } = usePeriod();
 
   const { data } = useQuery({
-    queryKey: ["monthly-report", PERIOD.toString()],
-    queryFn: () => c.queries.monthlyReport.execute(c.userId, PERIOD),
+    queryKey: ["monthly-report", period.toString()],
+    queryFn: () => c.queries.monthlyReport.execute(c.userId, period),
   });
 
   return (
@@ -27,7 +26,7 @@ export default function MonthlyReportScreen() {
       style={styles.screen}
       contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), gap: space(3) }}
     >
-      <ScreenHeader title={`Report · ${data?.periodLabel ?? ""}`.trim()} onClose={() => router.back()} closeLabel="Done" topInset={insets.top} />
+      <ScreenHeader title={`Report · ${monthLabel(period)}`} onClose={() => router.back()} closeLabel="Done" topInset={insets.top} />
 
       {data ? (
         <>

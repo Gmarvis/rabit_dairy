@@ -2,13 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { YearMonth } from "@rabbit/domain";
 import { Card, MoneyText, Pill, Row, ScreenHeader, SectionLabel } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
-import { percent } from "../src/lib/format";
+import { usePeriod } from "../src/lib/period";
+import { monthLabel, percent } from "../src/lib/format";
 import { colors, space } from "../src/theme/tokens";
-
-const PERIOD = YearMonth.of(2026, 4);
 
 const STATUS_TONE = {
   under: "positive",
@@ -21,9 +19,10 @@ export default function BudgetScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const c = useContainer();
+  const { period } = usePeriod();
   const { data } = useQuery({
-    queryKey: ["budget-vs-actual", PERIOD.toString()],
-    queryFn: () => c.queries.budgetVsActual.execute(c.userId, PERIOD),
+    queryKey: ["budget-vs-actual", period.toString()],
+    queryFn: () => c.queries.budgetVsActual.execute(c.userId, period),
   });
 
   return (
@@ -31,7 +30,7 @@ export default function BudgetScreen() {
       style={styles.screen}
       contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), gap: space(3) }}
     >
-      <ScreenHeader title={`Budget vs actual · ${data?.periodLabel ?? ""}`.trim()} onClose={() => router.back()} closeLabel="Done" topInset={insets.top} />
+      <ScreenHeader title={`Budget · ${monthLabel(period)}`} onClose={() => router.back()} closeLabel="Done" topInset={insets.top} />
       <Pressable onPress={() => router.push("/budgets")} style={styles.editRow}>
         <Text style={styles.edit}>✎ Edit budgets</Text>
       </Pressable>

@@ -1,23 +1,22 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { YearMonth } from "@rabbit/domain";
 import { Card, MoneyText, Pill, Row, SectionLabel } from "../../src/components/ui";
 import { useContainer } from "../../src/lib/auth";
-import { dayLabel, methodLabel, percent } from "../../src/lib/format";
+import { usePeriod } from "../../src/lib/period";
+import { dayLabel, methodLabel, monthLabel, percent } from "../../src/lib/format";
 import { colors, radius, space } from "../../src/theme/tokens";
-
-// Active period — the spreadsheet's "Active Month". Wired to Settings later.
-const PERIOD = YearMonth.of(2026, 4);
 
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const c = useContainer();
+  const { period, next, prev, isCurrent } = usePeriod();
   const { data, isLoading } = useQuery({
-    queryKey: ["dashboard", PERIOD.toString()],
-    queryFn: () => c.queries.dashboard.execute(c.userId, PERIOD),
+    queryKey: ["dashboard", period.toString()],
+    queryFn: () => c.queries.dashboard.execute(c.userId, period),
   });
 
   return (
@@ -27,8 +26,14 @@ export default function DashboardScreen() {
     >
       <Row between>
         <View>
-          <Text style={styles.greet}>Good evening, Sam</Text>
-          <Text style={styles.title}>{data?.periodLabel ?? "…"}</Text>
+          <Text style={styles.greet}>Rabbit Dairy</Text>
+          <Row style={{ gap: space(2) }}>
+            <Pressable onPress={prev} hitSlop={10}><Ionicons name="chevron-back" size={18} color={colors.ink2} /></Pressable>
+            <Text style={styles.title}>{monthLabel(period)}</Text>
+            <Pressable onPress={next} hitSlop={10} disabled={isCurrent}>
+              <Ionicons name="chevron-forward" size={18} color={isCurrent ? colors.muted : colors.ink2} />
+            </Pressable>
+          </Row>
         </View>
         <Pressable
           style={styles.avatar}
@@ -40,7 +45,7 @@ export default function DashboardScreen() {
         </Pressable>
       </Row>
 
-      {c.isDemo ? <Pill tone="gold">Demo data · April 2026</Pill> : null}
+      {c.isDemo ? <Pill tone="gold">Demo data</Pill> : null}
 
       {isLoading || !data ? (
         <Card><Text style={styles.dim}>Loading…</Text></Card>

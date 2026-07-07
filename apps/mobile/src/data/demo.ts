@@ -1,6 +1,7 @@
 /**
- * In-memory demo data — the April/March 2026 figures from the spreadsheet —
- * behind the same application ports. Lets the UI run before Supabase is wired.
+ * In-memory demo data — spreadsheet figures anchored to the *current* month so
+ * the dashboard is never empty — behind the same application ports. Lets the UI
+ * run before Supabase is wired.
  */
 import {
   Account,
@@ -55,18 +56,32 @@ const ACCS: AccDef[] = [
   { id: "acc-cash", name: "Cash wallet", type: "cash", institution: null, mask: null, opening: 8_000 },
 ];
 
+/** Anchor demo data to the live current month so the dashboard is never empty. */
+const now = new Date();
+const thisMonth = YearMonth.fromDate(now);
+const lastMonth = thisMonth.previous();
+/** ISO date (YYYY-MM-DD) for a given day in a period, clamped to a safe day. */
+const on = (p: YearMonth, day: number) =>
+  `${p.year}-${String(p.month).padStart(2, "0")}-${String(Math.min(day, 28)).padStart(2, "0")}`;
+
 interface TxnDef {
   amount: number; cat: string; acc: string; date: string;
   method?: PaymentMethod; desc?: string;
   voice?: boolean; receipt?: boolean;
 }
 const TXNS: TxnDef[] = [
-  { amount: 811_821, cat: "salary", acc: "acc-salary", date: "2026-04-01", method: "bank_transfer", desc: "Salary" },
-  { amount: 40_500, cat: "shopping", acc: "acc-momo", date: "2026-04-02", method: "mobile_money", desc: "Shopping" },
-  { amount: 150_000, cat: "equipment", acc: "acc-momo", date: "2026-04-03", method: "mobile_money", desc: "Carpet & center table", voice: true },
-  { amount: 12_500, cat: "gifts", acc: "acc-cash", date: "2026-04-03", method: "cash", desc: "Gift — mum" },
-  { amount: 350_000, cat: "loan", acc: "acc-salary", date: "2026-04-04", method: "bank_transfer", desc: "Njangi payback" },
-  { amount: 11_200, cat: "groceries", acc: "acc-cash", date: "2026-04-04", method: "cash", desc: "Groceries & Food" },
+  // This month — drives the dashboard, activity, report and budget screens.
+  { amount: 811_821, cat: "salary", acc: "acc-salary", date: on(thisMonth, 1), method: "bank_transfer", desc: "Salary" },
+  { amount: 40_500, cat: "shopping", acc: "acc-momo", date: on(thisMonth, 2), method: "mobile_money", desc: "Shopping" },
+  { amount: 150_000, cat: "equipment", acc: "acc-momo", date: on(thisMonth, 3), method: "mobile_money", desc: "Carpet & center table", voice: true },
+  { amount: 12_500, cat: "gifts", acc: "acc-cash", date: on(thisMonth, 3), method: "cash", desc: "Gift — mum" },
+  { amount: 350_000, cat: "loan", acc: "acc-salary", date: on(thisMonth, 4), method: "bank_transfer", desc: "Njangi payback" },
+  { amount: 11_200, cat: "groceries", acc: "acc-cash", date: on(thisMonth, 4), method: "cash", desc: "Groceries & Food" },
+  { amount: 60_000, cat: "savings", acc: "acc-savings", date: on(thisMonth, 5), method: "bank_transfer", desc: "Monthly savings", receipt: true },
+  // Last month — gives the yearly overview a second data point.
+  { amount: 811_821, cat: "salary", acc: "acc-salary", date: on(lastMonth, 1), method: "bank_transfer", desc: "Salary" },
+  { amount: 120_000, cat: "rent", acc: "acc-salary", date: on(lastMonth, 2), method: "bank_transfer", desc: "Rent" },
+  { amount: 48_000, cat: "groceries", acc: "acc-cash", date: on(lastMonth, 10), method: "cash", desc: "Groceries & Food" },
 ];
 
 let seq = 0;

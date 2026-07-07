@@ -3,13 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter, type Href } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { YearMonth } from "@rabbit/domain";
 import { Card, MoneyText, Row, SectionLabel } from "../../src/components/ui";
 import { useContainer } from "../../src/lib/auth";
-import { percent } from "../../src/lib/format";
+import { usePeriod } from "../../src/lib/period";
+import { monthLabel, percent } from "../../src/lib/format";
 import { colors, radius, space } from "../../src/theme/tokens";
-
-const PERIOD = YearMonth.of(2026, 4);
 
 const LINKS: { href: Href; icon: keyof typeof Ionicons.glyphMap; title: string; sub: string }[] = [
   { href: "/report", icon: "pie-chart", title: "Monthly report", sub: "Where the money went this month" },
@@ -21,10 +19,11 @@ export default function InsightsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const c = useContainer();
+  const { period } = usePeriod();
 
   const { data } = useQuery({
-    queryKey: ["dashboard", PERIOD.toString()],
-    queryFn: () => c.queries.dashboard.execute(c.userId, PERIOD),
+    queryKey: ["dashboard", period.toString()],
+    queryFn: () => c.queries.dashboard.execute(c.userId, period),
   });
 
   return (
@@ -35,7 +34,7 @@ export default function InsightsScreen() {
       <Text style={styles.title}>Insights</Text>
 
       <Card hero>
-        <SectionLabel>Kept this month · {data?.periodLabel ?? "…"}</SectionLabel>
+        <SectionLabel>Kept · {monthLabel(period)}</SectionLabel>
         {data ? (
           <>
             <MoneyText amount={data.summary.netBalance} signed size={24} style={{ marginTop: 4 }} />

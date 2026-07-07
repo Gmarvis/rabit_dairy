@@ -7,19 +7,20 @@ import Svg, { Rect, Text as SvgText } from "react-native-svg";
 import type { YearlyOverviewView } from "@rabbit/application";
 import { Card, MoneyText, Row, ScreenHeader, SectionLabel } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
+import { usePeriod } from "../src/lib/period";
 import { percent } from "../src/lib/format";
 import { colors, space } from "../src/theme/tokens";
-
-const YEAR = 2026;
 
 export default function YearlyOverviewScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const c = useContainer();
+  const { period } = usePeriod();
+  const year = period.year;
 
   const { data } = useQuery({
-    queryKey: ["yearly-overview", YEAR],
-    queryFn: () => c.queries.yearlyOverview.execute(c.userId, YEAR),
+    queryKey: ["yearly-overview", year],
+    queryFn: () => c.queries.yearlyOverview.execute(c.userId, year),
   });
 
   return (
@@ -27,7 +28,7 @@ export default function YearlyOverviewScreen() {
       style={styles.screen}
       contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), gap: space(3) }}
     >
-      <ScreenHeader title={`Yearly overview · ${YEAR}`} onClose={() => router.back()} closeLabel="Done" topInset={insets.top} />
+      <ScreenHeader title={`Yearly overview · ${year}`} onClose={() => router.back()} closeLabel="Done" topInset={insets.top} />
 
       {data ? (
         <>

@@ -11,13 +11,13 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { YearMonth, type CategoryType } from "@rabbit/domain";
+import { type CategoryType } from "@rabbit/domain";
 import type { BudgetEditorItem } from "@rabbit/application";
 import { Card, PrimaryButton, Row, ScreenHeader, SectionLabel } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
+import { usePeriod } from "../src/lib/period";
+import { monthLabel } from "../src/lib/format";
 import { colors, radius, space } from "../src/theme/tokens";
-
-const PERIOD = YearMonth.of(2026, 4);
 
 const TYPE_LABEL: Record<CategoryType, string> = {
   income: "Income",
@@ -35,10 +35,11 @@ export default function BudgetsScreen() {
   const router = useRouter();
   const qc = useQueryClient();
   const c = useContainer();
+  const { period } = usePeriod();
 
   const { data } = useQuery({
-    queryKey: ["budgets", PERIOD.toString()],
-    queryFn: () => c.queries.budgets.execute(c.userId, PERIOD),
+    queryKey: ["budgets", period.toString()],
+    queryFn: () => c.queries.budgets.execute(c.userId, period),
   });
 
   // Local edit state: categoryId -> amount string.
@@ -64,8 +65,8 @@ export default function BudgetsScreen() {
         await c.commands.setBudget.execute({
           userId: c.userId,
           categoryId: it.categoryId as never,
-          year: PERIOD.year,
-          month: PERIOD.month,
+          year: period.year,
+          month: period.month,
           amountMajor: val,
         });
       }
@@ -87,7 +88,7 @@ export default function BudgetsScreen() {
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), gap: space(3) }}>
-        <ScreenHeader title={`Budgets · ${data?.periodLabel ?? ""}`.trim()} onClose={() => router.back()} topInset={insets.top} />
+        <ScreenHeader title={`Budgets · ${monthLabel(period)}`} onClose={() => router.back()} topInset={insets.top} />
 
       {TYPE_ORDER.map((type) => {
         const items = grouped(type);
