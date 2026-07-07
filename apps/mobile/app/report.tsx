@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Circle } from "react-native-svg";
 import { YearMonth } from "@rabbit/domain";
 import type { CategorySlice } from "@rabbit/application";
-import { Card, MoneyText, Pill, Row, SectionLabel } from "../src/components/ui";
+import { Card, MoneyText, Pill, Row, ScreenHeader, SectionLabel } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
 import { percent } from "../src/lib/format";
 import { colors, space } from "../src/theme/tokens";
@@ -25,15 +25,9 @@ export default function MonthlyReportScreen() {
   return (
     <ScrollView
       style={styles.screen}
-      contentContainerStyle={{ padding: space(4), paddingTop: insets.top + space(2), gap: space(3) }}
+      contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), gap: space(3) }}
     >
-      <Row between>
-        <View>
-          <Text style={styles.greet}>Monthly report</Text>
-          <Text style={styles.title}>{data?.periodLabel ?? "…"}</Text>
-        </View>
-        <Text style={styles.close} onPress={() => router.back()}>Done</Text>
-      </Row>
+      <ScreenHeader title={`Report · ${data?.periodLabel ?? ""}`.trim()} onClose={() => router.back()} closeLabel="Done" topInset={insets.top} />
 
       {data ? (
         <>

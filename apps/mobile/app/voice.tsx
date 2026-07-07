@@ -9,7 +9,7 @@ import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { AccountType, CategoryType, PaymentMethod } from "@rabbit/domain";
-import { Card, Row } from "../src/components/ui";
+import { Card, PrimaryButton, Row, ScreenHeader } from "../src/components/ui";
 import { Listening } from "../src/components/Listening";
 import { useContainer } from "../src/lib/auth";
 import { amountFromText } from "../src/lib/word2num";
@@ -53,7 +53,6 @@ export default function VoiceScreen() {
     [options, group],
   );
 
-  // Live on-device transcription events.
   useSpeechRecognitionEvent("result", (e) => {
     const t = e.results[0]?.transcript ?? "";
     setTranscript(t);
@@ -65,7 +64,6 @@ export default function VoiceScreen() {
     setError(e.message || "Speech recognition failed.");
   });
 
-  /** Pull amount + best-guess category out of the spoken text. */
   function applyTranscript(text: string) {
     const amount = amountFromText(text);
     if (amount) setDigits(String(amount));
@@ -87,17 +85,10 @@ export default function VoiceScreen() {
       return;
     }
     const perm = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
-    if (!perm.granted) {
-      setError("Microphone & speech permission are needed.");
-      return;
-    }
+    if (!perm.granted) return setError("Microphone & speech permission are needed.");
     setTranscript("");
     setListening(true);
-    ExpoSpeechRecognitionModule.start({
-      lang: "en-US",
-      interimResults: true,
-      continuous: true,
-    });
+    ExpoSpeechRecognitionModule.start({ lang: "en-US", interimResults: true, continuous: true });
   }
 
   const amountMajor = parseInt(digits || "0", 10);
@@ -121,84 +112,82 @@ export default function VoiceScreen() {
   });
 
   return (
-    <ScrollView
-      style={styles.screen}
-      contentContainerStyle={{ padding: space(4), paddingTop: insets.top + space(3), gap: space(3) }}
-    >
-      <Row between>
-        <Pressable onPress={() => router.back()} hitSlop={10}><Text style={styles.cancel}>Cancel</Text></Pressable>
-        <Text style={styles.title}>Speak it</Text>
-        <Pressable onPress={() => canSave && save.mutate()} disabled={!canSave} hitSlop={10}>
-          <Text style={[styles.save, !canSave && styles.saveOff]}>Save</Text>
-        </Pressable>
-      </Row>
+    <View style={styles.screen}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), gap: space(3) }}>
+        <ScreenHeader title="Speak it" onClose={() => router.back()} topInset={insets.top} />
 
-      <View style={styles.recordArea}>
-        {listening ? (
-          <Listening size={130} playing />
-        ) : (
-          <Pressable style={styles.mic} onPress={toggleListen}>
-            <Ionicons name="mic" size={34} color={colors.goldInk} />
-          </Pressable>
-        )}
-        {listening ? (
-          <Pressable style={styles.stop} onPress={toggleListen}>
-            <Ionicons name="stop" size={14} color="#fff" />
-            <Text style={styles.stopText}>Stop</Text>
-          </Pressable>
-        ) : (
-          <Text style={styles.hint}>Tap the mic and say what you spent &amp; why</Text>
-        )}
-      </View>
-
-      <Card style={{ backgroundColor: "rgba(233,180,76,0.08)", borderColor: "rgba(233,180,76,0.3)", minHeight: 64 }}>
-        {transcript ? (
-          <Text style={styles.transcript}>&ldquo;{transcript}&rdquo;</Text>
-        ) : (
-          <Text style={styles.note}>🎙 Your words appear here live as you speak, and the amount &amp; category fill in automatically. Check them below before saving.</Text>
-        )}
-      </Card>
-
-      <View style={styles.segment}>
-        {(["income", "expense", "savings"] as Group[]).map((g) => (
-          <Pressable key={g} style={[styles.seg, group === g && styles.segOn]} onPress={() => { setGroup(g); setCategoryId(null); }}>
-            <Text style={[styles.segText, group === g && styles.segTextOn]}>{g[0]!.toUpperCase() + g.slice(1)}</Text>
-          </Pressable>
-        ))}
-      </View>
-
-      <View>
-        <Text style={styles.label}>Amount</Text>
-        <TextInput
-          style={styles.amount}
-          value={digits}
-          onChangeText={(t) => setDigits(t.replace(/[^0-9]/g, ""))}
-          keyboardType="number-pad"
-          placeholder="0"
-          placeholderTextColor={colors.muted}
-        />
-      </View>
-
-      <View>
-        <Text style={styles.label}>Category</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-          {categories.map((cat) => (
-            <Chip key={cat.id} label={cat.name} color={cat.color} selected={categoryId === cat.id} onPress={() => setCategoryId(cat.id)} />
+        <View style={styles.segment}>
+          {(["income", "expense", "savings"] as Group[]).map((g) => (
+            <Pressable key={g} style={[styles.seg, group === g && styles.segOn]} onPress={() => { setGroup(g); setCategoryId(null); }}>
+              <Text style={[styles.segText, group === g && styles.segTextOn]}>{g[0]!.toUpperCase() + g.slice(1)}</Text>
+            </Pressable>
           ))}
-        </ScrollView>
-      </View>
+        </View>
 
-      <View>
-        <Text style={styles.label}>Account</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-          {accounts.map((a) => (
-            <Chip key={a.id} label={a.name} selected={effectiveAccountId === a.id} onPress={() => setAccountId(a.id)} />
-          ))}
-        </ScrollView>
-      </View>
+        <View>
+          <Text style={styles.label}>Amount</Text>
+          <TextInput
+            style={styles.amount}
+            value={digits}
+            onChangeText={(t) => setDigits(t.replace(/[^0-9]/g, ""))}
+            keyboardType="number-pad"
+            placeholder="0"
+            placeholderTextColor={colors.muted}
+          />
+        </View>
 
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-    </ScrollView>
+        <View>
+          <Text style={styles.label}>Category</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+            {categories.map((cat) => (
+              <Chip key={cat.id} label={cat.name} color={cat.color} selected={categoryId === cat.id} onPress={() => setCategoryId(cat.id)} />
+            ))}
+          </ScrollView>
+        </View>
+
+        <View>
+          <Text style={styles.label}>Account</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+            {accounts.map((a) => (
+              <Chip key={a.id} label={a.name} selected={effectiveAccountId === a.id} onPress={() => setAccountId(a.id)} />
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Recording lives below the fields, per the layout you asked for. */}
+        <View style={styles.recordArea}>
+          {listening ? (
+            <Listening size={110} playing />
+          ) : (
+            <Pressable style={styles.mic} onPress={toggleListen}>
+              <Ionicons name="mic" size={30} color={colors.goldInk} />
+            </Pressable>
+          )}
+          {listening ? (
+            <Pressable style={styles.stop} onPress={toggleListen}>
+              <Ionicons name="stop" size={13} color="#fff" />
+              <Text style={styles.stopText}>Stop</Text>
+            </Pressable>
+          ) : (
+            <Text style={styles.hint}>Tap the mic and say what you spent &amp; why</Text>
+          )}
+        </View>
+
+        <Card style={styles.transcriptCard}>
+          {transcript ? (
+            <Text style={styles.transcript}>&ldquo;{transcript}&rdquo;</Text>
+          ) : (
+            <Text style={styles.note}>Your words appear here live as you speak — the amount &amp; category above fill in automatically.</Text>
+          )}
+        </Card>
+
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+      </ScrollView>
+
+      <View style={[styles.footer, { paddingBottom: insets.bottom + space(2) }]}>
+        <PrimaryButton label="Save transaction" onPress={() => save.mutate()} disabled={!canSave} loading={save.isPending} />
+      </View>
+    </View>
   );
 }
 
@@ -217,16 +206,13 @@ function Chip({ label, color, selected, onPress }: { label: string; color?: stri
 }
 
 const styles = StyleSheet.create({
-  screen: { backgroundColor: colors.bg },
-  cancel: { color: colors.ink2, fontSize: 13 },
-  title: { color: colors.ink, fontSize: 15, fontWeight: "800" },
-  save: { color: colors.gold, fontSize: 13, fontWeight: "800" },
-  saveOff: { color: colors.muted },
-  recordArea: { alignItems: "center", gap: space(2), paddingVertical: space(2) },
-  mic: { width: 84, height: 84, borderRadius: 42, backgroundColor: colors.gold, alignItems: "center", justifyContent: "center" },
+  screen: { flex: 1, backgroundColor: colors.bg },
+  recordArea: { alignItems: "center", gap: space(2), paddingVertical: space(1) },
+  mic: { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.gold, alignItems: "center", justifyContent: "center" },
   stop: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: colors.negative, borderRadius: radius.pill, paddingHorizontal: space(3.5), paddingVertical: space(2) },
   stopText: { color: "#fff", fontSize: 12, fontWeight: "700" },
   hint: { color: colors.ink2, fontSize: 12 },
+  transcriptCard: { backgroundColor: "rgba(233,180,76,0.08)", borderColor: "rgba(233,180,76,0.3)", minHeight: 60, justifyContent: "center" },
   transcript: { color: colors.ink, fontSize: 14, fontStyle: "italic", lineHeight: 20 },
   note: { color: colors.ink2, fontSize: 11, lineHeight: 16 },
   segment: { flexDirection: "row", backgroundColor: colors.card, borderColor: colors.line, borderWidth: 1, borderRadius: radius.md, padding: 3 },
@@ -243,4 +229,5 @@ const styles = StyleSheet.create({
   chipTextOn: { color: colors.goldInk },
   dot: { width: 9, height: 9, borderRadius: 3 },
   error: { color: colors.negative, fontSize: 12 },
+  footer: { paddingHorizontal: space(4), paddingTop: space(2), borderTopWidth: 1, borderTopColor: colors.line, backgroundColor: colors.bg },
 });

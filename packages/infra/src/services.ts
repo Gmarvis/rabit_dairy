@@ -1,10 +1,19 @@
 import type { Clock, FileStorage, IdGenerator } from "@rabbit/application";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-/** UUIDs from the platform crypto (available in Hermes/RN and Node ≥ 16). */
+/** RFC-4122 v4 UUID without relying on a global `crypto` (absent in RN/Hermes). */
+function uuidV4(): string {
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (ch) => {
+    const r = (Math.random() * 16) | 0;
+    const v = ch === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
 export class UuidIds implements IdGenerator {
   next() {
-    return crypto.randomUUID();
+    const c = (globalThis as { crypto?: { randomUUID?: () => string } }).crypto;
+    return c?.randomUUID ? c.randomUUID() : uuidV4();
   }
 }
 

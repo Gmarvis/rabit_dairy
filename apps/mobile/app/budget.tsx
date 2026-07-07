@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { YearMonth } from "@rabbit/domain";
-import { Card, MoneyText, Pill, Row, SectionLabel } from "../src/components/ui";
+import { Card, MoneyText, Pill, Row, ScreenHeader, SectionLabel } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
 import { percent } from "../src/lib/format";
 import { colors, space } from "../src/theme/tokens";
@@ -29,18 +29,12 @@ export default function BudgetScreen() {
   return (
     <ScrollView
       style={styles.screen}
-      contentContainerStyle={{ padding: space(4), paddingTop: insets.top + space(2), gap: space(3) }}
+      contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), gap: space(3) }}
     >
-      <Row between>
-        <View>
-          <Text style={styles.greet}>Budget vs actual</Text>
-          <Text style={styles.title}>{data?.periodLabel ?? "…"}</Text>
-        </View>
-        <Row style={{ gap: space(3) }}>
-          <Text style={styles.edit} onPress={() => router.push("/budgets")}>Edit</Text>
-          <Text style={styles.close} onPress={() => router.back()}>Done</Text>
-        </Row>
-      </Row>
+      <ScreenHeader title={`Budget vs actual · ${data?.periodLabel ?? ""}`.trim()} onClose={() => router.back()} closeLabel="Done" topInset={insets.top} />
+      <Pressable onPress={() => router.push("/budgets")} style={styles.editRow}>
+        <Text style={styles.edit}>✎ Edit budgets</Text>
+      </Pressable>
 
       {data?.lines.length === 0 ? (
         <Card><Text style={styles.dim}>No spending or budgets set for this month yet.</Text></Card>
@@ -94,7 +88,8 @@ const styles = StyleSheet.create({
   greet: { color: colors.ink2, fontSize: 12 },
   title: { color: colors.ink, fontSize: 20, fontWeight: "800", marginTop: 2 },
   close: { color: colors.gold, fontSize: 13, fontWeight: "700" },
-  edit: { color: colors.ink2, fontSize: 13, fontWeight: "700" },
+  edit: { color: colors.gold, fontSize: 13, fontWeight: "700" },
+  editRow: { alignSelf: "flex-start", marginTop: -space(1) },
   dim: { color: colors.ink2 },
   cat: { color: colors.ink, fontSize: 12, fontWeight: "600" },
   track: { height: 7, borderRadius: 4, backgroundColor: colors.card2, overflow: "hidden", marginTop: 8 },

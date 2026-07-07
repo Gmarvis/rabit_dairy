@@ -7,7 +7,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { CategoryType } from "@rabbit/domain";
 import type { EntryCategoryOption } from "@rabbit/application";
-import { Card, Row } from "../src/components/ui";
+import { Card, Row, ScreenHeader } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
 import { parseStatement, type ParsedRow } from "../src/lib/parseStatement";
 import { colors, radius, space } from "../src/theme/tokens";
@@ -122,13 +122,9 @@ export default function ScanScreen() {
   return (
     <ScrollView
       style={styles.screen}
-      contentContainerStyle={{ padding: space(4), paddingTop: insets.top + space(3), gap: space(3) }}
+      contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), gap: space(3) }}
     >
-      <Row between>
-        <Pressable onPress={() => router.back()} hitSlop={10}><Text style={styles.cancel}>Cancel</Text></Pressable>
-        <Text style={styles.title}>Scan statement</Text>
-        <View style={{ width: 44 }} />
-      </Row>
+      <ScreenHeader title="Scan statement" onClose={() => router.back()} topInset={insets.top} />
 
       {!rows ? (
         <>

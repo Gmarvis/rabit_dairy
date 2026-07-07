@@ -1,5 +1,7 @@
 import { type ReactNode } from "react";
 import {
+  ActivityIndicator,
+  Pressable,
   StyleSheet,
   Text,
   View,
@@ -9,6 +11,73 @@ import {
 } from "react-native";
 import type { Money } from "@rabbit/domain";
 import { colors, radius, space } from "../theme/tokens";
+
+/**
+ * The consistent modal header used across every screen: a close action on its
+ * own top row, then the big title on its own line below — never inline, with
+ * breathing room before the content so tap targets don't crowd.
+ */
+export function ScreenHeader({
+  title,
+  onClose,
+  closeLabel = "Cancel",
+  topInset = 0,
+}: {
+  title: string;
+  onClose: () => void;
+  closeLabel?: string;
+  topInset?: number;
+}) {
+  return (
+    <View style={{ paddingTop: topInset + space(2), marginBottom: space(4) }}>
+      <Pressable onPress={onClose} hitSlop={14} style={{ alignSelf: "flex-start", paddingVertical: space(1) }}>
+        <Text style={{ color: colors.gold, fontSize: 15, fontWeight: "600" }}>{closeLabel}</Text>
+      </Pressable>
+      <Text style={{ color: colors.ink, fontSize: 26, fontWeight: "800", letterSpacing: -0.5, marginTop: space(2) }}>
+        {title}
+      </Text>
+    </View>
+  );
+}
+
+/** Full-width primary action, anchored at the bottom of form screens. */
+export function PrimaryButton({
+  label,
+  onPress,
+  disabled,
+  loading,
+}: {
+  label: string;
+  onPress: () => void;
+  disabled?: boolean;
+  loading?: boolean;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      style={[pbStyles.btn, (disabled || loading) && pbStyles.off]}
+      onPress={onPress}
+      disabled={disabled || loading}
+    >
+      {loading ? (
+        <ActivityIndicator color={colors.goldInk} />
+      ) : (
+        <Text style={pbStyles.text}>{label}</Text>
+      )}
+    </Pressable>
+  );
+}
+
+const pbStyles = StyleSheet.create({
+  btn: {
+    backgroundColor: colors.gold,
+    borderRadius: radius.md,
+    paddingVertical: space(3.5),
+    alignItems: "center",
+  },
+  off: { opacity: 0.4 },
+  text: { color: colors.goldInk, fontWeight: "800", fontSize: 15 },
+});
 
 export function Card({
   children,

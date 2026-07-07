@@ -5,7 +5,7 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Rect, Text as SvgText } from "react-native-svg";
 import type { YearlyOverviewView } from "@rabbit/application";
-import { Card, MoneyText, Row, SectionLabel } from "../src/components/ui";
+import { Card, MoneyText, Row, ScreenHeader, SectionLabel } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
 import { percent } from "../src/lib/format";
 import { colors, space } from "../src/theme/tokens";
@@ -25,15 +25,9 @@ export default function YearlyOverviewScreen() {
   return (
     <ScrollView
       style={styles.screen}
-      contentContainerStyle={{ padding: space(4), paddingTop: insets.top + space(2), gap: space(3) }}
+      contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), gap: space(3) }}
     >
-      <Row between>
-        <View>
-          <Text style={styles.greet}>Yearly overview</Text>
-          <Text style={styles.title}>{YEAR}</Text>
-        </View>
-        <Text style={styles.close} onPress={() => router.back()}>Done</Text>
-      </Row>
+      <ScreenHeader title={`Yearly overview · ${YEAR}`} onClose={() => router.back()} closeLabel="Done" topInset={insets.top} />
 
       {data ? (
         <>

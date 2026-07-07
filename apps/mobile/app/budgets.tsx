@@ -13,7 +13,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { YearMonth, type CategoryType } from "@rabbit/domain";
 import type { BudgetEditorItem } from "@rabbit/application";
-import { Card, Row, SectionLabel } from "../src/components/ui";
+import { Card, PrimaryButton, Row, ScreenHeader, SectionLabel } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
 import { colors, radius, space } from "../src/theme/tokens";
 
@@ -85,23 +85,9 @@ export default function BudgetsScreen() {
   );
 
   return (
-    <ScrollView
-      style={styles.screen}
-      contentContainerStyle={{ padding: space(4), paddingTop: insets.top + space(2), gap: space(3) }}
-    >
-      <Row between>
-        <View>
-          <Text style={styles.greet}>Monthly budgets</Text>
-          <Text style={styles.title}>{data?.periodLabel ?? "…"}</Text>
-        </View>
-        <Pressable onPress={() => save.mutate()} disabled={save.isPending} hitSlop={10}>
-          {save.isPending ? (
-            <ActivityIndicator color={colors.gold} />
-          ) : (
-            <Text style={styles.saveBtn}>Save</Text>
-          )}
-        </Pressable>
-      </Row>
+    <View style={styles.screen}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), gap: space(3) }}>
+        <ScreenHeader title={`Budgets · ${data?.periodLabel ?? ""}`.trim()} onClose={() => router.back()} topInset={insets.top} />
 
       {TYPE_ORDER.map((type) => {
         const items = grouped(type);
@@ -131,21 +117,24 @@ export default function BudgetsScreen() {
         );
       })}
 
-      <Card hero>
-        <Row between>
-          <SectionLabel>Total budgeted</SectionLabel>
-          <Text style={styles.total}>{total.toLocaleString("en-US")} FCFA</Text>
-        </Row>
-      </Card>
-    </ScrollView>
+        <Card hero>
+          <Row between>
+            <SectionLabel>Total budgeted</SectionLabel>
+            <Text style={styles.total}>{total.toLocaleString("en-US")} FCFA</Text>
+          </Row>
+        </Card>
+      </ScrollView>
+
+      <View style={[styles.footer, { paddingBottom: insets.bottom + space(2) }]}>
+        <PrimaryButton label="Save budgets" onPress={() => save.mutate()} loading={save.isPending} />
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { backgroundColor: colors.bg },
-  greet: { color: colors.ink2, fontSize: 12 },
-  title: { color: colors.ink, fontSize: 20, fontWeight: "800", marginTop: 2 },
-  saveBtn: { color: colors.gold, fontSize: 14, fontWeight: "800" },
+  screen: { flex: 1, backgroundColor: colors.bg },
+  footer: { paddingHorizontal: space(4), paddingTop: space(2), borderTopWidth: 1, borderTopColor: colors.line, backgroundColor: colors.bg },
   row: { flexDirection: "row", alignItems: "center", gap: space(2.5), paddingVertical: space(2) },
   border: { borderBottomWidth: 1, borderBottomColor: colors.line },
   dot: { width: 10, height: 10, borderRadius: 3 },
