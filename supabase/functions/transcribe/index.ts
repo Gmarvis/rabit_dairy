@@ -1,6 +1,12 @@
-// Edge Function: transcribe a recorded voice note and parse it into a draft
-// transaction. Runs on Supabase (Deno). The OpenAI key lives only here, as the
-// `OPENAI_API_KEY` secret — never in the client or the repo.
+// Edge Function: turn a voice note into a draft transaction. Runs on Supabase
+// (Deno). The OpenAI key lives only here, as the `OPENAI_API_KEY` secret —
+// never in the client or the repo.
+//
+// Two modes, same JSON reply { transcript, amountMajor, categoryHint, method, note }:
+//   • { text }  — the client already has a live transcript (on-device speech
+//                 recognition); we skip Whisper and only parse the words.
+//   • { path }  — a recorded audio file in the private `voice-notes` bucket;
+//                 we fetch it, run Whisper, then parse.
 //
 // Deploy:  supabase functions deploy transcribe
 // Secret:  supabase secrets set OPENAI_API_KEY=sk-...   (or set it in the dashboard)
@@ -38,42 +44,49 @@ Deno.serve(async (req) => {
   const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!OPENAI_API_KEY) return json({ error: "OPENAI_API_KEY not set" }, 500);
 
-  let path: string;
+  let path: string | undefined;
+  let text: string | undefined;
   let categories: string[] = [];
   try {
     const body = await req.json();
     path = body.path;
+    text = typeof body.text === "string" ? body.text : undefined;
     categories = Array.isArray(body.categories) ? body.categories : [];
   } catch {
-    return json({ error: "Expected JSON body with a `path`." }, 400);
+    return json({ error: "Expected JSON body with `text` or `path`." }, 400);
   }
-  if (!path) return json({ error: "Missing `path`." }, 400);
+  if (!path && !text) return json({ error: "Missing `text` or `path`." }, 400);
 
-  // The upload path is `<uid>/<file>` — only let a user read their own notes.
-  const uid = uidFromAuth(req.headers.get("Authorization"));
-  if (!uid || !path.startsWith(`${uid}/`)) {
-    return json({ error: "Not allowed to read that file." }, 403);
+  // The transcript we'll parse: either the client's live text, or Whisper's.
+  let transcript = (text ?? "").trim();
+
+  if (!transcript) {
+    // Audio mode — the upload path is `<uid>/<file>`; only let a user read their own.
+    const uid = uidFromAuth(req.headers.get("Authorization"));
+    if (!uid || !path!.startsWith(`${uid}/`)) {
+      return json({ error: "Not allowed to read that file." }, 403);
+    }
+
+    // 1. Fetch the audio from the private voice-notes bucket.
+    const audioRes = await fetch(
+      `${SUPABASE_URL}/storage/v1/object/voice-notes/${path}`,
+      { headers: { Authorization: `Bearer ${SERVICE_KEY}` } },
+    );
+    if (!audioRes.ok) return json({ error: "Could not read the audio." }, 404);
+    const audioBlob = await audioRes.blob();
+
+    // 2. Whisper transcription.
+    const form = new FormData();
+    form.append("file", audioBlob, "note.m4a");
+    form.append("model", "whisper-1");
+    const wRes = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${OPENAI_API_KEY}` },
+      body: form,
+    });
+    if (!wRes.ok) return json({ error: `Transcription failed: ${await wRes.text()}` }, 502);
+    transcript = ((await wRes.json()).text ?? "").trim();
   }
-
-  // 1. Fetch the audio from the private voice-notes bucket.
-  const audioRes = await fetch(
-    `${SUPABASE_URL}/storage/v1/object/voice-notes/${path}`,
-    { headers: { Authorization: `Bearer ${SERVICE_KEY}` } },
-  );
-  if (!audioRes.ok) return json({ error: "Could not read the audio." }, 404);
-  const audioBlob = await audioRes.blob();
-
-  // 2. Whisper transcription.
-  const form = new FormData();
-  form.append("file", audioBlob, "note.m4a");
-  form.append("model", "whisper-1");
-  const wRes = await fetch("https://api.openai.com/v1/audio/transcriptions", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${OPENAI_API_KEY}` },
-    body: form,
-  });
-  if (!wRes.ok) return json({ error: `Transcription failed: ${await wRes.text()}` }, 502);
-  const transcript: string = (await wRes.json()).text ?? "";
 
   // 3. Parse the transcript into a draft transaction (strict JSON).
   const sys =

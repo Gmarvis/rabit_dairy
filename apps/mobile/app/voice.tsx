@@ -5,10 +5,12 @@ import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { AccountType, CategoryType, PaymentMethod } from "@rabbit/domain";
+import type { EntryCategoryOption } from "@rabbit/application";
 import { Card, PrimaryButton, Row, ScreenHeader } from "../src/components/ui";
 import { Listening } from "../src/components/Listening";
 import { useContainer } from "../src/lib/auth";
 import { amountFromText } from "../src/lib/word2num";
+import { parseVoice } from "../src/lib/parseVoice";
 import { colors, radius, space } from "../src/theme/tokens";
 
 type Group = "income" | "expense" | "savings";
@@ -21,6 +23,20 @@ function methodForAccount(type: AccountType): PaymentMethod {
   if (type === "mobile_money") return "mobile_money";
   if (type === "cash") return "cash";
   return "bank_transfer";
+}
+function groupOf(type: CategoryType): Group {
+  return (Object.keys(GROUP_TYPES) as Group[]).find((g) => GROUP_TYPES[g].includes(type))!;
+}
+/** Resolve an LLM/word category hint to one of the user's real categories. */
+function matchCategory(hint: string | null, cats: EntryCategoryOption[]): EntryCategoryOption | null {
+  if (!hint) return null;
+  const h = hint.toLowerCase().trim();
+  return (
+    cats.find((c) => c.name.toLowerCase() === h) ??
+    cats.find((c) => c.name.toLowerCase().includes(h) || h.includes(c.name.toLowerCase())) ??
+    cats.find((c) => h.includes(c.name.toLowerCase().split(" ")[0]!)) ??
+    null
+  );
 }
 
 // Speech recognition is a NATIVE module — present only in a dev build, absent in
@@ -46,11 +62,13 @@ export default function VoiceScreen() {
   const c = useContainer();
 
   const [listening, setListening] = useState(false);
+  const [parsing, setParsing] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [group, setGroup] = useState<Group>("expense");
   const [digits, setDigits] = useState("");
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [accountId, setAccountId] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const { data: options } = useQuery({
@@ -76,17 +94,32 @@ export default function VoiceScreen() {
     setError(e.message || "Speech recognition failed.");
   });
 
-  function applyTranscript(text: string) {
-    const amount = amountFromText(text);
-    if (amount) setDigits(String(amount));
-    const lower = text.toLowerCase();
-    const match = (options?.categories ?? []).find((cx) =>
-      lower.includes(cx.name.toLowerCase().split(" ")[0]!),
-    );
-    if (match) {
-      setCategoryId(match.id);
-      const g = (Object.keys(GROUP_TYPES) as Group[]).find((k) => GROUP_TYPES[k].includes(match.type));
-      if (g) setGroup(g);
+  /** Instant on-device guess, then an LLM refine (amount + category + note). */
+  async function applyTranscript(text: string) {
+    if (!text.trim()) return;
+    const allCats = options?.categories ?? [];
+
+    // 1. On-device: fill the amount straight away so the UI reacts instantly.
+    const quick = amountFromText(text);
+    if (quick) setDigits(String(quick));
+
+    // 2. LLM refine via the deployed `transcribe` function (text mode). Demo
+    //    mode returns null → we keep the on-device guess.
+    try {
+      setParsing(true);
+      const parsed = await parseVoice(text, allCats.map((cx) => cx.name));
+      if (!parsed) return;
+      if (parsed.amountMajor && parsed.amountMajor > 0) setDigits(String(parsed.amountMajor));
+      if (parsed.note) setNote(parsed.note);
+      const cat = matchCategory(parsed.categoryHint, allCats);
+      if (cat) {
+        setCategoryId(cat.id);
+        setGroup(groupOf(cat.type));
+      }
+    } catch {
+      setError("Couldn't read that automatically — check the amount & category below.");
+    } finally {
+      setParsing(false);
     }
   }
 
@@ -118,6 +151,7 @@ export default function VoiceScreen() {
         categoryId: categoryId as never,
         amountMajor,
         source: "voice",
+        description: note ?? transcript ?? null,
         voiceTranscript: transcript || null,
         paymentMethod: accountMethod(accounts, effectiveAccountId),
       });
@@ -197,6 +231,7 @@ export default function VoiceScreen() {
           ) : (
             <Text style={styles.note}>Your words appear here live as you speak — the amount &amp; category above fill in automatically.</Text>
           )}
+          {parsing ? <Text style={styles.reading}>Reading the amount &amp; category…</Text> : null}
         </Card>
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -233,6 +268,7 @@ const styles = StyleSheet.create({
   transcriptCard: { backgroundColor: "rgba(233,180,76,0.08)", borderColor: "rgba(233,180,76,0.3)", minHeight: 60, justifyContent: "center" },
   transcript: { color: colors.ink, fontSize: 14, fontStyle: "italic", lineHeight: 20 },
   note: { color: colors.ink2, fontSize: 11, lineHeight: 16 },
+  reading: { color: colors.gold, fontSize: 11, fontWeight: "700", marginTop: space(2) },
   segment: { flexDirection: "row", backgroundColor: colors.card, borderColor: colors.line, borderWidth: 1, borderRadius: radius.md, padding: 3 },
   seg: { flex: 1, paddingVertical: space(2), borderRadius: radius.sm, alignItems: "center" },
   segOn: { backgroundColor: colors.gold },
