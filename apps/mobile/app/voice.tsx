@@ -2,27 +2,17 @@ import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import {
-  RecordingPresets,
-  requestRecordingPermissionsAsync,
-  setAudioModeAsync,
-  useAudioPlayer,
-  useAudioRecorder,
-  useAudioRecorderState,
-} from "expo-audio";
+  ExpoSpeechRecognitionModule,
+  useSpeechRecognitionEvent,
+} from "expo-speech-recognition";
 import { useMemo, useState } from "react";
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { AccountType, CategoryType, PaymentMethod } from "@rabbit/domain";
 import { Card, Row } from "../src/components/ui";
+import { Listening } from "../src/components/Listening";
 import { useContainer } from "../src/lib/auth";
-import { transcribeNote } from "../src/lib/transcribe";
+import { amountFromText } from "../src/lib/word2num";
 import { colors, radius, space } from "../src/theme/tokens";
 
 type Group = "income" | "expense" | "savings";
@@ -36,10 +26,6 @@ function methodForAccount(type: AccountType): PaymentMethod {
   if (type === "cash") return "cash";
   return "bank_transfer";
 }
-function clock(ms: number) {
-  const s = Math.floor(ms / 1000);
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
-}
 
 export default function VoiceScreen() {
   const insets = useSafeAreaInsets();
@@ -47,14 +33,8 @@ export default function VoiceScreen() {
   const qc = useQueryClient();
   const c = useContainer();
 
-  const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
-  const recState = useAudioRecorderState(recorder);
-  const [uri, setUri] = useState<string | null>(null);
-  const [voicePath, setVoicePath] = useState<string | null>(null);
-  const [transcribing, setTranscribing] = useState(false);
-  const [transcript, setTranscript] = useState<string | null>(null);
-  const player = useAudioPlayer(uri ? { uri } : undefined);
-
+  const [listening, setListening] = useState(false);
+  const [transcript, setTranscript] = useState("");
   const [group, setGroup] = useState<Group>("expense");
   const [digits, setDigits] = useState("");
   const [categoryId, setCategoryId] = useState<string | null>(null);
@@ -73,90 +53,70 @@ export default function VoiceScreen() {
     [options, group],
   );
 
+  // Live on-device transcription events.
+  useSpeechRecognitionEvent("result", (e) => {
+    const t = e.results[0]?.transcript ?? "";
+    setTranscript(t);
+    if (e.isFinal) applyTranscript(t);
+  });
+  useSpeechRecognitionEvent("end", () => setListening(false));
+  useSpeechRecognitionEvent("error", (e) => {
+    setListening(false);
+    setError(e.message || "Speech recognition failed.");
+  });
+
+  /** Pull amount + best-guess category out of the spoken text. */
+  function applyTranscript(text: string) {
+    const amount = amountFromText(text);
+    if (amount) setDigits(String(amount));
+    const lower = text.toLowerCase();
+    const match = (options?.categories ?? []).find((cx) =>
+      lower.includes(cx.name.toLowerCase().split(" ")[0]!),
+    );
+    if (match) {
+      setCategoryId(match.id);
+      const g = (Object.keys(GROUP_TYPES) as Group[]).find((k) => GROUP_TYPES[k].includes(match.type));
+      if (g) setGroup(g);
+    }
+  }
+
+  async function toggleListen() {
+    setError(null);
+    if (listening) {
+      ExpoSpeechRecognitionModule.stop();
+      return;
+    }
+    const perm = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+    if (!perm.granted) {
+      setError("Microphone & speech permission are needed.");
+      return;
+    }
+    setTranscript("");
+    setListening(true);
+    ExpoSpeechRecognitionModule.start({
+      lang: "en-US",
+      interimResults: true,
+      continuous: true,
+    });
+  }
+
   const amountMajor = parseInt(digits || "0", 10);
   const canSave = amountMajor > 0 && !!categoryId && !!effectiveAccountId;
 
-  async function toggleRecord() {
-    setError(null);
-    try {
-      if (recState.isRecording) {
-        await recorder.stop();
-        const recorded = recorder.uri ?? null;
-        setUri(recorded);
-        if (recorded) void handleRecorded(recorded);
-        return;
-      }
-      const perm = await requestRecordingPermissionsAsync();
-      if (!perm.granted) {
-        setError("Microphone permission is needed to record.");
-        return;
-      }
-      await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
-      await recorder.prepareToRecordAsync();
-      recorder.record();
-      setUri(null);
-    } catch {
-      setError("Couldn't start recording on this device.");
-    }
-  }
-
-  // After a take: upload it, then (when live) transcribe and pre-fill the fields.
-  async function handleRecorded(localUri: string) {
-    let path = localUri;
-    try {
-      path = (await c.storage.upload("voice-notes", localUri, "audio/m4a")).path;
-    } catch {
-      /* keep the local uri if upload fails */
-    }
-    setVoicePath(path);
-    if (c.isDemo) return;
-    try {
-      setTranscribing(true);
-      const draft = await transcribeNote(path, categories.map((cat) => cat.name));
-      if (draft) {
-        setTranscript(draft.transcript || null);
-        if (draft.amountMajor) setDigits(String(draft.amountMajor));
-        if (draft.categoryHint) {
-          const hint = draft.categoryHint.toLowerCase();
-          const match = (options?.categories ?? []).find(
-            (cx) => cx.name.toLowerCase().includes(hint) || hint.includes(cx.name.toLowerCase()),
-          );
-          if (match) setCategoryId(match.id);
-        }
-      }
-    } catch {
-      setError("Couldn't transcribe — fill the details in below.");
-    } finally {
-      setTranscribing(false);
-    }
-  }
-
   const save = useMutation({
     mutationFn: async () => {
-      let path = voicePath;
-      if (!path && uri) {
-        try {
-          path = (await c.storage.upload("voice-notes", uri, "audio/m4a")).path;
-        } catch {
-          path = uri;
-        }
-      }
       const res = await c.commands.logTransaction.execute({
         userId: c.userId,
         accountId: effectiveAccountId as never,
         categoryId: categoryId as never,
         amountMajor,
         source: "voice",
-        voiceNotePath: path,
-        voiceTranscript: transcript,
+        voiceTranscript: transcript || null,
         paymentMethod: accountMethod(accounts, effectiveAccountId),
       });
       if (!res.ok) throw new Error(res.error.message);
     },
-    onSuccess: () => {
-      qc.invalidateQueries();
-      router.back();
-    },
+    onSuccess: () => { qc.invalidateQueries(); router.back(); },
     onError: (e) => setError(e instanceof Error ? e.message : "Could not save."),
   });
 
@@ -166,46 +126,39 @@ export default function VoiceScreen() {
       contentContainerStyle={{ padding: space(4), paddingTop: insets.top + space(3), gap: space(3) }}
     >
       <Row between>
-        <Pressable onPress={() => router.back()} hitSlop={10}>
-          <Text style={styles.cancel}>Cancel</Text>
-        </Pressable>
+        <Pressable onPress={() => router.back()} hitSlop={10}><Text style={styles.cancel}>Cancel</Text></Pressable>
         <Text style={styles.title}>Speak it</Text>
         <Pressable onPress={() => canSave && save.mutate()} disabled={!canSave} hitSlop={10}>
           <Text style={[styles.save, !canSave && styles.saveOff]}>Save</Text>
         </Pressable>
       </Row>
 
-      {/* Recorder */}
       <View style={styles.recordArea}>
-        <Pressable style={[styles.recBtn, recState.isRecording && styles.recBtnActive]} onPress={toggleRecord}>
-          <Ionicons name={recState.isRecording ? "stop" : "mic"} size={30} color={recState.isRecording ? "#fff" : colors.goldInk} />
-        </Pressable>
-        <Text style={styles.timer}>
-          {recState.isRecording ? clock(recState.durationMillis) : uri ? "Recorded" : "Tap to record & say why"}
-        </Text>
-        {uri && !recState.isRecording ? (
-          <Pressable style={styles.play} onPress={() => player.play()}>
-            <Ionicons name="play" size={13} color={colors.gold} />
-            <Text style={styles.playText}>Play back</Text>
+        {listening ? (
+          <Listening size={130} playing />
+        ) : (
+          <Pressable style={styles.mic} onPress={toggleListen}>
+            <Ionicons name="mic" size={34} color={colors.goldInk} />
           </Pressable>
-        ) : null}
+        )}
+        {listening ? (
+          <Pressable style={styles.stop} onPress={toggleListen}>
+            <Ionicons name="stop" size={14} color="#fff" />
+            <Text style={styles.stopText}>Stop</Text>
+          </Pressable>
+        ) : (
+          <Text style={styles.hint}>Tap the mic and say what you spent &amp; why</Text>
+        )}
       </View>
 
-      <Card style={{ backgroundColor: "rgba(233,180,76,0.08)", borderColor: "rgba(233,180,76,0.3)" }}>
-        {transcribing ? (
-          <Text style={styles.note}>🎙 Transcribing your note…</Text>
-        ) : transcript ? (
-          <Text style={styles.note}>
-            🎙 “{transcript}”{"\n"}Fields pre-filled — check them below.
-          </Text>
+      <Card style={{ backgroundColor: "rgba(233,180,76,0.08)", borderColor: "rgba(233,180,76,0.3)", minHeight: 64 }}>
+        {transcript ? (
+          <Text style={styles.transcript}>&ldquo;{transcript}&rdquo;</Text>
         ) : (
-          <Text style={styles.note}>
-            🎙 Your note is saved with the transaction. Record, then confirm the details below (they auto-fill once your Supabase transcribe function is set up).
-          </Text>
+          <Text style={styles.note}>🎙 Your words appear here live as you speak, and the amount &amp; category fill in automatically. Check them below before saving.</Text>
         )}
       </Card>
 
-      {/* Confirm fields */}
       <View style={styles.segment}>
         {(["income", "expense", "savings"] as Group[]).map((g) => (
           <Pressable key={g} style={[styles.seg, group === g && styles.segOn]} onPress={() => { setGroup(g); setCategoryId(null); }}>
@@ -269,12 +222,12 @@ const styles = StyleSheet.create({
   title: { color: colors.ink, fontSize: 15, fontWeight: "800" },
   save: { color: colors.gold, fontSize: 13, fontWeight: "800" },
   saveOff: { color: colors.muted },
-  recordArea: { alignItems: "center", gap: space(2), paddingVertical: space(3) },
-  recBtn: { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.gold, alignItems: "center", justifyContent: "center" },
-  recBtnActive: { backgroundColor: colors.negative },
-  timer: { color: colors.ink2, fontSize: 13, fontWeight: "600", fontVariant: ["tabular-nums"] },
-  play: { flexDirection: "row", alignItems: "center", gap: 6 },
-  playText: { color: colors.gold, fontSize: 12, fontWeight: "700" },
+  recordArea: { alignItems: "center", gap: space(2), paddingVertical: space(2) },
+  mic: { width: 84, height: 84, borderRadius: 42, backgroundColor: colors.gold, alignItems: "center", justifyContent: "center" },
+  stop: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: colors.negative, borderRadius: radius.pill, paddingHorizontal: space(3.5), paddingVertical: space(2) },
+  stopText: { color: "#fff", fontSize: 12, fontWeight: "700" },
+  hint: { color: colors.ink2, fontSize: 12 },
+  transcript: { color: colors.ink, fontSize: 14, fontStyle: "italic", lineHeight: 20 },
   note: { color: colors.ink2, fontSize: 11, lineHeight: 16 },
   segment: { flexDirection: "row", backgroundColor: colors.card, borderColor: colors.line, borderWidth: 1, borderRadius: radius.md, padding: 3 },
   seg: { flex: 1, paddingVertical: space(2), borderRadius: radius.sm, alignItems: "center" },

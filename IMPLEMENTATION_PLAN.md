@@ -85,13 +85,15 @@ Account balance = `opening + Σ(in) − Σ(out)` over its transactions. Transfer
   Reached from the ＋ hub, the Budget-vs-Actual screen, account detail, and the
   Accounts header.
 
-### Phase 4 — Voice capture ⚠️ (record + store done; transcription next)
-- ✅ `expo-audio` recording UI (record/stop, timer, playback); audio uploaded to
-  the Supabase `voice-notes` bucket (local uri in demo mode) and attached to the
-  transaction via `LogTransaction` with `source: "voice"`. Reached from ＋ → Speak.
-- ⬜ Speech-to-text via an Edge Function behind the existing `VoiceParser` port;
-  parse amount / category / method to pre-fill the confirm fields. Chosen
-  approach: record now, wire the transcriber as a follow-up (no provider block).
+### Phase 4 — Voice capture ✅
+- **Live on-device transcription** via `expo-speech-recognition`: words appear as
+  you speak; the final transcript is saved as the "why" (`voiceTranscript`).
+- `word2num` extracts the amount from the spoken phrase ("forty thousand five
+  hundred" → 40500) and the category is keyword-matched — both pre-filled for the
+  user to confirm. Saved via `LogTransaction` (`source: "voice"`).
+- **Lottie** (`lottie-react-native`) pulsing voice indicator while listening
+  (`assets/lottie/listening.json` — swappable for any LottieFiles animation).
+- (A Whisper Edge Function `transcribe` also exists as a server-side fallback.)
 
 ### Phase 5 — Scan & import ✅
 - `expo-image-picker` (camera + gallery). Statement image sent inline to the

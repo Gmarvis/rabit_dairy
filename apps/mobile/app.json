@@ -25,6 +25,10 @@
       ["expo-image-picker", {
         "photosPermission": "Rabbit Dairy reads bank or mobile-money statements you upload.",
         "cameraPermission": "Rabbit Dairy scans bank or mobile-money statements and receipts."
+      }],
+      ["expo-speech-recognition", {
+        "microphonePermission": "Rabbit Dairy listens so you can log a purchase by voice.",
+        "speechRecognitionPermission": "Rabbit Dairy transcribes your spoken note on-device, live."
       }]
     ],
     "experiments": { "typedRoutes": true }
