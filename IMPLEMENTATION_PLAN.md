@@ -76,9 +76,14 @@ Account balance = `opening + Σ(in) − Σ(out)` over its transactions. Transfer
 - (Postgres views for reports remain a later optimisation; queries currently
   aggregate in the application layer.)
 
-### Phase 3 — Write side (Commands) + manual capture
-- `CreateAccount`, `LogTransaction`, `RecordSavingsMovement`, `SetBudget`.
-- Manual-entry screen (keypad), category/account pickers, Budgets screen.
+### Phase 3 — Write side (Commands) + manual capture ✅
+- Commands: `LogTransaction`, `RecordSavingsMovement`, `SetBudget`,
+  `CreateAccount` — all built.
+- Screens: manual entry (keypad + pickers), **Budgets editor** (per-category
+  caps, grouped by type), **Savings deposit/withdrawal** (keypad; receipt
+  attach lands in Phase 5), **Add account** (type/institution/opening balance).
+  Reached from the ＋ hub, the Budget-vs-Actual screen, account detail, and the
+  Accounts header.
 
 ### Phase 4 — Voice capture
 - `expo-av` recording; upload audio to Supabase Storage.

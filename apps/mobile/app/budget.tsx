@@ -36,7 +36,10 @@ export default function BudgetScreen() {
           <Text style={styles.greet}>Budget vs actual</Text>
           <Text style={styles.title}>{data?.periodLabel ?? "…"}</Text>
         </View>
-        <Text style={styles.close} onPress={() => router.back()}>Done</Text>
+        <Row style={{ gap: space(3) }}>
+          <Text style={styles.edit} onPress={() => router.push("/budgets")}>Edit</Text>
+          <Text style={styles.close} onPress={() => router.back()}>Done</Text>
+        </Row>
       </Row>
 
       {data?.lines.length === 0 ? (
@@ -91,6 +94,7 @@ const styles = StyleSheet.create({
   greet: { color: colors.ink2, fontSize: 12 },
   title: { color: colors.ink, fontSize: 20, fontWeight: "800", marginTop: 2 },
   close: { color: colors.gold, fontSize: 13, fontWeight: "700" },
+  edit: { color: colors.ink2, fontSize: 13, fontWeight: "700" },
   dim: { color: colors.ink2 },
   cat: { color: colors.ink, fontSize: 12, fontWeight: "600" },
   track: { height: 7, borderRadius: 4, backgroundColor: colors.card2, overflow: "hidden", marginTop: 8 },

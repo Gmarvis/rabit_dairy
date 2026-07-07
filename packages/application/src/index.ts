@@ -21,6 +21,8 @@ export { RecordSavingsMovement } from "./commands/RecordSavingsMovement.js";
 export type { RecordSavingsMovementInput } from "./commands/RecordSavingsMovement.js";
 export { SetBudget } from "./commands/SetBudget.js";
 export type { SetBudgetInput } from "./commands/SetBudget.js";
+export { CreateAccount } from "./commands/CreateAccount.js";
+export type { CreateAccountInput } from "./commands/CreateAccount.js";
 
 // Queries
 export { GetDashboard } from "./queries/GetDashboard.js";
@@ -35,4 +37,5 @@ export type {
 export { GetAccountLedger } from "./queries/GetAccountLedger.js";
 export { GetMonthlyReport } from "./queries/GetMonthlyReport.js";
 export { GetYearlyOverview } from "./queries/GetYearlyOverview.js";
+export { GetBudgets } from "./queries/GetBudgets.js";
 export type * from "./queries/viewmodels.js";

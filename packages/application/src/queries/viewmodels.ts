@@ -98,6 +98,19 @@ export interface AccountLedgerView {
   transactions: TransactionListItem[];
 }
 
+export interface BudgetEditorItem {
+  categoryId: string;
+  name: string;
+  color: string;
+  type: CategoryType;
+  amountMajor: number;
+}
+
+export interface BudgetEditorView {
+  periodLabel: string;
+  items: BudgetEditorItem[];
+}
+
 export interface MonthBucket {
   month: number;
   monthName: string;

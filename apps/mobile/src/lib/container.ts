@@ -5,8 +5,10 @@
  */
 import { asUserId, type UserId } from "@rabbit/domain";
 import {
+  CreateAccount,
   GetAccountLedger,
   GetAccountsOverview,
+  GetBudgets,
   GetBudgetVsActual,
   GetDashboard,
   GetEntryOptions,
@@ -54,11 +56,13 @@ function build(userId: UserId) {
       monthlyReport: new GetMonthlyReport(txns, categories),
       yearlyOverview: new GetYearlyOverview(txns),
       entryOptions: new GetEntryOptions(categories, accounts),
+      budgets: new GetBudgets(budgets, categories),
     },
     commands: {
       logTransaction: new LogTransaction(txns, categories, ids, clock),
       recordSavings: new RecordSavingsMovement(txns, ids, clock),
       setBudget: new SetBudget(budgets, ids),
+      createAccount: new CreateAccount(accounts, ids),
     },
   };
 }

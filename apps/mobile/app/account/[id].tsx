@@ -57,8 +57,8 @@ export default function AccountDetailScreen() {
 
           {data.isSavings ? (
             <Row style={{ gap: space(2.5) }}>
-              <Action label="↓ Deposit" primary onPress={() => router.push("/manual")} />
-              <Action label="↑ Withdraw" onPress={() => router.push("/manual")} />
+              <Action label="↓ Deposit" primary onPress={() => router.push("/savings")} />
+              <Action label="↑ Withdraw" onPress={() => router.push("/savings")} />
             </Row>
           ) : null}
 

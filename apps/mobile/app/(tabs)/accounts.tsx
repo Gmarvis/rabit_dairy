@@ -18,6 +18,7 @@ const ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
 
 export default function AccountsScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const c = useContainer();
   const { data } = useQuery({
     queryKey: ["accounts"],
@@ -32,7 +33,12 @@ export default function AccountsScreen() {
       style={styles.screen}
       contentContainerStyle={{ padding: space(4), paddingTop: insets.top + space(2), gap: space(3) }}
     >
-      <Text style={styles.title}>Accounts</Text>
+      <Row between>
+        <Text style={styles.title}>Accounts</Text>
+        <Pressable style={styles.add} onPress={() => router.push("/account-new")} hitSlop={8}>
+          <Ionicons name="add" size={20} color={colors.goldInk} />
+        </Pressable>
+      </Row>
 
       <Card hero>
         <SectionLabel>Total balance</SectionLabel>
@@ -91,6 +97,7 @@ function AccountRow({ a, last }: { a: AccountListItem; last: boolean }) {
 const styles = StyleSheet.create({
   screen: { backgroundColor: colors.bg },
   title: { color: colors.ink, fontSize: 22, fontWeight: "800" },
+  add: { width: 34, height: 34, borderRadius: 12, backgroundColor: colors.gold, alignItems: "center", justifyContent: "center" },
   sub: { color: colors.ink2, fontSize: 10, marginTop: 3 },
   row: { flexDirection: "row", alignItems: "center", gap: space(2.5), paddingVertical: space(2.5) },
   rowBorder: { borderBottomWidth: 1, borderBottomColor: colors.line },
