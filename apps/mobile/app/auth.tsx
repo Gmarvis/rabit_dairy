@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { resendConfirmation, signIn, signUp } from "../src/lib/auth";
+import { googleAvailable, signInWithGoogle } from "../src/lib/google";
 import { colors, radius, space } from "../src/theme/tokens";
 
 /** Turn Supabase's terse auth errors into something a person can act on. */
@@ -63,6 +64,19 @@ export default function AuthScreen() {
       setInfo("Confirmation email sent again — check your inbox.");
     } catch {
       setError("Couldn't resend right now.");
+    }
+  }
+
+  async function google() {
+    setError(null);
+    setInfo(null);
+    setBusy(true);
+    try {
+      await signInWithGoogle();
+    } catch (e) {
+      setError(e instanceof Error ? friendly(e.message) : "Google sign-in failed.");
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -121,6 +135,19 @@ export default function AuthScreen() {
         )}
       </Pressable>
 
+      {googleAvailable ? (
+        <>
+          <View style={styles.divider}>
+            <View style={styles.line} />
+            <Text style={styles.or}>or</Text>
+            <View style={styles.line} />
+          </View>
+          <Pressable style={styles.google} onPress={google} disabled={busy}>
+            <Text style={styles.googleText}>Continue with Google</Text>
+          </Pressable>
+        </>
+      ) : null}
+
       <Pressable
         onPress={() => {
           setError(null);
@@ -159,6 +186,11 @@ const styles = StyleSheet.create({
   error: { color: colors.negative, fontSize: 12, marginBottom: space(2) },
   info: { color: colors.ink2, fontSize: 12, lineHeight: 17, marginBottom: space(2) },
   resend: { color: colors.gold, fontSize: 13, fontWeight: "700" },
+  divider: { flexDirection: "row", alignItems: "center", gap: space(3), marginTop: space(4) },
+  line: { flex: 1, height: 1, backgroundColor: colors.line },
+  or: { color: colors.muted, fontSize: 11 },
+  google: { marginTop: space(4), borderWidth: 1, borderColor: colors.line, borderRadius: radius.md, paddingVertical: space(3.5), alignItems: "center", backgroundColor: colors.card },
+  googleText: { color: colors.ink, fontSize: 15, fontWeight: "700" },
   button: {
     backgroundColor: colors.gold, borderRadius: radius.md, padding: space(3.5),
     alignItems: "center", marginTop: space(2),
