@@ -114,7 +114,7 @@ export function PrimaryButton({
     <Pressable
       accessibilityRole="button"
       style={[
-        { backgroundColor: c.gold, borderRadius: radius.md, paddingVertical: space(3.5), alignItems: "center" },
+        { backgroundColor: c.gold, borderRadius: radius.lg, paddingVertical: space(4), alignItems: "center" },
         (disabled || loading) && { opacity: 0.4 },
       ]}
       onPress={onPress}
@@ -123,7 +123,7 @@ export function PrimaryButton({
       {loading ? (
         <ActivityIndicator color={c.goldInk} />
       ) : (
-        <Text style={{ color: c.goldInk, fontWeight: "800", fontSize: 15 }}>{label}</Text>
+        <Text style={{ color: c.goldInk, fontWeight: "800", fontSize: 16 }}>{label}</Text>
       )}
     </Pressable>
   );
@@ -142,8 +142,8 @@ export function Card({
   return (
     <View
       style={[
-        { backgroundColor: c.card, borderRadius: 18, padding: 18, borderWidth: 1, borderColor: c.line },
-        hero && { backgroundColor: c.heroFrom, borderColor: c.line, borderRadius: 20, padding: 20 },
+        { backgroundColor: c.card, borderRadius: 18, padding: 20, borderWidth: 1, borderColor: c.line },
+        hero && { backgroundColor: c.heroFrom, borderColor: c.line, borderRadius: 20, padding: 22 },
         style,
       ]}
     >
