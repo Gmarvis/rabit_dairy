@@ -7,7 +7,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { CategoryType } from "@rabbit/domain";
 import type { EntryCategoryOption } from "@rabbit/application";
-import { Card, ModalHeader, Row } from "../src/components/ui";
+import { Card, ModalHeader, Row, withAlpha } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
 import { parseStatement, type ParsedRow } from "../src/lib/parseStatement";
 import { useTheme } from "../src/theme/ThemeProvider";
@@ -177,13 +177,22 @@ export default function ScanScreen() {
   }
 
   // Review state — the parsed rows.
+  const guessed = rows.find((r) => r.include && !r.row.categoryHint);
   return (
     <View style={s.screen}>
       <View style={{ paddingHorizontal: space(4) }}>
-        <ModalHeader title="Review rows" onCancel={() => setRows(null)} topInset={insets.top} />
+        <Row between style={{ paddingTop: Math.min(insets.top, space(2)) + space(2), paddingBottom: space(3) }}>
+          <Pressable onPress={() => setRows(null)} hitSlop={10} style={s.retake}>
+            <Ionicons name="chevron-back" size={18} color={t.gold} />
+            <Text style={s.upload}>Retake</Text>
+          </Pressable>
+          <Text style={s.reviewTitle}>Review {rows.length} rows</Text>
+          <View style={{ width: 80 }} />
+        </Row>
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), gap: space(3) }}>
-        <Text style={s.dim}>Uncheck any row you don't want, then import. Add them to:</Text>
+        <Text style={s.reviewSub}>We read these from your statement. Uncheck any you don't want, fix a category, then import.</Text>
+
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips}>
           {accounts.map((a) => (
             <Pressable key={a.id} style={[s.chip, effectiveAccountId === a.id && s.chipOn]} onPress={() => setAccountId(a.id)}>
@@ -194,12 +203,11 @@ export default function ScanScreen() {
 
         <Card style={{ paddingVertical: space(1) }}>
           {rows.map((r, i) => (
-            <Pressable key={i} style={[s.rowItem, i < rows.length - 1 && s.border]} onPress={() => toggle(i)}>
-              <Ionicons name={r.include ? "checkbox" : "square-outline"} size={22} color={r.include ? t.gold : t.muted} />
-              <View style={{ flex: 1 }}>
-                <Text style={s.rowTitle}>{r.row.description}</Text>
-                <Text style={s.rowMeta}>{nameFor(r.categoryId)}{r.row.date ? ` · ${r.row.date}` : ""}</Text>
+            <Pressable key={i} style={[s.rowItem, i < rows.length - 1 && s.border, !r.include && { opacity: 0.5 }]} onPress={() => toggle(i)}>
+              <View style={[s.check, r.include ? s.checkOn : s.checkOff]}>
+                {r.include ? <Ionicons name="checkmark" size={15} color={t.goldInk} /> : null}
               </View>
+              <Text style={s.rowTitle}>{r.row.description}</Text>
               <Text style={[s.amt, { color: r.row.direction === "out" ? t.negative : t.positive }]}>
                 {r.row.direction === "out" ? "−" : "+"}{r.row.amountMajor.toLocaleString("en-US")}
               </Text>
@@ -207,7 +215,22 @@ export default function ScanScreen() {
           ))}
         </Card>
 
+        {guessed ? (
+          <Card style={s.hint}>
+            <Row style={{ gap: 6 }}>
+              <Ionicons name="information-circle" size={15} color={t.blue} />
+              <Text style={s.hintTitle}>Needs a category</Text>
+            </Row>
+            <Text style={s.hintText}>
+              We guessed <Text style={{ fontWeight: "800", color: t.ink }}>{nameFor(guessed.categoryId)}</Text> for “{guessed.row.description}”. You can change it after import.
+            </Text>
+          </Card>
+        ) : null}
+
         {error ? <Text style={s.error}>{error}</Text> : null}
+      </ScrollView>
+
+      <View style={[s.footer, { paddingBottom: insets.bottom + space(3) }]}>
         <Pressable
           style={[s.importBtn, selected.length === 0 && s.importOff]}
           onPress={() => selected.length && importMut.mutate()}
@@ -219,7 +242,7 @@ export default function ScanScreen() {
             <Text style={s.importText}>Import {selected.length} transaction{selected.length === 1 ? "" : "s"}</Text>
           )}
         </Pressable>
-      </ScrollView>
+      </View>
     </View>
   );
 }
@@ -255,6 +278,15 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   privacy: { color: c.muted, fontSize: 12, textAlign: "center" },
   error: { color: c.negative, fontSize: 13, textAlign: "center" },
   footer: { paddingHorizontal: space(4), paddingTop: space(3) },
+  retake: { flexDirection: "row", alignItems: "center", gap: 2, width: 80 },
+  reviewTitle: { color: c.ink, fontSize: 16, fontWeight: "800" },
+  reviewSub: { color: c.ink2, fontSize: 14, lineHeight: 20 },
+  check: { width: 26, height: 26, borderRadius: 13, alignItems: "center", justifyContent: "center" },
+  checkOn: { backgroundColor: c.gold },
+  checkOff: { borderWidth: 2, borderColor: c.muted },
+  hint: { backgroundColor: withAlpha(c.blue, 0.1), borderColor: withAlpha(c.blue, 0.3) },
+  hintTitle: { color: c.blue, fontSize: 13, fontWeight: "800" },
+  hintText: { color: c.ink2, fontSize: 13, lineHeight: 19, marginTop: space(2) },
   action: { flex: 1, backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: radius.lg, paddingVertical: space(4), alignItems: "center" },
   actionPrimary: { backgroundColor: c.gold, borderColor: c.gold },
   actionText: { color: c.ink, fontWeight: "800", fontSize: 15 },
