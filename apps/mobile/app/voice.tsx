@@ -1,10 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import {
-  ExpoSpeechRecognitionModule,
-  useSpeechRecognitionEvent,
-} from "expo-speech-recognition";
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -26,6 +22,22 @@ function methodForAccount(type: AccountType): PaymentMethod {
   if (type === "cash") return "cash";
   return "bank_transfer";
 }
+
+// Speech recognition is a NATIVE module — present only in a dev build, absent in
+// Expo Go / a stale binary. Load it defensively so the screen never crashes the
+// route tree; if it's missing we fall back to typing the fields manually.
+const Speech = (() => {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require("expo-speech-recognition");
+  } catch {
+    return null;
+  }
+})() as typeof import("expo-speech-recognition") | null;
+
+const speechAvailable = !!Speech;
+const useSpeechRecognitionEvent = (Speech?.useSpeechRecognitionEvent ??
+  (() => {})) as (name: string, cb: (e: any) => void) => void;
 
 export default function VoiceScreen() {
   const insets = useSafeAreaInsets();
@@ -80,15 +92,19 @@ export default function VoiceScreen() {
 
   async function toggleListen() {
     setError(null);
-    if (listening) {
-      ExpoSpeechRecognitionModule.stop();
+    if (!Speech) {
+      setError("Voice needs the dev build — rebuild with 'npx expo run:ios'. You can still type below.");
       return;
     }
-    const perm = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+    if (listening) {
+      Speech.ExpoSpeechRecognitionModule.stop();
+      return;
+    }
+    const perm = await Speech.ExpoSpeechRecognitionModule.requestPermissionsAsync();
     if (!perm.granted) return setError("Microphone & speech permission are needed.");
     setTranscript("");
     setListening(true);
-    ExpoSpeechRecognitionModule.start({ lang: "en-US", interimResults: true, continuous: true });
+    Speech.ExpoSpeechRecognitionModule.start({ lang: "en-US", interimResults: true, continuous: true });
   }
 
   const amountMajor = parseInt(digits || "0", 10);
@@ -169,7 +185,9 @@ export default function VoiceScreen() {
               <Text style={styles.stopText}>Stop</Text>
             </Pressable>
           ) : (
-            <Text style={styles.hint}>Tap the mic and say what you spent &amp; why</Text>
+            <Text style={styles.hint}>
+              {speechAvailable ? "Tap the mic and say what you spent & why" : "Voice needs the dev build — type below for now"}
+            </Text>
           )}
         </View>
 
