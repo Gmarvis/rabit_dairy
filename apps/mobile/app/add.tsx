@@ -32,9 +32,13 @@ export default function AddHub() {
             key={o.key}
             accessibilityRole="button"
             style={[styles.option, o.highlight && styles.optionHi]}
-            // Manual entry is built; voice & scan land in Phase 4–5.
+            // Manual + voice are built; scan lands in Phase 5.
             onPress={() =>
-              o.key === "manual" ? router.replace("/manual") : router.back()
+              o.key === "manual"
+                ? router.replace("/manual")
+                : o.key === "voice"
+                  ? router.replace("/voice")
+                  : router.back()
             }
           >
             <View style={styles.icon}>

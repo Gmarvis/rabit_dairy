@@ -4,6 +4,7 @@
  * runs immediately. Screens depend only on this, never on infra directly.
  */
 import { asUserId, type UserId } from "@rabbit/domain";
+import type { FileStorage } from "@rabbit/application";
 import {
   CreateAccount,
   GetAccountLedger,
@@ -22,6 +23,7 @@ import {
   SupabaseAccountRepository,
   SupabaseBudgetRepository,
   SupabaseCategoryRepository,
+  SupabaseFileStorage,
   SupabaseTransactionRepository,
   SystemClock,
   UuidIds,
@@ -45,9 +47,16 @@ function build(userId: UserId) {
   const ids = new UuidIds();
   const clock = new SystemClock();
 
+  // Uploads to Supabase Storage when live; in demo mode keeps the local file uri.
+  const storage: FileStorage =
+    useSupabase && supabase
+      ? new SupabaseFileStorage(supabase, userId, ids)
+      : { async upload(_bucket, localUri) { return { path: localUri }; } };
+
   return {
     userId,
     isDemo: !useSupabase,
+    storage,
     queries: {
       dashboard: new GetDashboard(txns, categories, accounts),
       accounts: new GetAccountsOverview(accounts),

@@ -20,7 +20,8 @@
       "adaptiveIcon": { "backgroundColor": "#14231C" }
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      ["expo-audio", { "microphonePermission": "Rabbit Dairy records a short voice note explaining why you made a purchase." }]
     ],
     "experiments": { "typedRoutes": true }
   }

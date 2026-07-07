@@ -85,10 +85,13 @@ Account balance = `opening + Σ(in) − Σ(out)` over its transactions. Transfer
   Reached from the ＋ hub, the Budget-vs-Actual screen, account detail, and the
   Accounts header.
 
-### Phase 4 — Voice capture
-- `expo-av` recording; upload audio to Supabase Storage.
-- Speech-to-text via an Edge Function; parse amount / category / method into a
-  draft transaction the user confirms. Audio stays attached as the "why".
+### Phase 4 — Voice capture ⚠️ (record + store done; transcription next)
+- ✅ `expo-audio` recording UI (record/stop, timer, playback); audio uploaded to
+  the Supabase `voice-notes` bucket (local uri in demo mode) and attached to the
+  transaction via `LogTransaction` with `source: "voice"`. Reached from ＋ → Speak.
+- ⬜ Speech-to-text via an Edge Function behind the existing `VoiceParser` port;
+  parse amount / category / method to pre-fill the confirm fields. Chosen
+  approach: record now, wire the transcriber as a follow-up (no provider block).
 
 ### Phase 5 — Scan & import
 - `expo-camera` / `expo-image-picker`; upload image to Storage.
