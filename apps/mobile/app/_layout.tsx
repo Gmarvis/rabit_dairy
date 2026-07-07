@@ -51,6 +51,7 @@ function RootNavigator() {
       <Stack.Screen name="budgets" options={{ presentation: "modal" }} />
       <Stack.Screen name="savings" options={{ presentation: "modal", animation: "slide_from_bottom" }} />
       <Stack.Screen name="voice" options={{ presentation: "modal", animation: "slide_from_bottom" }} />
+      <Stack.Screen name="scan" options={{ presentation: "modal", animation: "slide_from_bottom" }} />
       <Stack.Screen name="account-new" options={{ presentation: "modal", animation: "slide_from_bottom" }} />
     </Stack>
   );

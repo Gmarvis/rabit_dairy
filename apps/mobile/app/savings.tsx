@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -17,7 +18,27 @@ export default function SavingsScreen() {
 
   const [kind, setKind] = useState<Kind>("deposit");
   const [digits, setDigits] = useState("");
+  const [receiptPath, setReceiptPath] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  async function attachReceipt(from: "camera" | "library") {
+    setError(null);
+    try {
+      const perm =
+        from === "camera"
+          ? await ImagePicker.requestCameraPermissionsAsync()
+          : await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) return setError("Permission needed to add the receipt.");
+      const res = await (from === "camera"
+        ? ImagePicker.launchCameraAsync({ quality: 0.5 })
+        : ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.5 }));
+      if (res.canceled || !res.assets[0]) return;
+      const { path } = await c.storage.upload("receipts", res.assets[0].uri, "image/jpeg");
+      setReceiptPath(path);
+    } catch {
+      setError("Couldn't attach the receipt.");
+    }
+  }
 
   const { data: options } = useQuery({
     queryKey: ["entry-options"],
@@ -37,6 +58,7 @@ export default function SavingsScreen() {
         savingsCategoryId: savingsCategory!.id as never,
         kind,
         amountMajor,
+        receiptPath,
       });
       if (!res.ok) throw new Error(res.error.message);
     },
@@ -83,10 +105,21 @@ export default function SavingsScreen() {
         </Text>
       </View>
 
-      {/* Receipt attach is wired in Phase 5 (scan & OCR). */}
-      <Card style={styles.receipt}>
-        <Text style={styles.receiptText}>📷 Attach receipt — coming with scan (Phase 5)</Text>
-      </Card>
+      {receiptPath ? (
+        <Card style={styles.receipt}>
+          <Text style={[styles.receiptText, { color: colors.positive }]}>✓ Receipt attached</Text>
+          <Pressable onPress={() => setReceiptPath(null)}><Text style={styles.receiptClear}>Remove</Text></Pressable>
+        </Card>
+      ) : (
+        <Row style={{ gap: space(2.5) }}>
+          <Pressable style={styles.receiptBtn} onPress={() => attachReceipt("camera")}>
+            <Text style={styles.receiptBtnText}>📷 Snap receipt</Text>
+          </Pressable>
+          <Pressable style={styles.receiptBtn} onPress={() => attachReceipt("library")}>
+            <Text style={styles.receiptBtnText}>🖼 Upload</Text>
+          </Pressable>
+        </Row>
+      )}
 
       {!savingsAccount || !savingsCategory ? (
         <Text style={styles.error}>Add a savings account and a savings category first.</Text>
@@ -119,8 +152,11 @@ const styles = StyleSheet.create({
   amountLabel: { color: colors.muted, fontSize: 10, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase" },
   amount: { color: colors.ink, fontSize: 38, fontWeight: "800", marginTop: 4, fontVariant: ["tabular-nums"] },
   cur: { color: colors.ink2, fontSize: 12, fontWeight: "600" },
-  receipt: { alignItems: "center", borderStyle: "dashed" },
-  receiptText: { color: colors.ink2, fontSize: 11 },
+  receipt: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  receiptText: { color: colors.ink2, fontSize: 12, fontWeight: "600" },
+  receiptClear: { color: colors.gold, fontSize: 11, fontWeight: "700" },
+  receiptBtn: { flex: 1, backgroundColor: colors.card, borderColor: colors.line, borderWidth: 1, borderRadius: radius.md, paddingVertical: space(3), alignItems: "center" },
+  receiptBtnText: { color: colors.ink, fontSize: 12, fontWeight: "700" },
   error: { color: colors.negative, fontSize: 12, marginTop: space(2), textAlign: "center" },
   keypad: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", marginTop: space(3), rowGap: space(2) },
   key: { width: "31%", backgroundColor: colors.card, borderColor: colors.line, borderWidth: 1, borderRadius: radius.md, paddingVertical: space(3.5), alignItems: "center" },

@@ -23,6 +23,8 @@ export { SetBudget } from "./commands/SetBudget.js";
 export type { SetBudgetInput } from "./commands/SetBudget.js";
 export { CreateAccount } from "./commands/CreateAccount.js";
 export type { CreateAccountInput } from "./commands/CreateAccount.js";
+export { ImportStatement } from "./commands/ImportStatement.js";
+export type { ImportStatementInput, ImportEntry } from "./commands/ImportStatement.js";
 
 // Queries
 export { GetDashboard } from "./queries/GetDashboard.js";

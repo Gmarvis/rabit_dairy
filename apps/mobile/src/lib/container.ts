@@ -15,6 +15,7 @@ import {
   GetEntryOptions,
   GetMonthlyReport,
   GetYearlyOverview,
+  ImportStatement,
   LogTransaction,
   RecordSavingsMovement,
   SetBudget,
@@ -72,6 +73,7 @@ function build(userId: UserId) {
       recordSavings: new RecordSavingsMovement(txns, ids, clock),
       setBudget: new SetBudget(budgets, ids),
       createAccount: new CreateAccount(accounts, ids),
+      importStatement: new ImportStatement(txns, categories, ids, clock),
     },
   };
 }

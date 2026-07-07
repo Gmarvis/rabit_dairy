@@ -21,7 +21,11 @@
     },
     "plugins": [
       "expo-router",
-      ["expo-audio", { "microphonePermission": "Rabbit Dairy records a short voice note explaining why you made a purchase." }]
+      ["expo-audio", { "microphonePermission": "Rabbit Dairy records a short voice note explaining why you made a purchase." }],
+      ["expo-image-picker", {
+        "photosPermission": "Rabbit Dairy reads bank or mobile-money statements you upload.",
+        "cameraPermission": "Rabbit Dairy scans bank or mobile-money statements and receipts."
+      }]
     ],
     "experiments": { "typedRoutes": true }
   }

@@ -93,10 +93,16 @@ Account balance = `opening + Σ(in) − Σ(out)` over its transactions. Transfer
   parse amount / category / method to pre-fill the confirm fields. Chosen
   approach: record now, wire the transcriber as a follow-up (no provider block).
 
-### Phase 5 — Scan & import
-- `expo-camera` / `expo-image-picker`; upload image to Storage.
-- OCR Edge Function → parsed rows; the **Import review** screen; duplicate
-  detection; confirm-before-import. Savings deposit/withdrawal receipt flow.
+### Phase 5 — Scan & import ✅
+- `expo-image-picker` (camera + gallery). Statement image sent inline to the
+  `parse-statement` Edge Function (OpenAI vision) — image is NOT stored, only
+  the extracted rows. `ImportStatement` command persists the user-confirmed set
+  (source "scan").
+- **Scan screen**: capture/upload → parse → **review** (per-row checkboxes,
+  auto-mapped categories, account picker) → confirm-before-import.
+- **Savings receipt-snap**: the savings deposit/withdrawal screen now attaches a
+  receipt (camera/gallery → `receipts` bucket) to the movement.
+- (Duplicate detection across already-logged rows remains a follow-up.)
 
 ### Phase 6 — Auth, sync, hardening (in progress)
 - ✅ Supabase Auth (email + password): sign-in/up screen, session-aware
