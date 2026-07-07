@@ -1,27 +1,30 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useRouter, type Href } from "expo-router";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { YearMonth } from "@rabbit/domain";
-import { Card, MoneyText, Pill, Row, SectionLabel } from "../../src/components/ui";
+import { Card, MoneyText, Row, SectionLabel } from "../../src/components/ui";
 import { useContainer } from "../../src/lib/auth";
 import { percent } from "../../src/lib/format";
-import { colors, space } from "../../src/theme/tokens";
+import { colors, radius, space } from "../../src/theme/tokens";
 
 const PERIOD = YearMonth.of(2026, 4);
 
-const STATUS_TONE = {
-  under: "positive",
-  at: "gold",
-  over: "negative",
-  no_budget: "muted",
-} as const;
+const LINKS: { href: Href; icon: keyof typeof Ionicons.glyphMap; title: string; sub: string }[] = [
+  { href: "/report", icon: "pie-chart", title: "Monthly report", sub: "Where the money went this month" },
+  { href: "/budget", icon: "checkbox", title: "Budget vs actual", sub: "Planned against spent, per category" },
+  { href: "/yearly", icon: "bar-chart", title: "Yearly overview", sub: "12-month income & expense trend" },
+];
 
 export default function InsightsScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const c = useContainer();
+
   const { data } = useQuery({
-    queryKey: ["budget-vs-actual", PERIOD.toString()],
-    queryFn: () => c.queries.budgetVsActual.execute(c.userId, PERIOD),
+    queryKey: ["dashboard", PERIOD.toString()],
+    queryFn: () => c.queries.dashboard.execute(c.userId, PERIOD),
   });
 
   return (
@@ -29,64 +32,45 @@ export default function InsightsScreen() {
       style={styles.screen}
       contentContainerStyle={{ padding: space(4), paddingTop: insets.top + space(2), gap: space(3) }}
     >
-      <View>
-        <Text style={styles.greet}>Budget vs actual</Text>
-        <Text style={styles.title}>{data?.periodLabel ?? "…"}</Text>
-      </View>
+      <Text style={styles.title}>Insights</Text>
 
-      {data?.lines.map((l) => {
-        const pct = Math.max(0, Math.min(1, l.percentUsed));
-        const barColor =
-          l.status === "over" ? colors.negative : l.status === "at" ? colors.gold : colors.positive;
-        return (
-          <Card key={l.categoryId}>
-            <Row between>
-              <Text style={styles.cat}>{l.categoryName}</Text>
-              <Pill tone={STATUS_TONE[l.status]}>
-                {l.status === "over"
-                  ? "over"
-                  : l.status === "no_budget"
-                    ? "no budget"
-                    : percent(l.percentUsed, 0)}
-              </Pill>
-            </Row>
-            <View style={styles.track}>
-              <View style={{ width: `${pct * 100}%`, backgroundColor: barColor, height: "100%", borderRadius: 4 }} />
-            </View>
-            <Row between style={{ marginTop: 5 }}>
-              <Text style={styles.meta}>{l.actual.format()} spent</Text>
-              <Text style={styles.meta}>
-                {l.budget.isZero ? "no budget set" : `of ${l.budget.format({ withCode: false })}`}
-              </Text>
+      <Card hero>
+        <SectionLabel>Kept this month · {data?.periodLabel ?? "…"}</SectionLabel>
+        {data ? (
+          <>
+            <MoneyText amount={data.summary.netBalance} signed size={24} style={{ marginTop: 4 }} />
+            <Text style={styles.sub}>
+              {percent(data.summary.savingsRate)} saved · {percent(data.summary.expenseRate)} spent
+            </Text>
+          </>
+        ) : null}
+      </Card>
+
+      {LINKS.map((l) => (
+        <Pressable key={l.title} onPress={() => router.push(l.href)}>
+          <Card>
+            <Row style={{ gap: space(3) }}>
+              <View style={styles.icon}>
+                <Ionicons name={l.icon} size={18} color={colors.gold} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.linkTitle}>{l.title}</Text>
+                <Text style={styles.linkSub}>{l.sub}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.muted} />
             </Row>
           </Card>
-        );
-      })}
-
-      {data ? (
-        <Card hero>
-          <Row between>
-            <SectionLabel>Spent of budget</SectionLabel>
-            <Text style={styles.overall}>
-              {data.totalBudget.isZero ? "—" : percent(data.overallPercentUsed, 0)}
-            </Text>
-          </Row>
-          <Row between style={{ marginTop: 6 }}>
-            <Text style={styles.meta}>Total spent</Text>
-            <MoneyText amount={data.totalActual} currency={false} size={14} />
-          </Row>
-        </Card>
-      ) : null}
+        </Pressable>
+      ))}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { backgroundColor: colors.bg },
-  greet: { color: colors.ink2, fontSize: 12 },
-  title: { color: colors.ink, fontSize: 20, fontWeight: "800", marginTop: 2 },
-  cat: { color: colors.ink, fontSize: 12, fontWeight: "600" },
-  track: { height: 7, borderRadius: 4, backgroundColor: colors.card2, overflow: "hidden", marginTop: 8 },
-  meta: { color: colors.muted, fontSize: 10 },
-  overall: { color: colors.positive, fontSize: 15, fontWeight: "800" },
+  title: { color: colors.ink, fontSize: 22, fontWeight: "800" },
+  sub: { color: colors.ink2, fontSize: 11, marginTop: 4 },
+  icon: { width: 40, height: 40, borderRadius: radius.md, backgroundColor: "rgba(233,180,76,0.16)", alignItems: "center", justifyContent: "center" },
+  linkTitle: { color: colors.ink, fontSize: 14, fontWeight: "700" },
+  linkSub: { color: colors.ink2, fontSize: 11, marginTop: 2 },
 });

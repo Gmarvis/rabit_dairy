@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useRouter } from "expo-router";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { AccountListItem } from "@rabbit/application";
 import { Card, MoneyText, Pill, Row, SectionLabel } from "../../src/components/ui";
@@ -59,8 +60,12 @@ export default function AccountsScreen() {
 }
 
 function AccountRow({ a, last }: { a: AccountListItem; last: boolean }) {
+  const router = useRouter();
   return (
-    <View style={[styles.row, !last && styles.rowBorder, a.isDormant && { opacity: 0.5 }]}>
+    <Pressable
+      style={[styles.row, !last && styles.rowBorder, a.isDormant && { opacity: 0.5 }]}
+      onPress={() => router.push(`/account/${a.id}`)}
+    >
       <View style={styles.icon}>
         <Ionicons name={ICON[a.type] ?? "wallet"} size={15} color={colors.ink} />
       </View>
@@ -79,7 +84,7 @@ function AccountRow({ a, last }: { a: AccountListItem; last: boolean }) {
         {a.type === "bank_savings" ? <Pill tone="gold">📷 snap</Pill> : null}
         {a.isDormant ? <Pill tone="muted">Hidden</Pill> : null}
       </View>
-    </View>
+    </Pressable>
   );
 }
 

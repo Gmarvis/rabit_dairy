@@ -44,6 +44,10 @@ function RootNavigator() {
         name="manual"
         options={{ presentation: "modal", animation: "slide_from_bottom" }}
       />
+      <Stack.Screen name="account/[id]" />
+      <Stack.Screen name="report" options={{ presentation: "modal" }} />
+      <Stack.Screen name="yearly" options={{ presentation: "modal" }} />
+      <Stack.Screen name="budget" options={{ presentation: "modal" }} />
     </Stack>
   );
 }

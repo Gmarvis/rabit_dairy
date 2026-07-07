@@ -5,10 +5,13 @@
  */
 import { asUserId, type UserId } from "@rabbit/domain";
 import {
+  GetAccountLedger,
   GetAccountsOverview,
   GetBudgetVsActual,
   GetDashboard,
   GetEntryOptions,
+  GetMonthlyReport,
+  GetYearlyOverview,
   LogTransaction,
   RecordSavingsMovement,
   SetBudget,
@@ -46,7 +49,10 @@ function build(userId: UserId) {
     queries: {
       dashboard: new GetDashboard(txns, categories, accounts),
       accounts: new GetAccountsOverview(accounts),
+      accountLedger: new GetAccountLedger(accounts, txns, categories),
       budgetVsActual: new GetBudgetVsActual(txns, budgets, categories),
+      monthlyReport: new GetMonthlyReport(txns, categories),
+      yearlyOverview: new GetYearlyOverview(txns),
       entryOptions: new GetEntryOptions(categories, accounts),
     },
     commands: {

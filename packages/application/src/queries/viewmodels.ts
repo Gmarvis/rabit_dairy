@@ -82,3 +82,40 @@ export interface MonthlyReportView {
   byCategory: CategorySlice[];
   topExpenses: CategorySlice[];
 }
+
+export interface AccountLedgerView {
+  id: string;
+  name: string;
+  type: AccountType;
+  institution: string | null;
+  mask: string | null;
+  balance: Money;
+  isPrimary: boolean;
+  isDormant: boolean;
+  isSavings: boolean;
+  /** Running balance over time (oldest → newest) for the sparkline. */
+  balanceHistory: number[];
+  transactions: TransactionListItem[];
+}
+
+export interface MonthBucket {
+  month: number;
+  monthName: string;
+  income: Money;
+  expenses: Money;
+  savings: Money;
+  net: Money;
+}
+
+export interface YearlyOverviewView {
+  year: number;
+  months: MonthBucket[];
+  ytdIncome: Money;
+  ytdExpenses: Money;
+  ytdSavings: Money;
+  ytdNet: Money;
+  /** ytdSavings / ytdIncome. */
+  savingsRate: number;
+  /** Largest single-month income or expense — for scaling the bars. */
+  peak: Money;
+}

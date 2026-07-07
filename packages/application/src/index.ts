@@ -32,4 +32,7 @@ export type {
   EntryCategoryOption,
   EntryAccountOption,
 } from "./queries/GetEntryOptions.js";
+export { GetAccountLedger } from "./queries/GetAccountLedger.js";
+export { GetMonthlyReport } from "./queries/GetMonthlyReport.js";
+export { GetYearlyOverview } from "./queries/GetYearlyOverview.js";
 export type * from "./queries/viewmodels.js";

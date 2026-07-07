@@ -67,11 +67,14 @@ Account balance = `opening + Σ(in) − Σ(out)` over its transactions. Transfer
 - Supabase schema + RLS migrations; seed categories & accounts.
 - Ports (repository interfaces) in `application`.
 
-### Phase 2 — Read side (Queries)
-- `GetDashboard`, `GetAccounts`, `GetAccountLedger`, `GetMonthlyReport`,
-  `GetBudgetVsActual`, `GetYearlyOverview`.
-- Back reports with Postgres **views** for speed; map to view-models.
-- Wire Dashboard, Accounts, Insights screens to live data.
+### Phase 2 — Read side (Queries) ✅
+- `GetDashboard`, `GetAccountsOverview`, `GetAccountLedger`,
+  `GetMonthlyReport`, `GetBudgetVsActual`, `GetYearlyOverview` — all built.
+- Screens: Dashboard, Accounts, **Account detail** (balance sparkline + ledger),
+  Insights hub → **Monthly Report** (donut + top 5), **Budget vs Actual**,
+  **Yearly Overview** (12-month bars). Wired through the composition root.
+- (Postgres views for reports remain a later optimisation; queries currently
+  aggregate in the application layer.)
 
 ### Phase 3 — Write side (Commands) + manual capture
 - `CreateAccount`, `LogTransaction`, `RecordSavingsMovement`, `SetBudget`.
