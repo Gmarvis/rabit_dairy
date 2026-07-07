@@ -1,25 +1,15 @@
-import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
-import { useRouter } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Card, MoneyText, Pill, Row, ScreenHeader, SectionLabel, withAlpha } from "../src/components/ui";
+import { Card, MoneyText, PageHeader, Row, SectionLabel, withAlpha } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
 import { usePeriod } from "../src/lib/period";
 import { monthLabel, percent } from "../src/lib/format";
 import { space, type Palette } from "../src/theme/tokens";
 import { useTheme } from "../src/theme/ThemeProvider";
 
-const STATUS_TONE = {
-  under: "positive",
-  at: "gold",
-  over: "negative",
-  no_budget: "muted",
-} as const;
-
 export default function BudgetScreen() {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
   const c = useContainer();
   const t = useTheme();
   const s = makeStyles(t);
@@ -29,16 +19,14 @@ export default function BudgetScreen() {
     queryFn: () => c.queries.budgetVsActual.execute(c.userId, period),
   });
 
+  const overallPct = Math.max(0, Math.min(1, data?.overallPercentUsed ?? 0));
+
   return (
     <ScrollView
       style={s.screen}
-      contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), gap: space(3) }}
+      contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), paddingTop: 0, gap: space(3) }}
     >
-      <ScreenHeader title={`Budget · ${monthLabel(period)}`} onClose={() => router.back()} closeLabel="Done" topInset={insets.top} />
-      <Pressable onPress={() => router.push("/budgets")} style={s.editRow}>
-        <Ionicons name="pencil" size={13} color={t.gold} />
-        <Text style={s.edit}>Edit budgets</Text>
-      </Pressable>
+      <PageHeader eyebrow="Budget vs actual" title={monthLabel(period)} topInset={insets.top} />
 
       {data?.lines.length === 0 ? (
         <Card><Text style={s.dim}>No spending or budgets set for this month yet.</Text></Card>
@@ -46,21 +34,21 @@ export default function BudgetScreen() {
 
       {data?.lines.map((l) => {
         const pct = Math.max(0, Math.min(1, l.percentUsed));
-        const barColor =
-          l.status === "over" ? t.negative : l.status === "at" ? t.gold : t.positive;
+        const over = l.status === "over" || (l.status === "no_budget" && !l.actual.isZero);
+        const statusColor = over ? t.negative : l.status === "at" ? t.gold : t.positive;
+        const overBy = (l.actual.major - l.budget.major).toLocaleString("en-US");
+        const statusText = over ? `over by ${overBy}` : `${percent(l.percentUsed, 0)} used`;
         return (
-          <Card key={l.categoryId} style={l.status === "over" ? { borderColor: withAlpha(t.negative, 0.4) } : undefined}>
+          <Card key={l.categoryId} style={over ? { borderColor: withAlpha(t.negative, 0.4) } : undefined}>
             <Row between>
               <Text style={s.cat}>{l.categoryName}</Text>
-              <Pill tone={STATUS_TONE[l.status]}>
-                {l.status === "over" ? "over" : l.status === "no_budget" ? "no budget" : percent(l.percentUsed, 0)}
-              </Pill>
+              <Text style={[s.status, { color: statusColor }]}>{statusText}</Text>
             </Row>
             <View style={s.track}>
-              <View style={{ width: `${pct * 100}%`, backgroundColor: barColor, height: "100%", borderRadius: 4 }} />
+              <View style={{ width: `${pct * 100}%`, backgroundColor: statusColor, height: "100%", borderRadius: 5 }} />
             </View>
-            <Row between style={{ marginTop: 5 }}>
-              <Text style={s.meta}>{l.actual.format()} spent</Text>
+            <Row between style={{ marginTop: 6 }}>
+              <Text style={s.meta}>{l.actual.format({ withCode: false })} spent</Text>
               <Text style={s.meta}>
                 {l.budget.isZero ? "no budget set" : `of ${l.budget.format({ withCode: false })}`}
               </Text>
@@ -73,14 +61,11 @@ export default function BudgetScreen() {
         <Card hero>
           <Row between>
             <SectionLabel>Spent of budget</SectionLabel>
-            <Text style={s.overall}>
-              {data.totalBudget.isZero ? "—" : percent(data.overallPercentUsed, 0)}
-            </Text>
+            <Text style={s.overall}>{data.totalBudget.isZero ? "—" : percent(data.overallPercentUsed, 0)}</Text>
           </Row>
-          <Row between style={{ marginTop: 6 }}>
-            <Text style={s.meta}>Total spent</Text>
-            <MoneyText amount={data.totalActual} currency={false} size={14} />
-          </Row>
+          <View style={[s.track, { marginTop: 10 }]}>
+            <View style={{ width: `${overallPct * 100}%`, backgroundColor: t.positive, height: "100%", borderRadius: 5 }} />
+          </View>
         </Card>
       ) : null}
     </ScrollView>
@@ -90,11 +75,10 @@ export default function BudgetScreen() {
 const makeStyles = (c: Palette) =>
   StyleSheet.create({
     screen: { backgroundColor: c.bg },
-    edit: { color: c.gold, fontSize: 13, fontWeight: "700" },
-    editRow: { flexDirection: "row", alignItems: "center", gap: 4, alignSelf: "flex-start", marginTop: -space(1) },
     dim: { color: c.ink2 },
-    cat: { color: c.ink, fontSize: 12, fontWeight: "600" },
-    track: { height: 7, borderRadius: 4, backgroundColor: c.card2, overflow: "hidden", marginTop: 8 },
-    meta: { color: c.muted, fontSize: 10 },
-    overall: { color: c.positive, fontSize: 15, fontWeight: "800" },
+    cat: { color: c.ink, fontSize: 14, fontWeight: "700" },
+    status: { fontSize: 12, fontWeight: "800", fontVariant: ["tabular-nums"] },
+    track: { height: 8, borderRadius: 5, backgroundColor: c.card2, overflow: "hidden", marginTop: 10 },
+    meta: { color: c.muted, fontSize: 11, fontVariant: ["tabular-nums"] },
+    overall: { color: c.positive, fontSize: 16, fontWeight: "800" },
   });

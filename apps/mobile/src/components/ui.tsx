@@ -42,6 +42,34 @@ export function ScreenHeader({
   );
 }
 
+/**
+ * Standing page header used across the doc's screens: a small eyebrow line, a
+ * big title below it, and an optional action on the right (a round button or a
+ * pill). Not a modal close — these screens dismiss with the sheet gesture.
+ */
+export function PageHeader({
+  eyebrow,
+  title,
+  right,
+  topInset = 0,
+}: {
+  eyebrow?: string;
+  title: string;
+  right?: ReactNode;
+  topInset?: number;
+}) {
+  const c = useTheme();
+  return (
+    <View style={{ paddingTop: topInset + space(2), marginBottom: space(3), flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between" }}>
+      <View>
+        {eyebrow ? <Text style={{ color: c.ink2, fontSize: 12 }}>{eyebrow}</Text> : null}
+        <Text style={{ color: c.ink, fontSize: 26, fontWeight: "800", letterSpacing: -0.5, marginTop: 2 }}>{title}</Text>
+      </View>
+      {right}
+    </View>
+  );
+}
+
 /** Full-width primary action, anchored at the bottom of form screens. */
 export function PrimaryButton({
   label,

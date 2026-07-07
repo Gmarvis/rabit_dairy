@@ -1,7 +1,9 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { Fragment, useEffect, useState } from "react";
 import {
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,7 +13,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { type CategoryType } from "@rabbit/domain";
 import type { BudgetEditorItem } from "@rabbit/application";
-import { Card, PrimaryButton, Row, ScreenHeader, SectionLabel } from "../src/components/ui";
+import { Card, PageHeader, PrimaryButton, Row, SectionLabel } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
 import { usePeriod } from "../src/lib/period";
 import { monthLabel } from "../src/lib/format";
@@ -78,6 +80,13 @@ export default function BudgetsScreen() {
     },
   });
 
+  async function copyLastMonth() {
+    const prev = await c.queries.budgets.execute(c.userId, period.previous());
+    setAmounts(
+      Object.fromEntries(prev.items.map((i) => [i.categoryId, i.amountMajor ? String(i.amountMajor) : ""])),
+    );
+  }
+
   const grouped = (type: CategoryType): BudgetEditorItem[] =>
     (data?.items ?? []).filter((i) => i.type === type);
 
@@ -88,8 +97,13 @@ export default function BudgetsScreen() {
 
   return (
     <View style={s.screen}>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), gap: space(3) }}>
-        <ScreenHeader title={`Budgets · ${monthLabel(period)}`} onClose={() => router.back()} topInset={insets.top} />
+      <ScrollView contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), paddingTop: 0, gap: space(3) }}>
+        <PageHeader
+          eyebrow="Monthly budgets"
+          title={monthLabel(period)}
+          topInset={insets.top}
+          right={<View style={s.pencil}><Ionicons name="pencil" size={16} color={t.gold} /></View>}
+        />
 
       {TYPE_ORDER.map((type) => {
         const items = grouped(type);
@@ -125,6 +139,10 @@ export default function BudgetsScreen() {
             <Text style={s.total}>{total.toLocaleString("en-US")} FCFA</Text>
           </Row>
         </Card>
+
+        <Pressable onPress={copyLastMonth} style={{ alignSelf: "center", paddingVertical: space(2) }}>
+          <Text style={s.copy}>Copy last month's budgets  →</Text>
+        </Pressable>
       </ScrollView>
 
       <View style={[s.footer, { paddingBottom: insets.bottom + space(2) }]}>
@@ -138,13 +156,15 @@ const makeStyles = (c: Palette) =>
   StyleSheet.create({
     screen: { flex: 1, backgroundColor: c.bg },
     footer: { paddingHorizontal: space(4), paddingTop: space(2), borderTopWidth: 1, borderTopColor: c.line, backgroundColor: c.bg },
-    row: { flexDirection: "row", alignItems: "center", gap: space(2.5), paddingVertical: space(2) },
+    pencil: { width: 38, height: 38, borderRadius: 19, backgroundColor: c.card, borderWidth: 1, borderColor: c.line, alignItems: "center", justifyContent: "center" },
+    row: { flexDirection: "row", alignItems: "center", gap: space(2.5), paddingVertical: space(2.5) },
     border: { borderBottomWidth: 1, borderBottomColor: c.line },
-    dot: { width: 10, height: 10, borderRadius: 3 },
-    cat: { color: c.ink, fontSize: 12, fontWeight: "600", flex: 1 },
+    dot: { width: 11, height: 11, borderRadius: 4 },
+    cat: { color: c.ink, fontSize: 14, fontWeight: "600", flex: 1 },
     input: {
-      color: c.ink, fontSize: 13, fontWeight: "700", textAlign: "right",
+      color: c.ink, fontSize: 15, fontWeight: "700", textAlign: "right",
       minWidth: 90, fontVariant: ["tabular-nums"], paddingVertical: 4,
     },
-    total: { color: c.ink, fontSize: 15, fontWeight: "800", fontVariant: ["tabular-nums"] },
+    total: { color: c.ink, fontSize: 16, fontWeight: "800", fontVariant: ["tabular-nums"] },
+    copy: { color: c.gold, fontSize: 13, fontWeight: "700" },
   });

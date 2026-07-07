@@ -1,11 +1,10 @@
 import { Fragment } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useRouter } from "expo-router";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Rect, Text as SvgText } from "react-native-svg";
 import type { YearlyOverviewView } from "@rabbit/application";
-import { Card, MoneyText, Row, ScreenHeader, SectionLabel } from "../src/components/ui";
+import { Card, MoneyText, PageHeader, Row, SectionLabel } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
 import { usePeriod } from "../src/lib/period";
 import { percent } from "../src/lib/format";
@@ -14,7 +13,6 @@ import { useTheme } from "../src/theme/ThemeProvider";
 
 export default function YearlyOverviewScreen() {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
   const c = useContainer();
   const t = useTheme();
   const s = makeStyles(t);
@@ -29,9 +27,9 @@ export default function YearlyOverviewScreen() {
   return (
     <ScrollView
       style={s.screen}
-      contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), gap: space(3) }}
+      contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), paddingTop: 0, gap: space(3) }}
     >
-      <ScreenHeader title={`Yearly overview · ${year}`} onClose={() => router.back()} closeLabel="Done" topInset={insets.top} />
+      <PageHeader eyebrow="Yearly overview" title={`${year}`} topInset={insets.top} />
 
       {data ? (
         <>
