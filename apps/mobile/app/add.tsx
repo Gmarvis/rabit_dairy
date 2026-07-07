@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useTheme } from "../src/theme/theme";
+import { useTheme } from "../src/theme/ThemeProvider";
 import { radius, space, type Palette } from "../src/theme/tokens";
 
 const OPTIONS = [
@@ -20,7 +20,7 @@ const OPTIONS = [
 export default function AddHub() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { c } = useTheme();
+  const c = useTheme();
   const s = makeStyles(c);
 
   return (

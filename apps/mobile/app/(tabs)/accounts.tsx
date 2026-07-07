@@ -7,14 +7,14 @@ import type { AccountListItem } from "@rabbit/application";
 import { Card, MoneyText, Pill, Row, SectionLabel, Tico } from "../../src/components/ui";
 import { useContainer } from "../../src/lib/auth";
 import { iconForAccount } from "../../src/theme/icons";
-import { useTheme } from "../../src/theme/theme";
+import { useTheme } from "../../src/theme/ThemeProvider";
 import { space, type Palette } from "../../src/theme/tokens";
 
 export default function AccountsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const c = useContainer();
-  const { c: t } = useTheme();
+  const t = useTheme();
   const s = makeStyles(t);
   const { data } = useQuery({
     queryKey: ["accounts"],
@@ -63,7 +63,7 @@ export default function AccountsScreen() {
 
 function AccountRow({ a, last }: { a: AccountListItem; last: boolean }) {
   const router = useRouter();
-  const { c: t } = useTheme();
+  const t = useTheme();
   const s = makeStyles(t);
   return (
     <Pressable

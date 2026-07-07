@@ -9,13 +9,13 @@ import { useContainer } from "../src/lib/auth";
 import { usePeriod } from "../src/lib/period";
 import { monthLabel, percent } from "../src/lib/format";
 import { space, type Palette } from "../src/theme/tokens";
-import { useTheme } from "../src/theme/theme";
+import { useTheme } from "../src/theme/ThemeProvider";
 
 export default function MonthlyReportScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const c = useContainer();
-  const { c: t } = useTheme();
+  const t = useTheme();
   const s = makeStyles(t);
   const { period } = usePeriod();
 

@@ -11,7 +11,7 @@ import {
   type ViewStyle,
 } from "react-native";
 import type { Money } from "@rabbit/domain";
-import { useTheme } from "../theme/theme";
+import { useTheme } from "../theme/ThemeProvider";
 import { radius, space, type Palette } from "../theme/tokens";
 
 /**
@@ -29,7 +29,7 @@ export function ScreenHeader({
   closeLabel?: string;
   topInset?: number;
 }) {
-  const { c } = useTheme();
+  const c = useTheme();
   return (
     <View style={{ paddingTop: topInset + space(2), marginBottom: space(4) }}>
       <Pressable onPress={onClose} hitSlop={14} style={{ alignSelf: "flex-start", paddingVertical: space(1) }}>
@@ -54,7 +54,7 @@ export function PrimaryButton({
   disabled?: boolean;
   loading?: boolean;
 }) {
-  const { c } = useTheme();
+  const c = useTheme();
   return (
     <Pressable
       accessibilityRole="button"
@@ -83,7 +83,7 @@ export function Card({
   style?: StyleProp<ViewStyle>;
   hero?: boolean;
 }) {
-  const { c } = useTheme();
+  const c = useTheme();
   return (
     <View
       style={[
@@ -98,7 +98,7 @@ export function Card({
 }
 
 export function SectionLabel({ children, style }: { children: ReactNode; style?: StyleProp<TextStyle> }) {
-  const { c } = useTheme();
+  const c = useTheme();
   return (
     <Text style={[{ color: c.muted, fontSize: 10, fontWeight: "700", letterSpacing: 1.2, textTransform: "uppercase" }, style]}>
       {children}
@@ -109,7 +109,7 @@ export function SectionLabel({ children, style }: { children: ReactNode; style?:
 type Tone = "gold" | "positive" | "negative" | "muted";
 
 export function Pill({ children, tone = "gold" }: { children: ReactNode; tone?: Tone }) {
-  const { c } = useTheme();
+  const c = useTheme();
   const map: Record<Tone, { bg: string; fg: string }> = {
     gold: { bg: c.goldSoft, fg: c.gold },
     positive: { bg: withAlpha(c.positive, 0.15), fg: c.positive },
@@ -136,7 +136,7 @@ export function Tico({
   color?: string;
   bg?: string;
 }) {
-  const { c } = useTheme();
+  const c = useTheme();
   return (
     <View
       style={{
@@ -164,7 +164,7 @@ export function MoneyText({
   currency?: boolean;
   style?: StyleProp<TextStyle>;
 }) {
-  const { c } = useTheme();
+  const c = useTheme();
   const color = signed ? (amount.isNegative ? c.negative : c.positive) : c.ink;
   const prefix = signed && !amount.isNegative && !amount.isZero ? "+" : "";
   return (

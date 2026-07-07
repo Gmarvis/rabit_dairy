@@ -1,5 +1,5 @@
 import { View } from "react-native";
-import { useTheme } from "../theme/theme";
+import { useTheme } from "../theme/ThemeProvider";
 
 // Lottie is a native module — present only in a dev build. Load defensively so
 // a stale binary / Expo Go falls back to a simple dot instead of crashing.
@@ -18,7 +18,7 @@ const LottieView = (() => {
  * Falls back to a static gold dot when the native module isn't available.
  */
 export function Listening({ size = 120, playing }: { size?: number; playing: boolean }) {
-  const { c } = useTheme();
+  const c = useTheme();
   if (!LottieView) {
     return (
       <View

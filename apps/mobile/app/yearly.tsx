@@ -10,13 +10,13 @@ import { useContainer } from "../src/lib/auth";
 import { usePeriod } from "../src/lib/period";
 import { percent } from "../src/lib/format";
 import { chart, space, type Palette } from "../src/theme/tokens";
-import { useTheme } from "../src/theme/theme";
+import { useTheme } from "../src/theme/ThemeProvider";
 
 export default function YearlyOverviewScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const c = useContainer();
-  const { c: t } = useTheme();
+  const t = useTheme();
   const s = makeStyles(t);
   const { period } = usePeriod();
   const year = period.year;
@@ -103,7 +103,7 @@ function Bars({ data, trackColor, axisColor }: { data: YearlyOverviewView; track
 }
 
 function Legend({ color, label }: { color: string; label: string }) {
-  const { c: t } = useTheme();
+  const t = useTheme();
   return (
     <Row style={{ gap: 5 }}>
       <View style={{ width: 9, height: 9, borderRadius: 3, backgroundColor: color }} />

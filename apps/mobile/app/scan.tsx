@@ -10,7 +10,7 @@ import type { EntryCategoryOption } from "@rabbit/application";
 import { Card, Row, ScreenHeader } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
 import { parseStatement, type ParsedRow } from "../src/lib/parseStatement";
-import { useTheme } from "../src/theme/theme";
+import { useTheme } from "../src/theme/ThemeProvider";
 import { radius, space, type Palette } from "../src/theme/tokens";
 
 interface ReviewRow {
@@ -42,7 +42,7 @@ export default function ScanScreen() {
   const router = useRouter();
   const qc = useQueryClient();
   const c = useContainer();
-  const { c: t } = useTheme();
+  const t = useTheme();
   const s = makeStyles(t);
 
   const [rows, setRows] = useState<ReviewRow[] | null>(null);
@@ -198,7 +198,7 @@ export default function ScanScreen() {
 }
 
 function Action({ label, primary, onPress }: { label: string; primary?: boolean; onPress: () => void }) {
-  const { c } = useTheme();
+  const c = useTheme();
   const s = makeStyles(c);
   return (
     <Pressable style={[s.action, primary && s.actionPrimary]} onPress={onPress}>

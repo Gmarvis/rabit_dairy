@@ -10,7 +10,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { resendConfirmation, signIn, signUp } from "../src/lib/auth";
 import { googleAvailable, signInWithGoogle } from "../src/lib/google";
-import { useTheme } from "../src/theme/theme";
+import { useTheme } from "../src/theme/ThemeProvider";
 import { radius, space, type Palette } from "../src/theme/tokens";
 
 /** Turn Supabase's terse auth errors into something a person can act on. */
@@ -25,7 +25,7 @@ function friendly(message: string): string {
 
 export default function AuthScreen() {
   const insets = useSafeAreaInsets();
-  const { c } = useTheme();
+  const c = useTheme();
   const styles = makeStyles(c);
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");

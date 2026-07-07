@@ -1,12 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs, useRouter } from "expo-router";
 import { Pressable, StyleSheet, View } from "react-native";
-import { useTheme } from "../../src/theme/theme";
+import { useTheme } from "../../src/theme/ThemeProvider";
 
 /** The centre ＋ button that opens the Add hub modal. */
 function AddButton() {
   const router = useRouter();
-  const { c } = useTheme();
+  const c = useTheme();
   return (
     <Pressable
       accessibilityLabel="Add a transaction"
@@ -20,7 +20,7 @@ function AddButton() {
 }
 
 export default function TabsLayout() {
-  const { c } = useTheme();
+  const c = useTheme();
   return (
     <Tabs
       screenOptions={{

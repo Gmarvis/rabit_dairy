@@ -16,7 +16,7 @@ import { useContainer } from "../src/lib/auth";
 import { usePeriod } from "../src/lib/period";
 import { monthLabel } from "../src/lib/format";
 import { space, type Palette } from "../src/theme/tokens";
-import { useTheme } from "../src/theme/theme";
+import { useTheme } from "../src/theme/ThemeProvider";
 
 const TYPE_LABEL: Record<CategoryType, string> = {
   income: "Income",
@@ -34,7 +34,7 @@ export default function BudgetsScreen() {
   const router = useRouter();
   const qc = useQueryClient();
   const c = useContainer();
-  const { c: t } = useTheme();
+  const t = useTheme();
   const s = makeStyles(t);
   const { period } = usePeriod();
 

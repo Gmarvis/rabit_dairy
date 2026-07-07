@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { AccountType } from "@rabbit/domain";
 import { PrimaryButton, Row, ScreenHeader } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
-import { useTheme } from "../src/theme/theme";
+import { useTheme } from "../src/theme/ThemeProvider";
 import { radius, space, type Palette } from "../src/theme/tokens";
 
 const TYPES: { key: AccountType; label: string }[] = [
@@ -22,7 +22,7 @@ export default function NewAccountScreen() {
   const router = useRouter();
   const qc = useQueryClient();
   const c = useContainer();
-  const { c: pal } = useTheme();
+  const pal = useTheme();
   const s = makeStyles(pal);
 
   const [name, setName] = useState("");

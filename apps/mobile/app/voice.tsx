@@ -11,7 +11,7 @@ import { Listening } from "../src/components/Listening";
 import { useContainer } from "../src/lib/auth";
 import { amountFromText } from "../src/lib/word2num";
 import { parseVoice } from "../src/lib/parseVoice";
-import { useTheme } from "../src/theme/theme";
+import { useTheme } from "../src/theme/ThemeProvider";
 import { radius, space, type Palette } from "../src/theme/tokens";
 
 type Group = "income" | "expense" | "savings";
@@ -61,7 +61,7 @@ export default function VoiceScreen() {
   const router = useRouter();
   const qc = useQueryClient();
   const c = useContainer();
-  const { c: pal } = useTheme();
+  const pal = useTheme();
   const s = makeStyles(pal);
 
   const [listening, setListening] = useState(false);
@@ -253,7 +253,7 @@ function accountMethod(accounts: { id: string; type: AccountType }[], id: string
 }
 
 function Chip({ label, color, selected, onPress }: { label: string; color?: string; selected: boolean; onPress: () => void }) {
-  const { c } = useTheme();
+  const c = useTheme();
   const s = makeStyles(c);
   return (
     <Pressable style={[s.chip, selected && s.chipOn]} onPress={onPress}>

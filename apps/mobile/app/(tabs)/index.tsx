@@ -8,14 +8,14 @@ import { useContainer } from "../../src/lib/auth";
 import { usePeriod } from "../../src/lib/period";
 import { dayLabel, monthLabel, percent } from "../../src/lib/format";
 import { iconForCategory } from "../../src/theme/icons";
-import { useTheme } from "../../src/theme/theme";
+import { useTheme } from "../../src/theme/ThemeProvider";
 import { space, type Palette } from "../../src/theme/tokens";
 
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const c = useContainer();
-  const { c: t } = useTheme();
+  const t = useTheme();
   const s = makeStyles(t);
   const { period, next, prev, isCurrent } = usePeriod();
   const { data, isLoading } = useQuery({

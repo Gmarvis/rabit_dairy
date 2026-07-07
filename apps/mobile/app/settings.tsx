@@ -7,7 +7,7 @@ import type { ExportRow } from "@rabbit/application";
 import { Card, Row, ScreenHeader, SectionLabel } from "../src/components/ui";
 import { signOut, useAuth, useContainer } from "../src/lib/auth";
 import { usePeriod } from "../src/lib/period";
-import { useTheme, type ThemeMode } from "../src/theme/theme";
+import { useTheme, useThemeControls, type ThemeMode } from "../src/theme/ThemeProvider";
 import { radius, space, type Palette } from "../src/theme/tokens";
 
 function toCsv(rows: ExportRow[]): string {
@@ -31,7 +31,8 @@ export default function SettingsScreen() {
   const router = useRouter();
   const { status, email } = useAuth();
   const c = useContainer();
-  const { c: t, mode, setMode } = useTheme();
+  const t = useTheme();
+  const { mode, setMode } = useThemeControls();
   const s = makeStyles(t);
   const { period } = usePeriod();
   const year = period.year;

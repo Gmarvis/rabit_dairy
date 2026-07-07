@@ -9,14 +9,14 @@ import { Card, MoneyText, Pill, Row, SectionLabel, Tico } from "../../src/compon
 import { useContainer } from "../../src/lib/auth";
 import { dayLabel, methodLabel } from "../../src/lib/format";
 import { iconForAccount, iconForCategory } from "../../src/theme/icons";
-import { useTheme } from "../../src/theme/theme";
+import { useTheme } from "../../src/theme/ThemeProvider";
 import { radius, space, type Palette } from "../../src/theme/tokens";
 
 export default function AccountDetailScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const c = useContainer();
-  const { c: t } = useTheme();
+  const t = useTheme();
   const s = makeStyles(t);
   const { id } = useLocalSearchParams<{ id: string }>();
 
@@ -121,7 +121,7 @@ function Sparkline({ points, color }: { points: number[]; color: string }) {
 }
 
 function Action({ label, icon, primary, onPress }: { label: string; icon: keyof typeof Ionicons.glyphMap; primary?: boolean; onPress: () => void }) {
-  const { c } = useTheme();
+  const c = useTheme();
   const s = makeStyles(c);
   return (
     <Pressable style={[s.action, primary && s.actionPrimary]} onPress={onPress}>

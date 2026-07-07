@@ -8,7 +8,7 @@ import type { EntryAccountOption } from "@rabbit/application";
 import { Ionicons } from "@expo/vector-icons";
 import { Card, PrimaryButton, Row, ScreenHeader } from "../../src/components/ui";
 import { useContainer } from "../../src/lib/auth";
-import { useTheme } from "../../src/theme/theme";
+import { useTheme } from "../../src/theme/ThemeProvider";
 import { radius, space, type Palette } from "../../src/theme/tokens";
 
 type Group = "income" | "expense" | "savings";
@@ -31,7 +31,7 @@ export default function EditTransactionScreen() {
   const router = useRouter();
   const qc = useQueryClient();
   const c = useContainer();
-  const { c: t } = useTheme();
+  const t = useTheme();
   const s = makeStyles(t);
   const { id } = useLocalSearchParams<{ id: string }>();
   const txnId = id as TransactionId;
@@ -208,7 +208,7 @@ function accountMethod(accounts: EntryAccountOption[], id: string | null): Payme
 }
 
 function Chip({ label, color, selected, onPress }: { label: string; color?: string; selected: boolean; onPress: () => void }) {
-  const { c } = useTheme();
+  const c = useTheme();
   const s = makeStyles(c);
   return (
     <Pressable style={[s.chip, selected && s.chipOn]} onPress={onPress}>

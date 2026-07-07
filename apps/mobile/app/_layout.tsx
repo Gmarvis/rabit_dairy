@@ -34,8 +34,6 @@ function RootNavigator() {
   useAuthGate();
   const theme = useTheme();
   return (
-    <>
-    <StatusBar style={isDark ? "light" : "dark"} />
     <Stack
       screenOptions={{
         headerShown: false,
@@ -64,7 +62,6 @@ function RootNavigator() {
       <Stack.Screen name="account-new" options={{ presentation: "modal", animation: "slide_from_bottom" }} />
       <Stack.Screen name="settings" options={{ presentation: "modal" }} />
     </Stack>
-    </>
   );
 }
 

@@ -9,7 +9,7 @@ import { useContainer } from "../../src/lib/auth";
 import { usePeriod } from "../../src/lib/period";
 import { dayLabel, methodLabel, monthLabel } from "../../src/lib/format";
 import { iconForCategory } from "../../src/theme/icons";
-import { useTheme } from "../../src/theme/theme";
+import { useTheme } from "../../src/theme/ThemeProvider";
 import { radius, space, type Palette } from "../../src/theme/tokens";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -37,7 +37,7 @@ export default function ActivityScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const c = useContainer();
-  const { c: t } = useTheme();
+  const t = useTheme();
   const s = makeStyles(t);
   const { period } = usePeriod();
   const [filter, setFilter] = useState<FilterKey>("all");

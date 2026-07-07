@@ -31,9 +31,21 @@ export interface Theme {
   goldInk: string;
   /** Soft gold tint background (chips, highlights). */
   goldSoft: string;
+  /** Gold border tint for emphasised cards. */
+  goldBorder: string;
 
   positive: string;
   negative: string;
+  /** Informational blue (savings, hints). */
+  blue: string;
+
+  /** Round avatar / decorative tile ground. */
+  avatarBg: string;
+  /** Hero card gradient stops. */
+  heroFrom: string;
+  heroTo: string;
+  /** Bottom tab bar ground. */
+  tabBar: string;
 
   /** Categorical chart hues (shared across themes). */
   chart: {
@@ -45,7 +57,7 @@ export interface Theme {
   };
 }
 
-const chart = {
+export const chart = {
   green: "#26A876",
   amber: "#BC8623",
   blue: "#4E8FD9",
@@ -68,10 +80,16 @@ export const darkTheme: Theme = {
   gold: "#E9B44C",
   goldInk: "#20170A",
   goldSoft: "rgba(233,180,76,0.15)",
+  goldBorder: "rgba(233,180,76,0.42)",
 
   positive: "#3ED996",
   negative: "#E97767",
   blue: "#6FA8E8",
+
+  avatarBg: "#243B2E",
+  heroFrom: "#233A2C",
+  heroTo: "#182A20",
+  tabBar: "#0F1A13",
 
   chart,
 };
@@ -91,9 +109,16 @@ export const lightTheme: Theme = {
   gold: "#9A6C10",
   goldInk: "#FFF9EB",
   goldSoft: "rgba(154,108,16,0.14)",
+  goldBorder: "rgba(154,108,16,0.40)",
 
   positive: "#1E7A50",
   negative: "#C24B3F",
+  blue: "#3F7BC0",
+
+  avatarBg: "#E8E4D4",
+  heroFrom: "#FFFFFF",
+  heroTo: "#F1ECDC",
+  tabBar: "#FFFFFF",
 
   chart,
 };
@@ -103,6 +128,9 @@ export const lightTheme: Theme = {
  * directly; new/redesigned screens should call `useTheme()` instead.
  */
 export const colors = darkTheme;
+
+/** Alias — screens type their makeStyles(c) parameter as Palette. */
+export type Palette = Theme;
 
 export const radius = { sm: 10, md: 13, lg: 16, xl: 22, pill: 999 } as const;
 

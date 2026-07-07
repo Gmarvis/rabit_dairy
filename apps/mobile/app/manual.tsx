@@ -7,7 +7,7 @@ import type { AccountType, CategoryType, PaymentMethod } from "@rabbit/domain";
 import type { EntryAccountOption } from "@rabbit/application";
 import { PrimaryButton, ScreenHeader } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
-import { useTheme } from "../src/theme/theme";
+import { useTheme } from "../src/theme/ThemeProvider";
 import { radius, space, type Palette } from "../src/theme/tokens";
 
 type Group = "income" | "expense" | "savings";
@@ -27,7 +27,7 @@ export default function ManualEntryScreen() {
   const router = useRouter();
   const qc = useQueryClient();
   const c = useContainer();
-  const { c: pal } = useTheme();
+  const pal = useTheme();
   const s = makeStyles(pal);
 
   const [group, setGroup] = useState<Group>("expense");

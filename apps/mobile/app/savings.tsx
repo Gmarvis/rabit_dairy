@@ -7,7 +7,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PrimaryButton, Row, ScreenHeader } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
-import { useTheme } from "../src/theme/theme";
+import { useTheme } from "../src/theme/ThemeProvider";
 import { radius, space, type Palette } from "../src/theme/tokens";
 
 type Kind = "deposit" | "withdrawal";
@@ -17,7 +17,7 @@ export default function SavingsScreen() {
   const router = useRouter();
   const qc = useQueryClient();
   const c = useContainer();
-  const { c: t } = useTheme();
+  const t = useTheme();
   const s = makeStyles(t);
 
   const [kind, setKind] = useState<Kind>("deposit");

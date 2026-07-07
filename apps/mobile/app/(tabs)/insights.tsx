@@ -7,7 +7,7 @@ import { Card, MoneyText, Row, SectionLabel } from "../../src/components/ui";
 import { useContainer } from "../../src/lib/auth";
 import { usePeriod } from "../../src/lib/period";
 import { monthLabel, percent } from "../../src/lib/format";
-import { useTheme } from "../../src/theme/theme";
+import { useTheme } from "../../src/theme/ThemeProvider";
 import { radius, space, type Palette } from "../../src/theme/tokens";
 
 const LINKS: { href: Href; icon: keyof typeof Ionicons.glyphMap; title: string; sub: string }[] = [
@@ -20,7 +20,7 @@ export default function InsightsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const c = useContainer();
-  const { c: t } = useTheme();
+  const t = useTheme();
   const s = makeStyles(t);
   const { period } = usePeriod();
 
