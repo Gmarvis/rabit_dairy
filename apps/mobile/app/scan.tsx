@@ -7,7 +7,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { CategoryType } from "@rabbit/domain";
 import type { EntryCategoryOption } from "@rabbit/application";
-import { Card, Row, ScreenHeader } from "../src/components/ui";
+import { Card, ModalHeader, Row } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
 import { parseStatement, type ParsedRow } from "../src/lib/parseStatement";
 import { useTheme } from "../src/theme/ThemeProvider";
@@ -140,7 +140,18 @@ export default function ScanScreen() {
       style={s.screen}
       contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), gap: space(3) }}
     >
-      <ScreenHeader title="Scan statement" onClose={() => router.back()} topInset={insets.top} />
+      <ModalHeader
+        title="Scan statement"
+        onCancel={() => router.back()}
+        topInset={insets.top}
+        right={
+          !rows ? (
+            <Pressable onPress={() => pick("library")} hitSlop={10}>
+              <Text style={s.upload}>Upload</Text>
+            </Pressable>
+          ) : undefined
+        }
+      />
 
       {!rows ? (
         <>
@@ -230,6 +241,7 @@ function Action({ label, primary, onPress }: { label: string; primary?: boolean;
 
 const makeStyles = (c: Palette) => StyleSheet.create({
   screen: { backgroundColor: c.bg },
+  upload: { color: c.gold, fontSize: 15, fontWeight: "700" },
   cancel: { color: c.ink2, fontSize: 13 },
   title: { color: c.ink, fontSize: 15, fontWeight: "800" },
   dim: { color: c.ink2, fontSize: 12 },

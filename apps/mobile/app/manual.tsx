@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
@@ -5,7 +6,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { AccountType, CategoryType, PaymentMethod } from "@rabbit/domain";
 import type { EntryAccountOption } from "@rabbit/application";
-import { PrimaryButton, ScreenHeader } from "../src/components/ui";
+import { ModalHeader } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
 import { useTheme } from "../src/theme/ThemeProvider";
 import { radius, space, type Palette } from "../src/theme/tokens";
@@ -75,7 +76,16 @@ export default function ManualEntryScreen() {
   return (
     <View style={s.screen}>
       <View style={{ paddingHorizontal: space(4) }}>
-        <ScreenHeader title="New transaction" onClose={() => router.back()} topInset={insets.top} />
+        <ModalHeader
+          title={`New ${group}`}
+          onCancel={() => router.back()}
+          topInset={insets.top}
+          right={
+            <Pressable onPress={() => canSave && save.mutate()} hitSlop={10} disabled={!canSave}>
+              <Text style={[s.save, { opacity: canSave ? 1 : 0.4 }]}>Save</Text>
+            </Pressable>
+          }
+        />
 
         <View style={s.segment}>
           {(["income", "expense", "savings"] as Group[]).map((g) => (
@@ -87,7 +97,9 @@ export default function ManualEntryScreen() {
 
         <View style={s.amountBox}>
           <Text style={s.amountLabel}>Amount</Text>
-          <Text style={[s.amount, amountMajor === 0 && s.amountZero]}>{amountMajor.toLocaleString("en-US")}</Text>
+          <Text style={[s.amount, amountMajor === 0 && s.amountZero]}>
+            {amountMajor.toLocaleString("en-US")}<Text style={s.cursor}>|</Text>
+          </Text>
           <Text style={s.cur}>FCFA</Text>
         </View>
 
@@ -114,15 +126,18 @@ export default function ManualEntryScreen() {
 
       <View style={{ flex: 1 }} />
 
-      <View style={[s.bottom, { paddingBottom: insets.bottom + space(2) }]}>
+      <View style={[s.bottom, { paddingBottom: insets.bottom + space(3) }]}>
         <View style={s.keypad}>
-          {["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "del"].map((k, i) => (
-            <Pressable key={i} style={[s.key, k === "" && s.keyBlank]} onPress={() => k && press(k)} disabled={k === ""}>
-              <Text style={s.keyText}>{k === "del" ? "⌫" : k}</Text>
+          {["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "del"].map((k, i) => (
+            <Pressable key={i} style={[s.key, k === "" && s.keyBlank]} onPress={() => k && k !== "." && press(k)} disabled={k === "" || k === "."}>
+              {k === "del" ? (
+                <Ionicons name="backspace-outline" size={22} color={pal.ink} />
+              ) : (
+                <Text style={s.keyText}>{k}</Text>
+              )}
             </Pressable>
           ))}
         </View>
-        <PrimaryButton label="Save transaction" onPress={() => save.mutate()} disabled={!canSave} loading={save.isPending} />
       </View>
     </View>
   );
@@ -145,6 +160,8 @@ function Chip({ s, label, color, selected, onPress }: { s: ReturnType<typeof mak
 const makeStyles = (c: Palette) =>
   StyleSheet.create({
     screen: { flex: 1, backgroundColor: c.bg },
+    save: { color: c.gold, fontSize: 15, fontWeight: "700" },
+    cursor: { color: c.gold, fontWeight: "400" },
     segment: { flexDirection: "row", backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: radius.md, padding: 3 },
     seg: { flex: 1, paddingVertical: space(2), borderRadius: radius.sm, alignItems: "center" },
     segOn: { backgroundColor: c.gold },

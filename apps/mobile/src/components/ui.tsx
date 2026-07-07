@@ -70,6 +70,33 @@ export function PageHeader({
   );
 }
 
+/**
+ * Compact modal top bar — Cancel on the left, a centred title, and an optional
+ * right action (Save / Upload). Used by the capture & form sheets.
+ */
+export function ModalHeader({
+  title,
+  onCancel,
+  right,
+  topInset = 0,
+}: {
+  title: string;
+  onCancel: () => void;
+  right?: ReactNode;
+  topInset?: number;
+}) {
+  const c = useTheme();
+  return (
+    <View style={{ paddingTop: topInset + space(2), paddingBottom: space(3), flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+      <Pressable onPress={onCancel} hitSlop={10} style={{ minWidth: 64 }}>
+        <Text style={{ color: c.gold, fontSize: 15, fontWeight: "600" }}>Cancel</Text>
+      </Pressable>
+      <Text style={{ color: c.ink, fontSize: 16, fontWeight: "800" }}>{title}</Text>
+      <View style={{ minWidth: 64, alignItems: "flex-end" }}>{right}</View>
+    </View>
+  );
+}
+
 /** Full-width primary action, anchored at the bottom of form screens. */
 export function PrimaryButton({
   label,
