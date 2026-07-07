@@ -73,10 +73,24 @@ export async function signIn(email: string, password: string) {
   if (error) throw error;
 }
 
-export async function signUp(email: string, password: string) {
+/**
+ * Returns `confirmed: true` when a session was created immediately (email
+ * confirmation is OFF — the good mobile default). When it's `false`, the
+ * project still requires an email link.
+ */
+export async function signUp(
+  email: string,
+  password: string,
+): Promise<{ confirmed: boolean }> {
   if (!supabase) throw new Error("Supabase is not configured.");
-  const { error } = await supabase.auth.signUp({ email, password });
+  const { data, error } = await supabase.auth.signUp({ email, password });
   if (error) throw error;
+  return { confirmed: !!data.session };
+}
+
+export async function resendConfirmation(email: string) {
+  if (!supabase) return;
+  await supabase.auth.resend({ type: "signup", email });
 }
 
 export async function signOut() {

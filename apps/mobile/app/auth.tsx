@@ -8,8 +8,18 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { signIn, signUp } from "../src/lib/auth";
+import { resendConfirmation, signIn, signUp } from "../src/lib/auth";
 import { colors, radius, space } from "../src/theme/tokens";
+
+/** Turn Supabase's terse auth errors into something a person can act on. */
+function friendly(message: string): string {
+  const m = message.toLowerCase();
+  if (m.includes("email not confirmed")) return "Your email isn't confirmed yet. Check your inbox — or resend the link below.";
+  if (m.includes("invalid login")) return "Wrong email or password.";
+  if (m.includes("already registered")) return "That email already has an account — sign in instead.";
+  if (m.includes("password")) return "Password must be at least 6 characters.";
+  return message;
+}
 
 export default function AuthScreen() {
   const insets = useSafeAreaInsets();
@@ -18,18 +28,41 @@ export default function AuthScreen() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
+  const [showResend, setShowResend] = useState(false);
 
   async function submit() {
     setError(null);
+    setInfo(null);
+    setShowResend(false);
     setBusy(true);
     try {
-      if (mode === "signin") await signIn(email.trim(), password);
-      else await signUp(email.trim(), password);
-      // On success the auth listener flips the gate and routes to Home.
+      if (mode === "signin") {
+        await signIn(email.trim(), password);
+        // On success the auth listener flips the gate and routes to Home.
+      } else {
+        const { confirmed } = await signUp(email.trim(), password);
+        if (!confirmed) {
+          setInfo("Account created. This project still requires email confirmation — check your inbox, or turn off “Confirm email” in Supabase for instant sign-in.");
+          setShowResend(true);
+        }
+      }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong.");
+      const msg = e instanceof Error ? e.message : "Something went wrong.";
+      setError(friendly(msg));
+      if (msg.toLowerCase().includes("email not confirmed")) setShowResend(true);
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function resend() {
+    setError(null);
+    try {
+      await resendConfirmation(email.trim());
+      setInfo("Confirmation email sent again — check your inbox.");
+    } catch {
+      setError("Couldn't resend right now.");
     }
   }
 
@@ -71,6 +104,12 @@ export default function AuthScreen() {
       </View>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
+      {info ? <Text style={styles.info}>{info}</Text> : null}
+      {showResend ? (
+        <Pressable onPress={resend} style={{ marginBottom: space(2) }}>
+          <Text style={styles.resend}>Resend confirmation email</Text>
+        </Pressable>
+      ) : null}
 
       <Pressable style={styles.button} onPress={submit} disabled={busy}>
         {busy ? (
@@ -118,6 +157,8 @@ const styles = StyleSheet.create({
     color: colors.ink, fontSize: 15,
   },
   error: { color: colors.negative, fontSize: 12, marginBottom: space(2) },
+  info: { color: colors.ink2, fontSize: 12, lineHeight: 17, marginBottom: space(2) },
+  resend: { color: colors.gold, fontSize: 13, fontWeight: "700" },
   button: {
     backgroundColor: colors.gold, borderRadius: radius.md, padding: space(3.5),
     alignItems: "center", marginTop: space(2),
