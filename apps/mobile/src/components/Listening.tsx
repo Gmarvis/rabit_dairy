@@ -12,10 +12,14 @@ const LottieView = (() => {
   }
 })();
 
+// Metro needs static require paths, so load both theme variants up front.
+const voiceWaveDark = require("../../assets/lottie/voiceWave.json");
+const voiceWaveLight = require("../../assets/lottie/voiceWaveLight.json");
+
 /**
- * Pulsing voice indicator shown while listening. Swap
- * assets/lottie/listening.json for any LottieFiles animation you prefer.
- * Falls back to a static gold dot when the native module isn't available.
+ * Animated voice indicator shown while listening — a LottieFiles waveform that
+ * follows the active theme. Falls back to a static gold dot when the native
+ * lottie module isn't available (Expo Go / a stale binary).
  */
 export function Listening({ size = 120, playing }: { size?: number; playing: boolean }) {
   const c = useTheme();
@@ -41,7 +45,7 @@ export function Listening({ size = 120, playing }: { size?: number; playing: boo
         autoPlay
         loop
         speed={playing ? 1 : 0}
-        source={require("../../assets/lottie/listening.json")}
+        source={c.mode === "light" ? voiceWaveLight : voiceWaveDark}
         style={{ width: size, height: size }}
       />
     </View>

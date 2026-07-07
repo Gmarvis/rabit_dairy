@@ -13,6 +13,19 @@ import { parseStatement, type ParsedRow } from "../src/lib/parseStatement";
 import { useTheme } from "../src/theme/ThemeProvider";
 import { radius, space, type Palette } from "../src/theme/tokens";
 
+// Lottie is a native module — load defensively so a stale binary degrades to
+// the static frame instead of crashing the route.
+const LottieView = (() => {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require("lottie-react-native").default as typeof import("lottie-react-native").default;
+  } catch {
+    return null;
+  }
+})();
+const scanLineDark = require("../assets/lottie/scanLine.json");
+const scanLineLight = require("../assets/lottie/scanLineLight.json");
+
 interface ReviewRow {
   row: ParsedRow;
   include: boolean;
@@ -132,6 +145,14 @@ export default function ScanScreen() {
       {!rows ? (
         <>
           <View style={s.frame}>
+            {LottieView ? (
+              <LottieView
+                autoPlay
+                loop
+                source={t.mode === "light" ? scanLineLight : scanLineDark}
+                style={s.scanLine}
+              />
+            ) : null}
             <Ionicons name="camera" size={28} color={t.ink2} />
             <Text style={s.frameTitle}>Snap or upload a statement</Text>
             <Text style={s.frameSub}>A bank SMS, MoMo history, or a screenshot of your bank app.</Text>
@@ -217,6 +238,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     borderRadius: radius.lg, alignItems: "center", justifyContent: "center",
     gap: space(2), paddingVertical: space(8), paddingHorizontal: space(5),
   },
+  scanLine: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, opacity: 0.9 },
   frameTitle: { color: c.ink, fontSize: 13, fontWeight: "700" },
   frameSub: { color: c.ink2, fontSize: 11, textAlign: "center" },
   privacy: { color: c.muted, fontSize: 10, textAlign: "center" },
