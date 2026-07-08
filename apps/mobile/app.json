@@ -43,7 +43,14 @@
           "speechRecognitionPermission": "Rabbit Dairy transcribes your spoken note on-device, live."
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Rabbit Dairy uses Face ID to unlock the app."
+        }
+      ],
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true
