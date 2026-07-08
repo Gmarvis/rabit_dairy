@@ -127,6 +127,11 @@ export default function DashboardScreen() {
         </Pressable>
       </Row>
 
+      {/* Daily heat-map — pinned to the top; toggle Good days / Tracked / Spending. */}
+      {good.hasData ? (
+        <HeatmapCard dataByDay={good.dataByDay} scale={good.scale} today={new Date()} streak={good.streak} />
+      ) : null}
+
       {isLoading || !data ? (
         <Text style={s.dim}>Loading…</Text>
       ) : (
@@ -262,13 +267,6 @@ export default function DashboardScreen() {
                   );
                 })()}
               </Card>
-            </View>
-          ) : null}
-
-          {/* Good-day heat-map — toggle Good days / Tracked / Spending inline. */}
-          {good.hasData ? (
-            <View style={{ marginTop: space(1) }}>
-              <HeatmapCard dataByDay={good.dataByDay} scale={good.scale} today={new Date()} streak={good.streak} />
             </View>
           ) : null}
 

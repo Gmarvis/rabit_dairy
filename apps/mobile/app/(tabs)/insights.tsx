@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter, type Href } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Dimensions, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PieChart } from "react-native-gifted-charts";
 import type { PeriodSummary } from "@rabbit/domain";
@@ -12,6 +12,8 @@ import { usePeriod } from "../../src/lib/period";
 import { monthLabel, percent } from "../../src/lib/format";
 import { useTheme } from "../../src/theme/ThemeProvider";
 import { radius, space, type Palette } from "../../src/theme/tokens";
+
+const TILE_W = (Dimensions.get("window").width - space(4) * 2 - space(3)) / 2;
 
 const LINKS: { href: Href; icon: keyof typeof Ionicons.glyphMap; title: string; sub: string }[] = [
   { href: "/reports", icon: "analytics", title: "Reports", sub: "Cash flow, breakdown & trends — interactive" },
@@ -60,22 +62,19 @@ export default function InsightsScreen() {
         </Row>
       </Card>
 
-      {LINKS.map((l) => (
-        <PressableScale key={l.title} onPress={() => router.push(l.href)}>
-          <Card>
-            <Row style={{ gap: space(3) }}>
+      <View style={s.grid}>
+        {LINKS.map((l) => (
+          <PressableScale key={l.title} onPress={() => router.push(l.href)} style={{ width: TILE_W }}>
+            <Card style={s.tile}>
               <View style={s.icon}>
                 <Ionicons name={l.icon} size={18} color={t.gold} />
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={s.linkTitle}>{l.title}</Text>
-                <Text style={s.linkSub}>{l.sub}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={16} color={t.muted} />
-            </Row>
-          </Card>
-        </PressableScale>
-      ))}
+              <Text style={s.linkTitle}>{l.title}</Text>
+              <Text style={s.linkSub}>{l.sub}</Text>
+            </Card>
+          </PressableScale>
+        ))}
+      </View>
     </ScrollView>
   );
 }
@@ -105,7 +104,9 @@ function Dot({ color, label, t }: { color: string; label: string; t: Palette }) 
 const makeStyles = (c: Palette) => StyleSheet.create({
   screen: { backgroundColor: c.bg },
   title: { color: c.ink, fontSize: 22, fontWeight: "800" },
+  grid: { flexDirection: "row", flexWrap: "wrap", gap: space(3) },
+  tile: { minHeight: 132 },
   icon: { width: 40, height: 40, borderRadius: radius.md, backgroundColor: c.goldSoft, alignItems: "center", justifyContent: "center" },
-  linkTitle: { color: c.ink, fontSize: 14, fontWeight: "700" },
-  linkSub: { color: c.ink2, fontSize: 11, marginTop: 2 },
+  linkTitle: { color: c.ink, fontSize: 14, fontWeight: "700", marginTop: space(2.5) },
+  linkSub: { color: c.ink2, fontSize: 11, marginTop: 3, lineHeight: 15 },
 });
