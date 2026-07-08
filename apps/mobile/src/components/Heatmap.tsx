@@ -2,12 +2,14 @@ import { useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "../theme/ThemeProvider";
 import { withAlpha } from "./ui";
-import type { Palette } from "../theme/tokens";
+import { chart, type Palette } from "../theme/tokens";
 
 const CELL = 15;
 const GAP = 4;
 const ROWS = 7; // Sun … Sat
 const ROW_LABELS = ["", "M", "", "W", "", "F", ""];
+
+export type HeatmapMode = "good" | "count" | "spent";
 
 function utcKey(d: Date): string {
   return d.toISOString().slice(0, 10);
@@ -18,35 +20,61 @@ function addDays(d: Date, n: number): Date {
   return x;
 }
 
-/** Discrete heat bucket (0 = none) → background colour. */
-function heatColor(spent: number, max: number, c: Palette): string {
-  if (spent <= 0) return withAlpha(c.negative, 0.07);
-  const r = max > 0 ? spent / max : 0;
-  const a = r < 0.25 ? 0.24 : r < 0.5 ? 0.42 : r < 0.75 ? 0.62 : 0.85;
-  return withAlpha(c.negative, a);
+/** Discrete alpha bucket for a 0–1 ratio. */
+function bucket(r: number): number {
+  const x = Math.max(0, Math.min(1, r));
+  return x < 0.25 ? 0.24 : x < 0.5 ? 0.42 : x < 0.75 ? 0.62 : 0.85;
 }
 
 export interface HeatmapDay {
   key: string;
   date: Date;
   spent: number;
+  count: number;
   future: boolean;
 }
 
+export interface HeatmapScale {
+  spendMax: number;
+  countMax: number;
+  /** Typical daily spend — the bar for a "good" day. */
+  target: number;
+}
+
+function cellColor(day: HeatmapDay, mode: HeatmapMode, sc: HeatmapScale, c: Palette): string {
+  if (day.future) return "transparent";
+  if (mode === "spent") {
+    return day.spent <= 0 ? withAlpha(c.negative, 0.07) : withAlpha(c.negative, bucket(day.spent / (sc.spendMax || 1)));
+  }
+  if (mode === "count") {
+    return day.count <= 0 ? withAlpha(c.ink2, 0.07) : withAlpha(c.gold, bucket(day.count / (sc.countMax || 1)));
+  }
+  // "good" — reward days you tracked AND kept spending at or below your usual.
+  if (day.count === 0) return withAlpha(c.ink2, 0.06); // not tracked → empty nudge
+  if (sc.target > 0 && day.spent <= sc.target) {
+    const under = (sc.target - day.spent) / sc.target; // 0 … 1 (1 = no-spend day)
+    return withAlpha(c.positive, bucket(0.3 + 0.7 * under));
+  }
+  return withAlpha(chart.amber, 0.34); // tracked but over your usual
+}
+
 /**
- * A GitHub-style heat-map of daily spending: `weeks` columns of 7 day-cells,
- * each tinted by how much was spent that day. Tapping a cell reports the day.
+ * A GitHub-style heat-map of daily money behaviour over `weeks` weeks. `mode`
+ * decides what the colour means: a "good" day (tracked + under your usual
+ * spend), how many entries you logged, or how much you spent.
  */
 export function SpendingHeatmap({
-  spentByDay,
-  maxSpent,
+  dataByDay,
+  scale,
+  mode,
   weeks = 16,
   today,
   selectedKey,
   onDayPress,
 }: {
-  spentByDay: Map<string, number>;
-  maxSpent: number;
+  dataByDay: Map<string, { spent: number; count: number }>;
+  scale: HeatmapScale;
+  mode: HeatmapMode;
   weeks?: number;
   today: Date;
   selectedKey?: string | null;
@@ -56,7 +84,6 @@ export function SpendingHeatmap({
 
   const columns = useMemo(() => {
     const t0 = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
-    // Saturday that ends this week, then walk back to the first Sunday.
     const lastSat = addDays(t0, 6 - t0.getUTCDay());
     const firstSun = addDays(lastSat, -(weeks * ROWS - 1));
     const cols: HeatmapDay[][] = [];
@@ -65,14 +92,14 @@ export function SpendingHeatmap({
       for (let r = 0; r < ROWS; r++) {
         const date = addDays(firstSun, w * ROWS + r);
         const key = utcKey(date);
-        col.push({ key, date, spent: spentByDay.get(key) ?? 0, future: date.getTime() > t0.getTime() });
+        const d = dataByDay.get(key);
+        col.push({ key, date, spent: d?.spent ?? 0, count: d?.count ?? 0, future: date.getTime() > t0.getTime() });
       }
       cols.push(col);
     }
     return cols;
-  }, [spentByDay, weeks, today]);
+  }, [dataByDay, weeks, today]);
 
-  // Month labels above the columns where a new month starts.
   const monthLabels = columns.map((col, i) => {
     const first = col[0]!.date;
     const prev = i > 0 ? columns[i - 1]![0]!.date : null;
@@ -84,7 +111,6 @@ export function SpendingHeatmap({
 
   return (
     <View style={{ flexDirection: "row", marginTop: 8 }}>
-      {/* weekday labels */}
       <View style={{ marginRight: 6, marginTop: 16 }}>
         {ROW_LABELS.map((l, i) => (
           <View key={i} style={{ height: CELL + GAP, justifyContent: "center" }}>
@@ -93,7 +119,6 @@ export function SpendingHeatmap({
         ))}
       </View>
       <View>
-        {/* month labels */}
         <View style={{ flexDirection: "row", height: 14 }}>
           {monthLabels.map((m, i) => (
             <View key={i} style={{ width: CELL + GAP }}>
@@ -101,7 +126,6 @@ export function SpendingHeatmap({
             </View>
           ))}
         </View>
-        {/* grid */}
         <View style={{ flexDirection: "row" }}>
           {columns.map((col, w) => (
             <View key={w} style={{ marginRight: GAP }}>
@@ -113,7 +137,7 @@ export function SpendingHeatmap({
                   style={[
                     styles.cell,
                     {
-                      backgroundColor: day.future ? "transparent" : heatColor(day.spent, maxSpent, c),
+                      backgroundColor: cellColor(day, mode, scale, c),
                       borderColor: selectedKey === day.key ? c.ink : "transparent",
                     },
                   ]}
@@ -127,16 +151,18 @@ export function SpendingHeatmap({
   );
 }
 
-/** Less → More legend swatches. */
-export function HeatmapLegend() {
+/** Legend whose colour + labels match the active mode. */
+export function HeatmapLegend({ mode }: { mode: HeatmapMode }) {
   const c = useTheme();
+  const base = mode === "spent" ? c.negative : mode === "count" ? c.gold : c.positive;
+  const [lo, hi] = mode === "good" ? ["Over", "Kept low"] : mode === "count" ? ["Fewer", "More"] : ["Less", "More"];
   return (
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 5, marginTop: 10 }}>
-      <Text style={{ color: c.muted, fontSize: 10 }}>Less</Text>
-      {[0.07, 0.24, 0.42, 0.62, 0.85].map((a) => (
-        <View key={a} style={[styles.cell, { backgroundColor: withAlpha(c.negative, a) }]} />
+      <Text style={{ color: c.muted, fontSize: 10 }}>{lo}</Text>
+      {[0.1, 0.24, 0.42, 0.62, 0.85].map((a) => (
+        <View key={a} style={[styles.cell, { backgroundColor: withAlpha(base, a) }]} />
       ))}
-      <Text style={{ color: c.muted, fontSize: 10 }}>More</Text>
+      <Text style={{ color: c.muted, fontSize: 10 }}>{hi}</Text>
     </View>
   );
 }
