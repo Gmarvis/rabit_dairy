@@ -6,6 +6,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { AccountListItem } from "@rabbit/application";
 import { Card, MoneyText, Pill, Row, SectionLabel, Tico } from "../../src/components/ui";
 import { useContainer } from "../../src/lib/auth";
+import { usePeriod } from "../../src/lib/period";
+import { monthLabel } from "../../src/lib/format";
 import { iconForAccount } from "../../src/theme/icons";
 import { useTheme } from "../../src/theme/ThemeProvider";
 import { space, type Palette } from "../../src/theme/tokens";
@@ -16,9 +18,18 @@ export default function AccountsScreen() {
   const c = useContainer();
   const t = useTheme();
   const s = makeStyles(t);
+  const { period } = usePeriod();
   const { data } = useQuery({
     queryKey: ["accounts"],
     queryFn: () => c.queries.accounts.execute(c.userId),
+  });
+  const { data: dash } = useQuery({
+    queryKey: ["dashboard", period.toString()],
+    queryFn: () => c.queries.dashboard.execute(c.userId, period),
+  });
+  const { data: yearly } = useQuery({
+    queryKey: ["yearly-overview", period.year],
+    queryFn: () => c.queries.yearlyOverview.execute(c.userId, period.year),
   });
 
   const banks = data?.accounts.filter((a) => a.type.startsWith("bank_")) ?? [];
@@ -45,6 +56,18 @@ export default function AccountsScreen() {
         <Text style={s.sub}>
           {data ? `${data.accountCount} accounts · ${data.dormantCount} dormant` : "…"}
         </Text>
+
+        <View style={s.divider} />
+        <Row between>
+          <View>
+            <SectionLabel>Net · {monthLabel(period)}</SectionLabel>
+            {dash ? <MoneyText amount={dash.summary.netBalance} signed currency={false} size={16} style={{ marginTop: 3 }} /> : null}
+          </View>
+          <View style={{ alignItems: "flex-end" }}>
+            <SectionLabel>Net · {period.year}</SectionLabel>
+            {yearly ? <MoneyText amount={yearly.ytdNet} signed currency={false} size={16} style={{ marginTop: 3 }} /> : null}
+          </View>
+        </Row>
       </Card>
 
       <SectionLabel>Bank</SectionLabel>
@@ -104,6 +127,7 @@ const makeStyles = (c: Palette) =>
     title: { color: c.ink, fontSize: 22, fontWeight: "800", marginTop: 1 },
     add: { width: 40, height: 40, borderRadius: 20, backgroundColor: c.gold, alignItems: "center", justifyContent: "center" },
     sub: { color: c.ink2, fontSize: 10, marginTop: 3 },
+    divider: { height: 1, backgroundColor: c.line, marginVertical: space(3) },
     row: { flexDirection: "row", alignItems: "center", gap: space(2.5), paddingVertical: space(2.5) },
     rowBorder: { borderBottomWidth: 1, borderBottomColor: c.line },
     name: { color: c.ink, fontSize: 13, fontWeight: "600" },
