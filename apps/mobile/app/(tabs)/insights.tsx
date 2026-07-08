@@ -47,10 +47,13 @@ export default function InsightsScreen() {
       <Card hero>
         <Row between style={{ alignItems: "center" }}>
           <View style={{ flex: 1 }}>
-            <SectionLabel>Kept · {monthLabel(period)}</SectionLabel>
+            <SectionLabel>Total balance · all accounts</SectionLabel>
             {data ? (
               <>
-                <MoneyText amount={data.summary.netBalance} signed size={26} style={{ marginTop: 6 }} />
+                <MoneyText amount={data.netWorth} size={26} style={{ marginTop: 6 }} />
+                <Text style={s.keptLine}>
+                  {data.summary.netBalance.format({ withCode: false })} kept in {monthLabel(period)}
+                </Text>
                 <Row style={{ gap: space(3), marginTop: space(2) }}>
                   <Dot color={t.blue} label={`${percent(data.summary.savingsRate)} saved`} t={t} />
                   <Dot color={t.negative} label={`${percent(data.summary.expenseRate)} spent`} t={t} />
@@ -104,6 +107,7 @@ function Dot({ color, label, t }: { color: string; label: string; t: Palette }) 
 const makeStyles = (c: Palette) => StyleSheet.create({
   screen: { backgroundColor: c.bg },
   title: { color: c.ink, fontSize: 22, fontWeight: "800" },
+  keptLine: { color: c.ink2, fontSize: 12, marginTop: 4 },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: space(3) },
   tile: { minHeight: 132 },
   icon: { width: 40, height: 40, borderRadius: radius.md, backgroundColor: c.goldSoft, alignItems: "center", justifyContent: "center" },
