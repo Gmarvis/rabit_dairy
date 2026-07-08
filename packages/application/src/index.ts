@@ -60,6 +60,7 @@ export { GetCalendar } from "./queries/GetCalendar.js";
 export { GetRecentTransactions } from "./queries/GetRecentTransactions.js";
 export { GetNudges } from "./queries/GetNudges.js";
 export { GetForecast } from "./queries/GetForecast.js";
+export { GetLifetime } from "./queries/GetLifetime.js";
 export { GetExportRows } from "./queries/GetExportRows.js";
 export type { ExportRow } from "./queries/GetExportRows.js";
 export type * from "./queries/viewmodels.js";

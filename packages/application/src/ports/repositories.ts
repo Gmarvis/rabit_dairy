@@ -35,6 +35,8 @@ export interface TransactionRepository {
   findById(userId: UserId, id: TransactionId): Promise<Transaction | null>;
   /** All transactions occurring within a period, newest first. */
   listByPeriod(userId: UserId, period: YearMonth): Promise<Transaction[]>;
+  /** Every transaction the user has — for all-time / lifetime totals. */
+  listAll(userId: UserId): Promise<Transaction[]>;
   listByAccount(
     userId: UserId,
     accountId: AccountId,

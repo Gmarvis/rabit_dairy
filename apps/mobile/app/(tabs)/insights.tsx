@@ -36,6 +36,10 @@ export default function InsightsScreen() {
     queryKey: ["dashboard", period.toString()],
     queryFn: () => c.queries.dashboard.execute(c.userId, period),
   });
+  const { data: life } = useQuery({
+    queryKey: ["lifetime"],
+    queryFn: () => c.queries.lifetime.execute(c.userId),
+  });
 
   return (
     <ScrollView
@@ -64,6 +68,37 @@ export default function InsightsScreen() {
           {data && data.summary.income.minor > 0 ? <IncomeSplit summary={data.summary} t={t} /> : null}
         </Row>
       </Card>
+
+      {/* All-time — the full-lifetime overview. */}
+      {life && life.transactionCount > 0 ? (
+        <Card>
+          <Row between>
+            <SectionLabel>All-time</SectionLabel>
+            {life.since ? (
+              <Text style={s.since}>
+                since {new Date(life.since).toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" })}
+              </Text>
+            ) : null}
+          </Row>
+          <MoneyText amount={life.netWorth} size={24} style={{ marginTop: 6 }} />
+          <Text style={s.keptLine}>net worth · across all accounts</Text>
+          <View style={s.divider} />
+          <Row between>
+            <View>
+              <SectionLabel>Earned</SectionLabel>
+              <Text style={[s.stat, { color: t.positive }]}>{life.earned.format({ withCode: false })}</Text>
+            </View>
+            <View style={{ alignItems: "center" }}>
+              <SectionLabel>Spent</SectionLabel>
+              <Text style={[s.stat, { color: t.negative }]}>{life.spent.format({ withCode: false })}</Text>
+            </View>
+            <View style={{ alignItems: "flex-end" }}>
+              <SectionLabel>Saved</SectionLabel>
+              <Text style={[s.stat, { color: t.blue }]}>{life.saved.format({ withCode: false })}</Text>
+            </View>
+          </Row>
+        </Card>
+      ) : null}
 
       <View style={s.grid}>
         {LINKS.map((l) => (
@@ -108,6 +143,9 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   screen: { backgroundColor: c.bg },
   title: { color: c.ink, fontSize: 22, fontWeight: "800" },
   keptLine: { color: c.ink2, fontSize: 12, marginTop: 4 },
+  since: { color: c.muted, fontSize: 11, fontVariant: ["tabular-nums"] },
+  divider: { height: 1, backgroundColor: c.line, marginVertical: space(3) },
+  stat: { fontSize: 15, fontWeight: "800", marginTop: 3, fontVariant: ["tabular-nums"] },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: space(3) },
   tile: { minHeight: 132 },
   icon: { width: 40, height: 40, borderRadius: radius.md, backgroundColor: c.goldSoft, alignItems: "center", justifyContent: "center" },

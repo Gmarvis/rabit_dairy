@@ -62,6 +62,9 @@ export class InMemoryTransactions implements TransactionRepository {
       .filter((t) => period.containsIso(t.occurredAt))
       .sort((a, b) => (a.occurredAt < b.occurredAt ? 1 : -1));
   }
+  async listAll() {
+    return [...this.store.values()].sort((a, b) => (a.occurredAt < b.occurredAt ? 1 : -1));
+  }
   async listByAccount(_u: UserId, accountId: AccountId, limit?: number) {
     const rows = [...this.store.values()]
       .filter((t) => t.accountId === accountId)

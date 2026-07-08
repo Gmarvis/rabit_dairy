@@ -141,6 +141,17 @@ export class SupabaseTransactionRepository implements TransactionRepository {
     return rows.map(toTransaction);
   }
 
+  async listAll(userId: UserId) {
+    const rows = unwrap<TransactionRow[]>(
+      await this.db
+        .from("transactions")
+        .select("*")
+        .eq("user_id", userId)
+        .order("occurred_at", { ascending: false }),
+    );
+    return rows.map(toTransaction);
+  }
+
   async listByAccount(userId: UserId, accountId: AccountId, limit?: number) {
     let q = this.db
       .from("transactions")

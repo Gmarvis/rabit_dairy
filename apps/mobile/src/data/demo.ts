@@ -147,6 +147,9 @@ export const demoTransactions: TransactionRepository = {
       .filter((t) => period.containsIso(t.occurredAt))
       .sort((a, b) => (a.occurredAt < b.occurredAt ? 1 : -1));
   },
+  async listAll() {
+    return [...transactions].sort((a, b) => (a.occurredAt < b.occurredAt ? 1 : -1));
+  },
   async listByAccount(_u, accountId: AccountId, limit?: number) {
     const rows = transactions
       .filter((t) => t.accountId === accountId)

@@ -296,6 +296,19 @@ export interface NudgesView {
   items: Nudge[];
 }
 
+export interface LifetimeView {
+  /** All money held now across non-dormant accounts. */
+  netWorth: Money;
+  earned: Money;
+  spent: Money;
+  saved: Money;
+  /** earned − spent, all-time. */
+  net: Money;
+  transactionCount: number;
+  /** ISO date of the first transaction, or null. */
+  since: string | null;
+}
+
 export interface CalendarDay {
   /** Day of month, 1-based. */
   day: number;
