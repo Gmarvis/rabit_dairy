@@ -1,9 +1,8 @@
-import { Fragment, useState } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Svg, { Polyline, Rect, Circle } from "react-native-svg";
-import { Ionicons } from "@expo/vector-icons";
+import { BarChart, LineChart, PieChart } from "react-native-gifted-charts";
 import type { BreakdownDimension, BreakdownSlice, CashFlowView } from "@rabbit/application";
 import { Card, MoneyText, PageHeader, Row, SectionLabel, Tico } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
@@ -19,6 +18,15 @@ const DIMS: { key: BreakdownDimension; label: string }[] = [
   { key: "account", label: "Account" },
   { key: "method", label: "Method" },
 ];
+const CW = Dimensions.get("window").width - space(4) * 2 - 40; // card inner width
+
+/** Compact FCFA label, e.g. 1.2M / 820k / 500. */
+function abbrev(n: number): string {
+  const a = Math.abs(n);
+  if (a >= 1_000_000) return `${(n / 1_000_000).toFixed(a >= 10_000_000 ? 0 : 1)}M`;
+  if (a >= 1_000) return `${Math.round(n / 1_000)}k`;
+  return `${Math.round(n)}`;
+}
 
 export default function ReportsScreen() {
   const insets = useSafeAreaInsets();
@@ -27,6 +35,7 @@ export default function ReportsScreen() {
   const s = makeStyles(t);
   const { period } = usePeriod();
   const [dim, setDim] = useState<BreakdownDimension>("category");
+  const [activeSlice, setActiveSlice] = useState(0);
 
   const { data: flow } = useQuery({
     queryKey: ["cash-flow", period.toString()],
@@ -40,6 +49,12 @@ export default function ReportsScreen() {
   const slices = report
     ? dim === "category" ? report.byCategory : dim === "account" ? report.byAccount : report.byMethod
     : [];
+  const pieData = slices.map((sl, i) => ({
+    value: Math.max(sl.amount.major, 0.0001),
+    color: sl.color ?? HUES[i % HUES.length]!,
+    focused: i === activeSlice,
+  }));
+  const focused = slices[activeSlice];
 
   return (
     <ScrollView
@@ -52,16 +67,14 @@ export default function ReportsScreen() {
       <Card>
         <Row between>
           <SectionLabel>Cash flow · 6 months</SectionLabel>
-          <Text style={s.unit}>FCFA</Text>
+          <Text style={s.unit}>tap a bar</Text>
         </Row>
-        {flow ? <CashFlowBars data={flow} /> : null}
+        {flow ? <CashFlowChart data={flow} t={t} /> : null}
         <Row style={{ gap: space(3), marginTop: space(2) }}>
           <Legend color={chart.green} label="Income" t={t} />
           <Legend color={chart.red} label="Expense" t={t} />
         </Row>
-        {flow ? (
-          <View style={s.divider} />
-        ) : null}
+        {flow ? <View style={s.divider} /> : null}
         {flow ? (
           <Row between>
             <View>
@@ -84,10 +97,10 @@ export default function ReportsScreen() {
       {flow ? (
         <Card>
           <Row between>
-            <SectionLabel>Savings rate</SectionLabel>
+            <SectionLabel>Savings rate · drag to explore</SectionLabel>
             <Text style={s.rate}>{percent(flow.savingsRate)}</Text>
           </Row>
-          <SavingsSpark data={flow} t={t} />
+          <SavingsLine data={flow} t={t} />
         </Card>
       ) : null}
 
@@ -95,18 +108,44 @@ export default function ReportsScreen() {
       <SectionLabel>Spending breakdown</SectionLabel>
       <View style={s.segment}>
         {DIMS.map((d) => (
-          <Pressable key={d.key} onPress={() => setDim(d.key)} style={[s.seg, dim === d.key && s.segOn]}>
+          <Pressable
+            key={d.key}
+            onPress={() => { setDim(d.key); setActiveSlice(0); }}
+            style={[s.seg, dim === d.key && s.segOn]}
+          >
             <Text style={[s.segText, dim === d.key && s.segTextOn]}>{d.label}</Text>
           </Pressable>
         ))}
       </View>
-      <Card style={{ paddingVertical: space(1) }}>
+      <Card>
         {slices.length === 0 ? (
           <Text style={[s.dim, { paddingVertical: space(3), textAlign: "center" }]}>No spending this month.</Text>
         ) : (
-          slices.map((sl, i) => (
-            <BreakdownRow key={sl.key} slice={sl} index={i} last={i === slices.length - 1} t={t} s={s} />
-          ))
+          <>
+            <View style={{ alignItems: "center", paddingVertical: space(2) }}>
+              <PieChart
+                data={pieData}
+                donut
+                radius={CW * 0.27}
+                innerRadius={CW * 0.17}
+                innerCircleColor={t.card}
+                focusOnPress
+                onPress={(_item: unknown, index: number) => setActiveSlice(index)}
+                centerLabelComponent={() => (
+                  <View style={{ alignItems: "center" }}>
+                    <Text style={s.centerPct}>{focused ? percent(focused.percent, 0) : ""}</Text>
+                    <Text style={s.centerLabel} numberOfLines={1}>{focused?.label ?? ""}</Text>
+                  </View>
+                )}
+              />
+            </View>
+            <View style={{ height: 1, backgroundColor: t.line, marginBottom: space(1) }} />
+            {slices.map((sl, i) => (
+              <Pressable key={sl.key} onPress={() => setActiveSlice(i)}>
+                <BreakdownRow slice={sl} index={i} last={i === slices.length - 1} active={i === activeSlice} t={t} s={s} />
+              </Pressable>
+            ))}
+          </>
         )}
       </Card>
 
@@ -132,10 +171,91 @@ export default function ReportsScreen() {
   );
 }
 
-function BreakdownRow({ slice, index, last, t, s }: { slice: BreakdownSlice; index: number; last: boolean; t: Palette; s: ReturnType<typeof makeStyles> }) {
+function CashFlowChart({ data, t }: { data: CashFlowView; t: Palette }) {
+  const barData = data.months.flatMap((m) => [
+    { value: m.income.major, frontColor: chart.green, spacing: 3, label: m.label, labelWidth: 34, labelTextStyle: { color: t.muted, fontSize: 10 } },
+    { value: m.expenses.major, frontColor: chart.red },
+  ]);
+  return (
+    <BarChart
+      data={barData}
+      width={CW - 16}
+      height={130}
+      barWidth={13}
+      barBorderRadius={3}
+      initialSpacing={12}
+      spacing={20}
+      hideRules
+      yAxisThickness={0}
+      xAxisThickness={0}
+      hideYAxisText
+      noOfSections={3}
+      maxValue={Math.max(1, data.peak.major)}
+      isAnimated
+      animationDuration={700}
+      focusBarOnPress
+      renderTooltip={(item: { value: number; frontColor: string }) => (
+        <View style={[styles.tip, { backgroundColor: t.ink }]}>
+          <Text style={{ color: t.bg, fontSize: 11, fontWeight: "800" }}>{abbrev(item.value)}</Text>
+        </View>
+      )}
+    />
+  );
+}
+
+function SavingsLine({ data, t }: { data: CashFlowView; t: Palette }) {
+  const lineData = data.months.map((m) => ({
+    value: Math.round(Math.max(0, Math.min(1, m.savingsRate)) * 100),
+    label: m.label,
+  }));
+  return (
+    <View style={{ marginTop: space(2), marginLeft: -8 }}>
+      <LineChart
+        data={lineData}
+        width={CW - 24}
+        height={120}
+        curved
+        areaChart
+        color={t.positive}
+        thickness={2.5}
+        startFillColor={t.positive}
+        endFillColor={t.positive}
+        startOpacity={0.22}
+        endOpacity={0.02}
+        dataPointsColor={t.positive}
+        dataPointsRadius={3}
+        hideRules
+        yAxisThickness={0}
+        xAxisThickness={0}
+        hideYAxisText
+        maxValue={100}
+        noOfSections={2}
+        xAxisLabelTextStyle={{ color: t.muted, fontSize: 10 }}
+        isAnimated
+        animationDuration={800}
+        pointerConfig={{
+          pointerColor: t.positive,
+          pointerStripColor: t.line,
+          pointerStripHeight: 120,
+          radius: 5,
+          pointerLabelWidth: 60,
+          pointerLabelHeight: 30,
+          autoAdjustPointerLabelPosition: true,
+          pointerLabelComponent: (items: { value: number }[]) => (
+            <View style={[styles.tip, { backgroundColor: t.ink }]}>
+              <Text style={{ color: t.bg, fontSize: 11, fontWeight: "800" }}>{items[0]?.value ?? 0}%</Text>
+            </View>
+          ),
+        }}
+      />
+    </View>
+  );
+}
+
+function BreakdownRow({ slice, index, last, active, t, s }: { slice: BreakdownSlice; index: number; last: boolean; active: boolean; t: Palette; s: ReturnType<typeof makeStyles> }) {
   const color = slice.color ?? HUES[index % HUES.length]!;
   return (
-    <View style={[s.brRow, !last && s.border]}>
+    <View style={[s.brRow, !last && s.border, active && { opacity: 1 }, !active && { opacity: 0.72 }]}>
       <View style={[s.dot, { backgroundColor: color }]} />
       <View style={{ flex: 1 }}>
         <Row between>
@@ -158,45 +278,6 @@ function BreakdownRow({ slice, index, last, t, s }: { slice: BreakdownSlice; ind
   );
 }
 
-function CashFlowBars({ data }: { data: CashFlowView }) {
-  const W = 320, H = 120, base = 100, maxH = 84;
-  const peak = data.peak.major || 1;
-  const slot = W / data.months.length;
-  const bw = 6;
-  return (
-    <Svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} style={{ marginTop: 8 }}>
-      {data.months.map((m, i) => {
-        const cx = i * slot + slot / 2;
-        const ih = (m.income.major / peak) * maxH;
-        const eh = (m.expenses.major / peak) * maxH;
-        return (
-          <Fragment key={m.month}>
-            <Rect x={cx - bw - 1.5} y={base - ih} width={bw} height={Math.max(ih, 0)} rx={2.5} fill={chart.green} />
-            <Rect x={cx + 1.5} y={base - eh} width={bw} height={Math.max(eh, 0)} rx={2.5} fill={chart.red} />
-          </Fragment>
-        );
-      })}
-    </Svg>
-  );
-}
-
-function SavingsSpark({ data, t }: { data: CashFlowView; t: Palette }) {
-  const vals = data.months.map((m) => Math.max(0, Math.min(1, m.savingsRate)));
-  const W = 300, H = 44;
-  const pts = vals.map((v, i) => {
-    const x = (i / (vals.length - 1)) * W;
-    const y = H - v * (H - 6) - 3;
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  });
-  const last = pts[pts.length - 1]!.split(",");
-  return (
-    <Svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ marginTop: 10 }}>
-      <Polyline points={pts.join(" ")} fill="none" stroke={t.positive} strokeWidth={2.5} />
-      <Circle cx={Number(last[0])} cy={Number(last[1])} r={3.5} fill={t.positive} />
-    </Svg>
-  );
-}
-
 function Legend({ color, label, t }: { color: string; label: string; t: Palette }) {
   return (
     <Row style={{ gap: 5 }}>
@@ -206,14 +287,20 @@ function Legend({ color, label, t }: { color: string; label: string; t: Palette 
   );
 }
 
+const styles = StyleSheet.create({
+  tip: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, marginBottom: 6 },
+});
+
 const makeStyles = (c: Palette) => StyleSheet.create({
   screen: { backgroundColor: c.bg },
-  unit: { color: c.muted, fontSize: 10 },
+  unit: { color: c.muted, fontSize: 10, fontWeight: "600" },
   dim: { color: c.ink2, fontSize: 13 },
   divider: { height: 1, backgroundColor: c.line, marginVertical: space(3) },
   metaLabel: { color: c.muted, fontSize: 10, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase" },
   mom: { fontSize: 16, fontWeight: "800", marginTop: 2 },
   rate: { color: c.positive, fontSize: 18, fontWeight: "800" },
+  centerPct: { color: c.ink, fontSize: 20, fontWeight: "800" },
+  centerLabel: { color: c.ink2, fontSize: 10, maxWidth: CW * 0.3, textAlign: "center" },
   segment: { flexDirection: "row", backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: 13, padding: 3 },
   seg: { flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: space(2), borderRadius: 10 },
   segOn: { backgroundColor: c.gold },
