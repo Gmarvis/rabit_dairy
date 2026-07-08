@@ -307,6 +307,8 @@ export interface LifetimeView {
   transactionCount: number;
   /** ISO date of the first transaction, or null. */
   since: string | null;
+  /** Net worth at each month-end, first active month → latest (oldest first). */
+  series: { label: string; value: number }[];
 }
 
 export interface CalendarDay {

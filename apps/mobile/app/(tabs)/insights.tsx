@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter, type Href } from "expo-router";
 import { Dimensions, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { PieChart } from "react-native-gifted-charts";
+import { LineChart, PieChart } from "react-native-gifted-charts";
 import type { PeriodSummary } from "@rabbit/domain";
 import { Card, MoneyText, Row, SectionLabel } from "../../src/components/ui";
 import { PressableScale } from "../../src/components/anim";
@@ -14,6 +14,14 @@ import { useTheme } from "../../src/theme/ThemeProvider";
 import { radius, space, type Palette } from "../../src/theme/tokens";
 
 const TILE_W = (Dimensions.get("window").width - space(4) * 2 - space(3)) / 2;
+const CHART_W = Dimensions.get("window").width - space(4) * 2 - 44;
+
+function abbrev(n: number): string {
+  const a = Math.abs(n);
+  if (a >= 1_000_000) return `${(n / 1_000_000).toFixed(a >= 10_000_000 ? 0 : 1)}M`;
+  if (a >= 1_000) return `${Math.round(n / 1_000)}k`;
+  return `${Math.round(n)}`;
+}
 
 const LINKS: { href: Href; icon: keyof typeof Ionicons.glyphMap; title: string; sub: string }[] = [
   { href: "/reports", icon: "analytics", title: "Reports", sub: "Cash flow, breakdown & trends — interactive" },
@@ -97,6 +105,53 @@ export default function InsightsScreen() {
               <Text style={[s.stat, { color: t.blue }]}>{life.saved.format({ withCode: false })}</Text>
             </View>
           </Row>
+
+          {life.series.length > 1 ? (
+            <>
+              <View style={s.divider} />
+              <SectionLabel>Net worth over time</SectionLabel>
+              <View style={{ marginTop: space(2), marginLeft: -8 }}>
+                <LineChart
+                  data={life.series.map((p) => ({ value: p.value, label: p.label }))}
+                  width={CHART_W - 16}
+                  height={120}
+                  curved
+                  areaChart
+                  color={t.positive}
+                  thickness={2.5}
+                  startFillColor={t.positive}
+                  endFillColor={t.positive}
+                  startOpacity={0.22}
+                  endOpacity={0.02}
+                  hideDataPoints
+                  hideRules
+                  hideYAxisText
+                  yAxisThickness={0}
+                  xAxisThickness={0}
+                  adjustToWidth
+                  initialSpacing={8}
+                  endSpacing={8}
+                  xAxisLabelTextStyle={{ color: t.muted, fontSize: 9 }}
+                  isAnimated
+                  animationDuration={800}
+                  pointerConfig={{
+                    pointerColor: t.positive,
+                    pointerStripColor: t.line,
+                    pointerStripHeight: 120,
+                    radius: 4,
+                    pointerLabelWidth: 120,
+                    pointerLabelHeight: 30,
+                    autoAdjustPointerLabelPosition: true,
+                    pointerLabelComponent: (items: { value: number }[]) => (
+                      <View style={{ backgroundColor: t.ink, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 }}>
+                        <Text style={{ color: t.bg, fontSize: 11, fontWeight: "800" }}>{abbrev(items[0]?.value ?? 0)} FCFA</Text>
+                      </View>
+                    ),
+                  }}
+                />
+              </View>
+            </>
+          ) : null}
         </Card>
       ) : null}
 

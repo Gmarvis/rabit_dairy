@@ -37,5 +37,10 @@ describe("GetLifetime", () => {
     // Opening 0 + (200k − 30k) movement → net worth 170k.
     expect(view.netWorth.major).toBe(170_000);
     expect(view.since).toBe("2025-11-01T00:00:00Z");
+    // Net-worth series spans Nov 2025 → Apr 2026 (6 months), ending at 170k.
+    expect(view.series).toHaveLength(6);
+    expect(view.series[0]!.value).toBe(100_000); // end of Nov
+    expect(view.series[1]!.value).toBe(70_000); // Dec, −30k
+    expect(view.series[view.series.length - 1]!.value).toBe(170_000);
   });
 });

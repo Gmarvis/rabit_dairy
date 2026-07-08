@@ -1,4 +1,4 @@
-import { Money, summarise, type UserId } from "@rabbit/domain";
+import { Money, YearMonth, summarise, type UserId } from "@rabbit/domain";
 import type {
   AccountRepository,
   TransactionRepository,
@@ -41,6 +41,34 @@ export class GetLifetime {
     const firstAt = all.length
       ? all.reduce((min, t) => (t.occurredAt < min ? t.occurredAt : min), all[0]!.occurredAt)
       : null;
+    const lastAt = all.length
+      ? all.reduce((max, t) => (t.occurredAt > max ? t.occurredAt : max), all[0]!.occurredAt)
+      : null;
+
+    // Net-worth-over-time: opening baseline, then cumulative monthly movement
+    // (non-dormant accounts) from the first active month to the last.
+    const dormant = new Set(accs.filter((a) => a.isDormant).map((a) => a.id));
+    const totalOpening = accs
+      .filter((a) => !a.isDormant)
+      .reduce((s, a) => s.plus(a.openingBalance), Money.zero("XAF"));
+    const monthMove = new Map<string, Money>();
+    for (const t of all) {
+      if (dormant.has(t.accountId)) continue;
+      const k = t.occurredAt.slice(0, 7); // YYYY-MM
+      monthMove.set(k, (monthMove.get(k) ?? Money.zero("XAF")).plus(t.signedAmount));
+    }
+    const series: { label: string; value: number }[] = [];
+    if (firstAt && lastAt) {
+      const last = YearMonth.parse(lastAt.slice(0, 7));
+      let ym = YearMonth.parse(firstAt.slice(0, 7));
+      let cum = totalOpening;
+      for (let i = 0; i < 600; i++) {
+        cum = cum.plus(monthMove.get(ym.toString()) ?? Money.zero("XAF"));
+        series.push({ label: ym.monthName.slice(0, 3), value: cum.minor });
+        if (ym.equals(last)) break;
+        ym = ym.next();
+      }
+    }
 
     return {
       netWorth,
@@ -51,6 +79,7 @@ export class GetLifetime {
       net: summary.income.minus(summary.expenses),
       transactionCount: all.length,
       since: firstAt,
+      series,
     };
   }
 }
