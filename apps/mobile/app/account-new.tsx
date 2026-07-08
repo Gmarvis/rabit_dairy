@@ -10,7 +10,7 @@ import { useTheme } from "../src/theme/ThemeProvider";
 import { radius, space, type Palette } from "../src/theme/tokens";
 
 const TYPES: { key: AccountType; label: string }[] = [
-  { key: "bank_salary", label: "Salary" },
+  { key: "bank_salary", label: "Current / Cheque" },
   { key: "bank_savings", label: "Savings" },
   { key: "bank_other", label: "Other bank" },
   { key: "mobile_money", label: "Mobile money" },
@@ -26,7 +26,7 @@ export default function NewAccountScreen() {
   const s = makeStyles(pal);
 
   const [name, setName] = useState("");
-  const [type, setType] = useState<AccountType>("bank_savings");
+  const [type, setType] = useState<AccountType>("bank_salary");
   const [institution, setInstitution] = useState("");
   const [mask, setMask] = useState("");
   const [opening, setOpening] = useState("");
