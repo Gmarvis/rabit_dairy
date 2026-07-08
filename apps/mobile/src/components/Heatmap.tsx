@@ -41,21 +41,38 @@ export interface HeatmapScale {
   target: number;
 }
 
-function cellColor(day: HeatmapDay, mode: HeatmapMode, sc: HeatmapScale, c: Palette): string {
-  if (day.future) return "transparent";
+/** Colour for one day's cell in the given mode — shared with the Home strip. */
+export function dayHeatColor(
+  mode: HeatmapMode,
+  spent: number,
+  count: number,
+  sc: HeatmapScale,
+  c: Palette,
+  future = false,
+): string {
+  if (future) return "transparent";
   if (mode === "spent") {
-    return day.spent <= 0 ? withAlpha(c.negative, 0.07) : withAlpha(c.negative, bucket(day.spent / (sc.spendMax || 1)));
+    return spent <= 0 ? withAlpha(c.negative, 0.07) : withAlpha(c.negative, bucket(spent / (sc.spendMax || 1)));
   }
   if (mode === "count") {
-    return day.count <= 0 ? withAlpha(c.ink2, 0.07) : withAlpha(c.gold, bucket(day.count / (sc.countMax || 1)));
+    return count <= 0 ? withAlpha(c.ink2, 0.07) : withAlpha(c.gold, bucket(count / (sc.countMax || 1)));
   }
   // "good" — reward days you tracked AND kept spending at or below your usual.
-  if (day.count === 0) return withAlpha(c.ink2, 0.06); // not tracked → empty nudge
-  if (sc.target > 0 && day.spent <= sc.target) {
-    const under = (sc.target - day.spent) / sc.target; // 0 … 1 (1 = no-spend day)
+  if (count === 0) return withAlpha(c.ink2, 0.06); // not tracked → empty nudge
+  if (sc.target > 0 && spent <= sc.target) {
+    const under = (sc.target - spent) / sc.target; // 0 … 1 (1 = no-spend day)
     return withAlpha(c.positive, bucket(0.3 + 0.7 * under));
   }
   return withAlpha(chart.amber, 0.34); // tracked but over your usual
+}
+
+/** True when a day counts toward the "good day" streak. */
+export function isGoodDay(spent: number, count: number, target: number): boolean {
+  return count > 0 && (target <= 0 ? spent <= 0 : spent <= target);
+}
+
+function cellColor(day: HeatmapDay, mode: HeatmapMode, sc: HeatmapScale, c: Palette): string {
+  return dayHeatColor(mode, day.spent, day.count, sc, c, day.future);
 }
 
 /**

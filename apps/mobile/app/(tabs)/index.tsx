@@ -2,11 +2,13 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LineChart } from "react-native-gifted-charts";
+import { YearMonth } from "@rabbit/domain";
 import type { NetWorthTrendView } from "@rabbit/application";
+import { dayHeatColor, isGoodDay } from "../../src/components/Heatmap";
 import { Card, MoneyText, Pill, Row, SectionLabel, Tico, withAlpha } from "../../src/components/ui";
 import { CountUpMoney } from "../../src/components/anim";
 import { ONBOARDED_KEY } from "../onboarding";
@@ -63,6 +65,48 @@ export default function DashboardScreen() {
     queryKey: ["forecast", period.toString()],
     queryFn: () => c.queries.forecast.execute(c.userId, period),
   });
+  const { data: recentTx } = useQuery({
+    queryKey: ["recent-transactions"],
+    queryFn: () => c.queries.recentTransactions.execute(c.userId, YearMonth.fromDate(new Date())),
+  });
+
+  // "Good day" streak — days you logged AND kept at/under your usual spend.
+  const good = useMemo(() => {
+    const m = new Map<string, { spent: number; count: number }>();
+    for (const tx of recentTx ?? []) {
+      const k = new Date(tx.occurredAt).toISOString().slice(0, 10);
+      const cur = m.get(k) ?? { spent: 0, count: 0 };
+      cur.count += 1;
+      if (tx.signedAmount.minor < 0) cur.spent += -tx.signedAmount.minor;
+      m.set(k, cur);
+    }
+    let total = 0, days = 0, spendMax = 0, countMax = 0;
+    for (const v of m.values()) {
+      spendMax = Math.max(spendMax, v.spent);
+      countMax = Math.max(countMax, v.count);
+      if (v.spent > 0) { total += v.spent; days += 1; }
+    }
+    const target = days > 0 ? total / days : 0;
+    const scale = { spendMax, countMax, target };
+    const now = new Date();
+    const t0 = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    const keyOf = (d: Date) => d.toISOString().slice(0, 10);
+    const strip = Array.from({ length: 14 }, (_, i) => {
+      const d = new Date(t0);
+      d.setUTCDate(t0.getUTCDate() - (13 - i));
+      const v = m.get(keyOf(d)) ?? { spent: 0, count: 0 };
+      return { key: keyOf(d), spent: v.spent, count: v.count };
+    });
+    const isGood = (d: Date) => {
+      const v = m.get(keyOf(d));
+      return !!v && isGoodDay(v.spent, v.count, target);
+    };
+    let streak = 0;
+    const cur = new Date(t0);
+    if (!isGood(cur)) cur.setUTCDate(cur.getUTCDate() - 1);
+    while (isGood(cur)) { streak += 1; cur.setUTCDate(cur.getUTCDate() - 1); }
+    return { scale, strip, streak, hasData: m.size > 0 };
+  }, [recentTx]);
 
   return (
     <ScrollView
@@ -227,6 +271,35 @@ export default function DashboardScreen() {
             </View>
           ) : null}
 
+          {/* Good-day streak — logged & under your usual spend. */}
+          {good.hasData ? (
+            <Pressable onPress={() => router.push("/reports")} style={{ marginTop: space(1) }}>
+              <Card>
+                <Row between>
+                  <View>
+                    <SectionLabel>Good days</SectionLabel>
+                    <Row style={{ gap: 8, marginTop: 6, alignItems: "flex-end" }}>
+                      <Text style={s.goodNum}>{good.streak}</Text>
+                      <Text style={s.goodUnit}>day{good.streak === 1 ? "" : "s"} in a row</Text>
+                    </Row>
+                  </View>
+                  <View style={[s.goodIcon, { backgroundColor: withAlpha(t.positive, 0.15) }]}>
+                    <Ionicons name="leaf" size={18} color={t.positive} />
+                  </View>
+                </Row>
+                <Row style={{ gap: 4, marginTop: space(3) }}>
+                  {good.strip.map((d) => (
+                    <View
+                      key={d.key}
+                      style={[s.stripCell, { backgroundColor: dayHeatColor("good", d.spent, d.count, good.scale, t) }]}
+                    />
+                  ))}
+                </Row>
+                <Text style={s.goodCap}>Logged &amp; at or under your usual spend. Keep the row green.</Text>
+              </Card>
+            </Pressable>
+          ) : null}
+
           {/* Habit streaks — a nudge to keep the diary going. */}
           {habits ? (
             <Pressable onPress={() => router.push("/habits")} style={{ marginTop: space(1) }}>
@@ -367,6 +440,11 @@ const makeStyles = (c: Palette) =>
     netDelta: { fontSize: 12, fontWeight: "700", fontVariant: ["tabular-nums"] },
     cap: { color: c.ink2, fontSize: 11 },
     sparkCap: { color: c.muted, fontSize: 10, fontWeight: "600" },
+    goodNum: { color: c.positive, fontSize: 30, fontWeight: "800", fontVariant: ["tabular-nums"], lineHeight: 32 },
+    goodUnit: { color: c.ink2, fontSize: 12, marginBottom: 3 },
+    goodIcon: { width: 38, height: 38, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+    stripCell: { flex: 1, height: 24, borderRadius: 5 },
+    goodCap: { color: c.muted, fontSize: 11, marginTop: 10, lineHeight: 16 },
     fcLabel: { color: c.muted, fontSize: 11, fontWeight: "700", letterSpacing: 0.5, textTransform: "uppercase" },
     fcVal: { fontSize: 28, fontWeight: "800", marginTop: 5, fontVariant: ["tabular-nums"] },
     fcCur: { fontSize: 13, fontWeight: "600", color: c.ink2 },
