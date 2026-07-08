@@ -67,6 +67,7 @@ function RootNavigator() {
       <Stack.Screen name="categories" options={{ presentation: "modal" }} />
       <Stack.Screen name="habits" options={{ presentation: "modal" }} />
       <Stack.Screen name="calendar" options={{ presentation: "modal" }} />
+      <Stack.Screen name="search" options={{ presentation: "modal", animation: "fade" }} />
       <Stack.Screen name="category/[id]" options={{ presentation: "modal", animation: "slide_from_bottom" }} />
     </Stack>
   );

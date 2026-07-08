@@ -1,9 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
-import { useRouter } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { SpendGoalHabit, StreakStat } from "@rabbit/application";
+import { Confetti } from "../src/components/anim";
 import { Card, PageHeader, Pill, Row, SectionLabel, Tico } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
 import { useTheme } from "../src/theme/ThemeProvider";
@@ -12,6 +13,9 @@ import { space, type Palette } from "../src/theme/tokens";
 function plural(n: number, one: string) {
   return `${n} ${one}${n === 1 ? "" : "s"}`;
 }
+
+/** Streak lengths worth celebrating with a confetti burst. */
+const MILESTONES = new Set([3, 7, 14, 21, 30, 50, 75, 100, 150, 200, 365]);
 
 export default function HabitsScreen() {
   const insets = useSafeAreaInsets();
@@ -24,9 +28,18 @@ export default function HabitsScreen() {
     queryFn: () => c.queries.habits.execute(c.userId),
   });
 
+  const [celebrate, setCelebrate] = useState(false);
+  const celebrated = useRef(false);
+  useEffect(() => {
+    if (data && !celebrated.current && MILESTONES.has(data.logging.current)) {
+      celebrated.current = true;
+      setCelebrate(true);
+    }
+  }, [data]);
+
   return (
+    <View style={s.screen}>
     <ScrollView
-      style={s.screen}
       contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(6) }}
     >
       <PageHeader eyebrow="Your money routine" title="Habits" topInset={insets.top} />
@@ -118,6 +131,8 @@ export default function HabitsScreen() {
         </>
       )}
     </ScrollView>
+    <Confetti play={celebrate} />
+    </View>
   );
 }
 
@@ -170,7 +185,7 @@ const gStyles = StyleSheet.create({
 });
 
 const makeStyles = (c: Palette) => StyleSheet.create({
-  screen: { backgroundColor: c.bg },
+  screen: { flex: 1, backgroundColor: c.bg },
   dim: { color: c.ink2, marginTop: space(4) },
   big: { color: c.ink, fontSize: 40, fontWeight: "800", fontVariant: ["tabular-nums"], lineHeight: 44 },
   bigSub: { color: c.ink2, fontSize: 13, marginTop: 2 },

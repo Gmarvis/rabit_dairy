@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   Animated,
+  Dimensions,
   Easing,
   Pressable,
   StyleSheet,
@@ -9,6 +10,7 @@ import {
   type TextStyle,
   type ViewStyle,
 } from "react-native";
+import { chart } from "../theme/tokens";
 import { useTheme } from "../theme/ThemeProvider";
 
 /**
@@ -122,6 +124,76 @@ export function FadeInUp({
       ]}
     >
       {children}
+    </Animated.View>
+  );
+}
+
+const CONFETTI_COLORS = [chart.green, chart.amber, chart.blue, chart.red, chart.violet, "#E9B44C"];
+const SCREEN_H = Dimensions.get("window").height;
+
+/**
+ * A brief confetti burst — celebratory feedback for hitting a milestone. Pure
+ * Animated (one driver, many interpolations), so no native module. Renders
+ * nothing until `play` flips true, then clears itself when the burst ends.
+ */
+export function Confetti({ play, count = 20 }: { play: boolean; count?: number }) {
+  const p = useRef(new Animated.Value(0)).current;
+  const [visible, setVisible] = useState(false);
+
+  const bits = useMemo(
+    () =>
+      Array.from({ length: count }, (_, i) => {
+        const spread = (i / (count - 1)) * 2 - 1; // −1 … 1
+        return {
+          dx: spread * (110 + (i % 5) * 26),
+          fall: SCREEN_H * (0.42 + ((i * 7) % 20) / 100),
+          color: CONFETTI_COLORS[i % CONFETTI_COLORS.length]!,
+          size: 6 + (i % 3) * 3,
+          spin: i % 2 ? 1 : -1,
+          delayIn: (i % 4) * 0.04,
+        };
+      }),
+    [count],
+  );
+
+  useEffect(() => {
+    if (!play) return;
+    setVisible(true);
+    p.setValue(0);
+    Animated.timing(p, {
+      toValue: 1,
+      duration: 1200,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start(() => setVisible(false));
+  }, [play, p]);
+
+  if (!visible) return null;
+
+  return (
+    <Animated.View pointerEvents="none" style={StyleSheet.absoluteFill}>
+      {bits.map((b, i) => {
+        const translateY = p.interpolate({ inputRange: [0, 0.2, 1], outputRange: [0, -60, b.fall] });
+        const translateX = p.interpolate({ inputRange: [0, 1], outputRange: [0, b.dx] });
+        const rotate = p.interpolate({ inputRange: [0, 1], outputRange: ["0deg", `${b.spin * 540}deg`] });
+        const opacity = p.interpolate({ inputRange: [0, 0.1, 0.8, 1], outputRange: [0, 1, 1, 0] });
+        return (
+          <Animated.View
+            key={i}
+            style={{
+              position: "absolute",
+              top: "34%",
+              left: "50%",
+              width: b.size,
+              height: b.size * 1.4,
+              borderRadius: 2,
+              backgroundColor: b.color,
+              opacity,
+              transform: [{ translateX }, { translateY }, { rotate }],
+            }}
+          />
+        );
+      })}
     </Animated.View>
   );
 }

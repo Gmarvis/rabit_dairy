@@ -63,7 +63,7 @@ export default function ActivityScreen() {
     >
       <Row between>
         <Text style={s.title}>Transactions</Text>
-        <Pressable style={s.iconBtn} accessibilityLabel="Search" accessibilityRole="button">
+        <Pressable style={s.iconBtn} accessibilityLabel="Search" accessibilityRole="button" onPress={() => router.push("/search")}>
           <Ionicons name="search" size={16} color={t.ink} />
         </Pressable>
       </Row>

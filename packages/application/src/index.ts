@@ -57,6 +57,7 @@ export { GetCategories } from "./queries/GetCategories.js";
 export { GetNetWorthTrend } from "./queries/GetNetWorthTrend.js";
 export { GetHabits } from "./queries/GetHabits.js";
 export { GetCalendar } from "./queries/GetCalendar.js";
+export { GetRecentTransactions } from "./queries/GetRecentTransactions.js";
 export { GetExportRows } from "./queries/GetExportRows.js";
 export type { ExportRow } from "./queries/GetExportRows.js";
 export type * from "./queries/viewmodels.js";
