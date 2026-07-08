@@ -96,8 +96,9 @@ export default function ScanScreen() {
       }));
       setRows(review);
       if (review.length === 0) setError("Couldn't read anything from that image. Try a clearer photo.");
-    } catch {
-      setError("Couldn't read that image. Try a clearer photo.");
+    } catch (e) {
+      // Surface the real reason (e.g. function not deployed / key missing) so it's debuggable.
+      setError(e instanceof Error ? e.message : "Couldn't read that image. Try a clearer photo.");
     } finally {
       setBusy(false);
     }

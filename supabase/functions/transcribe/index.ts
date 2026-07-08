@@ -88,15 +88,31 @@ Deno.serve(async (req) => {
     transcript = ((await wRes.json()).text ?? "").trim();
   }
 
-  // 3. Parse the transcript into a draft transaction (strict JSON).
+  // 3. Parse the transcript into a draft transaction. We use OpenAI Structured
+  //    Outputs so `categoryHint` is guaranteed to be one of the user's actual
+  //    categories (an enum) — the model reads the note and picks from the list,
+  //    rather than inventing a free-text label we then have to fuzzy-match.
+  const categoryProp = categories.length
+    ? { type: ["string", "null"], enum: [...categories, null] }
+    : { type: ["string", "null"] };
+  const schema = {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      amountMajor: { type: ["number", "null"], description: "Whole-number FCFA amount, no separators." },
+      categoryHint: categoryProp,
+      method: { type: ["string", "null"], enum: ["cash", "mobile_money", "bank_card", "bank_transfer", null] },
+      note: { type: ["string", "null"], description: "A short human label for the purchase, e.g. 'Barbershop'." },
+    },
+    required: ["amountMajor", "categoryHint", "method", "note"],
+  };
   const sys =
-    "Extract a personal-finance transaction from the user's spoken note. " +
-    "Currency is XAF (FCFA), whole numbers. Reply ONLY with minified JSON: " +
-    `{"amountMajor": number|null, "categoryHint": string|null, "method": ` +
-    `"cash"|"mobile_money"|"bank_card"|"bank_transfer"|null, "note": string|null}. ` +
-    (categories.length
-      ? `Pick categoryHint from this list when possible: ${categories.join(", ")}.`
-      : "");
+    "You turn a spoken note into a personal-finance transaction. Currency is " +
+    "XAF (FCFA), whole numbers. Read the note and choose the single best-fitting " +
+    "categoryHint from the allowed list; if none fits, use null. `note` is a short " +
+    "merchant/label from the words (e.g. 'I spent 5000 at the barbershop' → note " +
+    "'Barbershop', amountMajor 5000). Infer `method` only if the words imply it.";
+
   const cRes = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -106,7 +122,10 @@ Deno.serve(async (req) => {
     body: JSON.stringify({
       model: "gpt-4o-mini",
       temperature: 0,
-      response_format: { type: "json_object" },
+      response_format: {
+        type: "json_schema",
+        json_schema: { name: "transaction", strict: true, schema },
+      },
       messages: [
         { role: "system", content: sys },
         { role: "user", content: transcript || "(empty)" },
@@ -121,6 +140,8 @@ Deno.serve(async (req) => {
     } catch {
       /* keep defaults on parse failure */
     }
+  } else {
+    return json({ error: `Parse failed: ${await cRes.text()}` }, 502);
   }
 
   return json({ transcript, ...parsed });
