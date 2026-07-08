@@ -7,7 +7,9 @@
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#14231C",
+    "icon": "./assets/icon.png",
     "splash": {
+      "image": "./assets/splash.png",
       "backgroundColor": "#14231C",
       "resizeMode": "contain"
     },
@@ -18,6 +20,7 @@
     "android": {
       "package": "ltd.nyota.rabbitdiary",
       "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#14231C"
       }
     },
