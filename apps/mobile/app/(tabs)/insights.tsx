@@ -88,8 +88,8 @@ export default function InsightsScreen() {
               </Text>
             ) : null}
           </Row>
-          <MoneyText amount={life.netWorth} size={24} style={{ marginTop: 6 }} />
-          <Text style={s.keptLine}>net worth · across all accounts</Text>
+          <MoneyText amount={life.net} signed size={24} style={{ marginTop: 6 }} />
+          <Text style={s.keptLine}>accumulated · everything earned minus spending</Text>
           <View style={s.divider} />
           <Row between>
             <View>
@@ -109,7 +109,7 @@ export default function InsightsScreen() {
           {life.series.length > 1 ? (
             <>
               <View style={s.divider} />
-              <SectionLabel>Net worth over time</SectionLabel>
+              <SectionLabel>Accumulated over time</SectionLabel>
               <View style={{ marginTop: space(2), marginLeft: -8 }}>
                 <LineChart
                   data={life.series.map((p) => ({ value: p.value, label: p.label }))}

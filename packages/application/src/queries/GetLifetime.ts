@@ -45,25 +45,25 @@ export class GetLifetime {
       ? all.reduce((max, t) => (t.occurredAt > max ? t.occurredAt : max), all[0]!.occurredAt)
       : null;
 
-    // Net-worth-over-time: opening baseline, then cumulative monthly movement
-    // (non-dormant accounts) from the first active month to the last.
-    const dormant = new Set(accs.filter((a) => a.isDormant).map((a) => a.id));
-    const totalOpening = accs
-      .filter((a) => !a.isDormant)
-      .reduce((s, a) => s.plus(a.openingBalance), Money.zero("XAF"));
-    const monthMove = new Map<string, Money>();
+    // Accumulated-over-time: the running total of what you've kept (income
+    // minus spending; setting money aside is not spending), month by month
+    // from the first active month to the last. Ends at `net`.
+    const monthAccum = new Map<string, Money>();
     for (const t of all) {
-      if (dormant.has(t.accountId)) continue;
+      let delta: Money;
+      if (t.categoryType === "income") delta = t.amount;
+      else if (t.isExpense) delta = t.amount.negated();
+      else continue; // savings / transfers don't change what you've accumulated
       const k = t.occurredAt.slice(0, 7); // YYYY-MM
-      monthMove.set(k, (monthMove.get(k) ?? Money.zero("XAF")).plus(t.signedAmount));
+      monthAccum.set(k, (monthAccum.get(k) ?? Money.zero("XAF")).plus(delta));
     }
     const series: { label: string; value: number }[] = [];
     if (firstAt && lastAt) {
       const last = YearMonth.parse(lastAt.slice(0, 7));
       let ym = YearMonth.parse(firstAt.slice(0, 7));
-      let cum = totalOpening;
+      let cum = Money.zero("XAF");
       for (let i = 0; i < 600; i++) {
-        cum = cum.plus(monthMove.get(ym.toString()) ?? Money.zero("XAF"));
+        cum = cum.plus(monthAccum.get(ym.toString()) ?? Money.zero("XAF"));
         series.push({ label: ym.monthName.slice(0, 3), value: cum.minor });
         if (ym.equals(last)) break;
         ym = ym.next();
