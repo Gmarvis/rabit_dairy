@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { AccountType, CategoryType, PaymentMethod } from "@rabbit/domain";
 import type { EntryAccountOption } from "@rabbit/application";
@@ -35,6 +35,7 @@ export default function ManualEntryScreen() {
   const [digits, setDigits] = useState("");
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [accountId, setAccountId] = useState<string | null>(null);
+  const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const { data: options } = useQuery({
@@ -59,6 +60,7 @@ export default function ManualEntryScreen() {
         accountId: effectiveAccountId as never,
         categoryId: categoryId as never,
         amountMajor,
+        description: note.trim() || null,
         paymentMethod: accountMethod(accounts, effectiveAccountId),
       });
       if (!res.ok) throw new Error(res.error.message);
@@ -121,6 +123,19 @@ export default function ManualEntryScreen() {
           </ScrollView>
         </View>
 
+        <View style={{ marginTop: space(3) }}>
+          <Text style={s.label}>Note</Text>
+          <TextInput
+            style={s.note}
+            value={note}
+            onChangeText={setNote}
+            placeholder="e.g. Barbershop, groceries at Casino"
+            placeholderTextColor={pal.muted}
+            returnKeyType="done"
+            maxLength={80}
+          />
+        </View>
+
         {error ? <Text style={s.error}>{error}</Text> : null}
       </View>
 
@@ -178,6 +193,7 @@ const makeStyles = (c: Palette) =>
     chipOn: { backgroundColor: c.gold, borderColor: c.gold },
     chipText: { color: c.ink2, fontSize: 12, fontWeight: "600" },
     chipTextOn: { color: c.goldInk },
+    note: { backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: radius.md, paddingHorizontal: space(3.5), paddingVertical: space(3), color: c.ink, fontSize: 15 },
     dot: { width: 9, height: 9, borderRadius: 3 },
     error: { color: c.negative, fontSize: 12, marginTop: space(2) },
     bottom: { paddingHorizontal: space(4), gap: space(3) },

@@ -23,6 +23,8 @@
     "expo-constants": "~18.0.13",
     "expo-image-picker": "~17.0.11",
     "expo-linking": "~8.0.12",
+    "expo-local-authentication": "~17.0.7",
+    "expo-notifications": "^0.32.17",
     "expo-router": "~6.0.24",
     "expo-speech-recognition": "^2.1.1",
     "expo-status-bar": "~3.0.9",

@@ -4,6 +4,7 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider, useAuth } from "../src/lib/auth";
+import { LockGate } from "../src/lib/lock";
 import { PeriodProvider } from "../src/lib/period";
 import {
   ThemeProvider,
@@ -83,7 +84,9 @@ export default function RootLayout() {
           <AuthProvider>
             <PeriodProvider>
               <ThemedStatusBar />
-              <RootNavigator />
+              <LockGate>
+                <RootNavigator />
+              </LockGate>
             </PeriodProvider>
           </AuthProvider>
         </QueryClientProvider>

@@ -7,6 +7,13 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { ExportRow } from "@rabbit/application";
 import { Card, Row, ScreenHeader, SectionLabel, Toggle } from "../src/components/ui";
 import { signOut, useAuth, useContainer } from "../src/lib/auth";
+import { BIOMETRIC_KEY, canUseBiometrics } from "../src/lib/lock";
+import {
+  disableDailyReminder,
+  enableDailyReminder,
+  isReminderEnabled,
+  REMINDER_HOUR,
+} from "../src/lib/reminders";
 import { usePeriod } from "../src/lib/period";
 import { monthLabel } from "../src/lib/format";
 import { useTheme, useThemeControls } from "../src/theme/ThemeProvider";
@@ -29,8 +36,6 @@ function displayName(email: string | null): string {
   return local.replace(/\b\w/g, (m) => m.toUpperCase());
 }
 
-const BIOMETRIC_KEY = "rabbit.biometricLock";
-
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -44,13 +49,37 @@ export default function SettingsScreen() {
   const [exporting, setExporting] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [biometric, setBiometric] = useState(false);
+  const [reminder, setReminder] = useState(false);
 
   useEffect(() => {
     AsyncStorage.getItem(BIOMETRIC_KEY).then((v) => setBiometric(v === "1")).catch(() => {});
+    isReminderEnabled().then(setReminder).catch(() => {});
   }, []);
 
-  function toggleBiometric(v: boolean) {
+  async function toggleReminder(v: boolean) {
+    if (v) {
+      const ok = await enableDailyReminder();
+      if (!ok) {
+        setNote("Allow notifications for Rabbit Dairy to get the daily reminder.");
+        return;
+      }
+      setReminder(true);
+      setNote(null);
+    } else {
+      await disableDailyReminder();
+      setReminder(false);
+    }
+  }
+
+  const reminderTime = `${((REMINDER_HOUR + 11) % 12) + 1}:00 ${REMINDER_HOUR < 12 ? "AM" : "PM"}`;
+
+  async function toggleBiometric(v: boolean) {
+    if (v && !(await canUseBiometrics())) {
+      setNote("Set up Face ID, Touch ID or a device passcode first, then turn this on.");
+      return;
+    }
     setBiometric(v);
+    setNote(null);
     AsyncStorage.setItem(BIOMETRIC_KEY, v ? "1" : "0").catch(() => {});
   }
 
@@ -124,6 +153,13 @@ export default function SettingsScreen() {
           <Text style={s.rowText}>Biometric lock</Text>
           <Toggle value={biometric} onValueChange={toggleBiometric} />
         </Row>
+        <Row between style={[s.row, s.border]}>
+          <View>
+            <Text style={s.rowText}>Daily reminder</Text>
+            <Text style={s.rowHint}>Nudge to log at {reminderTime}</Text>
+          </View>
+          <Toggle value={reminder} onValueChange={toggleReminder} />
+        </Row>
         <Pressable onPress={exportCsv} disabled={exporting}>
           <Row between style={[s.row, s.border]}>
             <Text style={s.rowText}>Export data (CSV / Excel)</Text>
@@ -153,6 +189,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   row: { paddingVertical: space(2.5) },
   border: { borderTopWidth: 1, borderTopColor: c.line },
   rowText: { color: c.ink, fontSize: 13, fontWeight: "600" },
+  rowHint: { color: c.muted, fontSize: 11, marginTop: 2 },
   rowVal: { color: c.gold, fontSize: 13, fontWeight: "700" },
   rowMuted: { color: c.ink2, fontSize: 13, fontWeight: "600" },
   note: { color: c.ink2, fontSize: 12 },
