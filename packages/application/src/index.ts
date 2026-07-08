@@ -29,6 +29,10 @@ export { CreateAccount } from "./commands/CreateAccount.js";
 export type { CreateAccountInput } from "./commands/CreateAccount.js";
 export { ImportStatement } from "./commands/ImportStatement.js";
 export type { ImportStatementInput, ImportEntry } from "./commands/ImportStatement.js";
+export { SaveCategory } from "./commands/SaveCategory.js";
+export type { SaveCategoryInput } from "./commands/SaveCategory.js";
+export { ArchiveCategory } from "./commands/ArchiveCategory.js";
+export type { ArchiveCategoryInput } from "./commands/ArchiveCategory.js";
 
 // Queries
 export { GetDashboard } from "./queries/GetDashboard.js";
@@ -47,6 +51,7 @@ export { GetYearlyOverview } from "./queries/GetYearlyOverview.js";
 export { GetCashFlow } from "./queries/GetCashFlow.js";
 export { GetSpendingReport } from "./queries/GetSpendingReport.js";
 export { GetBudgets } from "./queries/GetBudgets.js";
+export { GetCategories } from "./queries/GetCategories.js";
 export { GetExportRows } from "./queries/GetExportRows.js";
 export type { ExportRow } from "./queries/GetExportRows.js";
 export type * from "./queries/viewmodels.js";

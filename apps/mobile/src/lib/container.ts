@@ -6,6 +6,7 @@
 import { asUserId, type UserId } from "@rabbit/domain";
 import type { FileStorage } from "@rabbit/application";
 import {
+  ArchiveCategory,
   CreateAccount,
   DeleteTransaction,
   EditTransaction,
@@ -13,6 +14,7 @@ import {
   GetAccountsOverview,
   GetBudgets,
   GetBudgetVsActual,
+  GetCategories,
   GetDashboard,
   GetEntryOptions,
   GetExportRows,
@@ -24,6 +26,7 @@ import {
   ImportStatement,
   LogTransaction,
   RecordSavingsMovement,
+  SaveCategory,
   SetBudget,
 } from "@rabbit/application";
 import {
@@ -75,6 +78,7 @@ function build(userId: UserId) {
       spendingReport: new GetSpendingReport(txns, categories, accounts),
       entryOptions: new GetEntryOptions(categories, accounts),
       budgets: new GetBudgets(budgets, categories),
+      categories: new GetCategories(categories),
       exportRows: new GetExportRows(txns, categories, accounts),
       transaction: new GetTransaction(txns, categories, accounts),
     },
@@ -86,6 +90,8 @@ function build(userId: UserId) {
       setBudget: new SetBudget(budgets, ids),
       createAccount: new CreateAccount(accounts, ids),
       importStatement: new ImportStatement(txns, categories, ids, clock),
+      saveCategory: new SaveCategory(categories, ids),
+      archiveCategory: new ArchiveCategory(categories),
     },
   };
 }

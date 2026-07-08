@@ -104,6 +104,12 @@ export default function SettingsScreen() {
       <Card style={{ paddingVertical: space(1) }}>
         <Row between style={s.row}><Text style={s.rowText}>Currency</Text><Text style={s.rowVal}>XAF · FCFA</Text></Row>
         <Row between style={[s.row, s.border]}><Text style={s.rowText}>Active month</Text><Text style={s.rowMuted}>{monthLabel(period)}</Text></Row>
+        <Pressable onPress={() => router.push("/categories")}>
+          <Row between style={[s.row, s.border]}>
+            <Text style={s.rowText}>Categories</Text>
+            <Ionicons name="chevron-forward" size={16} color={t.gold} />
+          </Row>
+        </Pressable>
         <Row between style={[s.row, s.border]}><Text style={s.rowText}>Emergency fund goal</Text><Text style={s.rowMuted}>0</Text></Row>
       </Card>
 

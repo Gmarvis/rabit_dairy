@@ -208,6 +208,29 @@ export interface SpendingReportView {
   topSpends: TopSpendItem[];
 }
 
+export interface CategoryRow {
+  id: string;
+  name: string;
+  type: CategoryType;
+  color: string;
+  defaultPaymentMethod: PaymentMethod | null;
+}
+
+export interface CategoryGroup {
+  type: CategoryType;
+  /** Human label for the type, e.g. "Variable expense". */
+  label: string;
+  items: CategoryRow[];
+}
+
+export interface CategoriesView {
+  groups: CategoryGroup[];
+  /** Count of active categories. */
+  total: number;
+  /** Number of types that have at least one category. */
+  typeCount: number;
+}
+
 export interface YearlyOverviewView {
   year: number;
   months: MonthBucket[];
