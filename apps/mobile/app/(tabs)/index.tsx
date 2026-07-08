@@ -1,11 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Circle, Polygon, Polyline } from "react-native-svg";
 import type { NetWorthTrendView } from "@rabbit/application";
 import { Card, MoneyText, Pill, Row, SectionLabel, Tico, withAlpha } from "../../src/components/ui";
+import { CountUpMoney } from "../../src/components/anim";
 import { useAuth, useContainer } from "../../src/lib/auth";
 import { usePeriod } from "../../src/lib/period";
 import { greeting, monthLabel, percent, shortDate } from "../../src/lib/format";
@@ -27,7 +28,7 @@ export default function DashboardScreen() {
   const { email } = useAuth();
   const t = useTheme();
   const s = makeStyles(t);
-  const { period, next, prev, isCurrent } = usePeriod();
+  const { period } = usePeriod();
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard", period.toString()],
     queryFn: () => c.queries.dashboard.execute(c.userId, period),
@@ -41,15 +42,6 @@ export default function DashboardScreen() {
     queryFn: () => c.queries.habits.execute(c.userId),
   });
 
-  function pickMonth() {
-    const buttons = [
-      { text: "Previous month", onPress: prev },
-      ...(!isCurrent ? [{ text: "Next month", onPress: next }] : []),
-      { text: "Cancel", style: "cancel" as const },
-    ];
-    Alert.alert("Change month", monthLabel(period), buttons);
-  }
-
   return (
     <ScrollView
       style={s.screen}
@@ -58,10 +50,10 @@ export default function DashboardScreen() {
       <Row between>
         <View>
           <Text style={s.greet}>{greeting()}, {firstName(email)}</Text>
-          <Pressable onPress={pickMonth} hitSlop={8}>
+          <Pressable onPress={() => router.push("/calendar")} hitSlop={8}>
             <Row style={{ gap: space(1.5) }}>
               <Text style={s.title}>{monthLabel(period)}</Text>
-              <Ionicons name="chevron-down" size={18} color={t.ink2} />
+              <Ionicons name="calendar-outline" size={16} color={t.ink2} />
             </Row>
           </Pressable>
         </View>
@@ -82,7 +74,7 @@ export default function DashboardScreen() {
           {/* Net worth — all your money, the first thing you see. */}
           <Card hero>
             <SectionLabel>Total balance · all accounts</SectionLabel>
-            <MoneyText amount={data.netWorth} size={40} style={{ marginTop: 8 }} />
+            <CountUpMoney value={data.netWorth.minor} size={40} style={{ marginTop: 8 }} />
             <Row between style={{ marginTop: 8 }}>
               <Text style={s.netSub}>
                 {data.accountCount} account{data.accountCount === 1 ? "" : "s"}

@@ -250,6 +250,32 @@ export interface NetWorthTrendView {
   max: number;
 }
 
+export interface CalendarDay {
+  /** Day of month, 1-based. */
+  day: number;
+  spent: Money;
+  income: Money;
+  /** Signed net for the day. */
+  net: Money;
+  count: number;
+}
+
+export interface CalendarView {
+  year: number;
+  month: number;
+  monthName: string;
+  /** Weekday (0=Sun…6=Sat) the 1st falls on, for the grid offset. */
+  firstWeekday: number;
+  days: CalendarDay[];
+  transactions: TransactionListItem[];
+  /** Largest single-day spend in minor units, for heat scaling. */
+  maxSpent: number;
+  monthSpent: Money;
+  monthIncome: Money;
+  /** Day of month with the highest spend, or null. */
+  busiestDay: number | null;
+}
+
 export interface StreakStat {
   /** Current unbroken run. */
   current: number;

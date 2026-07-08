@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import { type ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import {
   ActivityIndicator,
+  Animated,
   Pressable,
   StyleSheet,
   Text,
@@ -110,21 +111,29 @@ export function PrimaryButton({
   loading?: boolean;
 }) {
   const c = useTheme();
+  const scale = useRef(new Animated.Value(1)).current;
+  const spring = (v: number) =>
+    Animated.spring(scale, { toValue: v, useNativeDriver: true, speed: 40, bounciness: 0 }).start();
   return (
     <Pressable
       accessibilityRole="button"
-      style={[
-        { backgroundColor: c.gold, borderRadius: radius.lg, paddingVertical: space(4), alignItems: "center" },
-        (disabled || loading) && { opacity: 0.4 },
-      ]}
+      onPressIn={() => spring(0.97)}
+      onPressOut={() => spring(1)}
       onPress={onPress}
       disabled={disabled || loading}
     >
-      {loading ? (
-        <ActivityIndicator color={c.goldInk} />
-      ) : (
-        <Text style={{ color: c.goldInk, fontWeight: "800", fontSize: 16 }}>{label}</Text>
-      )}
+      <Animated.View
+        style={[
+          { backgroundColor: c.gold, borderRadius: radius.lg, paddingVertical: space(4), alignItems: "center", transform: [{ scale }] },
+          (disabled || loading) && { opacity: 0.4 },
+        ]}
+      >
+        {loading ? (
+          <ActivityIndicator color={c.goldInk} />
+        ) : (
+          <Text style={{ color: c.goldInk, fontWeight: "800", fontSize: 16 }}>{label}</Text>
+        )}
+      </Animated.View>
     </Pressable>
   );
 }
