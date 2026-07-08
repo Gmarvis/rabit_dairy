@@ -11,6 +11,7 @@ import { useTheme } from "../../src/theme/ThemeProvider";
 import { radius, space, type Palette } from "../../src/theme/tokens";
 
 const LINKS: { href: Href; icon: keyof typeof Ionicons.glyphMap; title: string; sub: string }[] = [
+  { href: "/reports", icon: "analytics", title: "Reports", sub: "Cash flow, spending breakdown & trends" },
   { href: "/report", icon: "pie-chart", title: "Monthly report", sub: "Where the money went this month" },
   { href: "/budget", icon: "checkbox", title: "Budget vs actual", sub: "Planned against spent, per category" },
   { href: "/yearly", icon: "bar-chart", title: "Yearly overview", sub: "12-month income & expense trend" },

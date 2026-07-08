@@ -140,6 +140,68 @@ export interface MonthBucket {
   net: Money;
 }
 
+/** One month in the cash-flow series. */
+export interface CashFlowMonth {
+  /** 1–12. */
+  month: number;
+  /** Short label like "Apr". */
+  label: string;
+  income: Money;
+  expenses: Money;
+  /** income − expenses. */
+  net: Money;
+  /** savings ÷ income for the month. */
+  savingsRate: number;
+}
+
+export interface CashFlowView {
+  /** Oldest → newest. */
+  months: CashFlowMonth[];
+  totalIncome: Money;
+  totalExpenses: Money;
+  totalNet: Money;
+  /** Latest month's savings rate. */
+  savingsRate: number;
+  /** Latest vs previous month, as a ratio change (e.g. +0.32 = up 32%); null if no prior. */
+  incomeMoM: number | null;
+  expensesMoM: number | null;
+  /** Tallest income/expense bar, for scaling the chart. */
+  peak: Money;
+}
+
+export type BreakdownDimension = "category" | "account" | "method";
+
+export interface BreakdownSlice {
+  key: string;
+  label: string;
+  /** Category colour, or null when the view should assign one (account/method). */
+  color: string | null;
+  amount: Money;
+  /** Share of the dimension total (0–1). */
+  percent: number;
+  /** Month-over-month change vs the same slice last month; null if new/unknown. */
+  momDelta: number | null;
+}
+
+export interface TopSpendItem {
+  id: string;
+  title: string;
+  categoryName: string;
+  categoryColor: string;
+  occurredAt: string;
+  /** Positive magnitude. */
+  amount: Money;
+}
+
+export interface SpendingReportView {
+  periodLabel: string;
+  totalExpenses: Money;
+  byCategory: BreakdownSlice[];
+  byAccount: BreakdownSlice[];
+  byMethod: BreakdownSlice[];
+  topSpends: TopSpendItem[];
+}
+
 export interface YearlyOverviewView {
   year: number;
   months: MonthBucket[];
