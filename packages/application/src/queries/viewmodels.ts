@@ -231,6 +231,25 @@ export interface CategoriesView {
   typeCount: number;
 }
 
+export interface NetWorthPoint {
+  /** Short month label, e.g. "Apr". */
+  label: string;
+  value: Money;
+}
+
+export interface NetWorthTrendView {
+  /** Oldest → newest; the last point is the live total. */
+  points: NetWorthPoint[];
+  current: Money;
+  /** current − first point (signed). */
+  change: Money;
+  /** change ÷ first point; null when the first point is zero. */
+  changePct: number | null;
+  /** Min/max in minor units, for scaling the sparkline. */
+  min: number;
+  max: number;
+}
+
 export interface YearlyOverviewView {
   year: number;
   months: MonthBucket[];

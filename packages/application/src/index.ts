@@ -52,6 +52,7 @@ export { GetCashFlow } from "./queries/GetCashFlow.js";
 export { GetSpendingReport } from "./queries/GetSpendingReport.js";
 export { GetBudgets } from "./queries/GetBudgets.js";
 export { GetCategories } from "./queries/GetCategories.js";
+export { GetNetWorthTrend } from "./queries/GetNetWorthTrend.js";
 export { GetExportRows } from "./queries/GetExportRows.js";
 export type { ExportRow } from "./queries/GetExportRows.js";
 export type * from "./queries/viewmodels.js";

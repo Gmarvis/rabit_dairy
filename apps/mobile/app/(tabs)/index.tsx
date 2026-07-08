@@ -3,7 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Card, MoneyText, Pill, Row, SectionLabel, Tico } from "../../src/components/ui";
+import Svg, { Circle, Polygon, Polyline } from "react-native-svg";
+import type { NetWorthTrendView } from "@rabbit/application";
+import { Card, MoneyText, Pill, Row, SectionLabel, Tico, withAlpha } from "../../src/components/ui";
 import { useAuth, useContainer } from "../../src/lib/auth";
 import { usePeriod } from "../../src/lib/period";
 import { greeting, monthLabel, percent, shortDate } from "../../src/lib/format";
@@ -29,6 +31,10 @@ export default function DashboardScreen() {
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard", period.toString()],
     queryFn: () => c.queries.dashboard.execute(c.userId, period),
+  });
+  const { data: trend } = useQuery({
+    queryKey: ["netWorthTrend", period.toString()],
+    queryFn: () => c.queries.netWorthTrend.execute(c.userId, period),
   });
 
   function pickMonth() {
@@ -89,6 +95,16 @@ export default function DashboardScreen() {
                 </Text>
               </Row>
             </Row>
+            {trend && trend.points.length > 1 ? (
+              <>
+                <NetWorthSpark trend={trend} c={t} />
+                <Row between>
+                  <Text style={s.sparkCap}>{trend.points[0]!.label}</Text>
+                  <Text style={s.sparkCap}>Net worth · last {trend.points.length} months</Text>
+                  <Text style={s.sparkCap}>{trend.points[trend.points.length - 1]!.label}</Text>
+                </Row>
+              </>
+            ) : null}
           </Card>
 
           {/* This month's cash flow. */}
@@ -146,6 +162,32 @@ export default function DashboardScreen() {
   );
 }
 
+/** A gently-filled line of net worth over the trailing months. */
+function NetWorthSpark({ trend, c }: { trend: NetWorthTrendView; c: Palette }) {
+  const W = 300, H = 56, pad = 4;
+  const vals = trend.points.map((p) => p.value.minor);
+  const lo = Math.min(trend.min, 0);
+  const span = Math.max(1, trend.max - lo);
+  const up = !trend.change.isNegative;
+  const stroke = up ? c.positive : c.negative;
+
+  const pts = vals.map((v, i) => {
+    const x = (i / (vals.length - 1)) * (W - pad * 2) + pad;
+    const y = H - pad - ((v - lo) / span) * (H - pad * 2);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+  const last = pts[pts.length - 1]!.split(",");
+  const area = `${pad},${H} ${pts.join(" ")} ${W - pad},${H}`;
+
+  return (
+    <Svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ marginTop: 14 }}>
+      <Polygon points={area} fill={withAlpha(stroke, 0.14)} />
+      <Polyline points={pts.join(" ")} fill="none" stroke={stroke} strokeWidth={2.5} strokeLinejoin="round" />
+      <Circle cx={Number(last[0])} cy={Number(last[1])} r={3.5} fill={stroke} />
+    </Svg>
+  );
+}
+
 function SplitBar({ expenseRate, c }: { expenseRate: number; c: Palette }) {
   const spent = Math.max(0, Math.min(1, expenseRate));
   return (
@@ -177,6 +219,7 @@ const makeStyles = (c: Palette) =>
     netSub: { color: c.ink2, fontSize: 12 },
     netDelta: { fontSize: 12, fontWeight: "700", fontVariant: ["tabular-nums"] },
     cap: { color: c.ink2, fontSize: 11 },
+    sparkCap: { color: c.muted, fontSize: 10, fontWeight: "600" },
     seeAll: { color: c.gold, fontSize: 10, fontWeight: "700" },
     txn: { flexDirection: "row", alignItems: "center", gap: space(2.5), paddingVertical: space(2.5) },
     txnBorder: { borderBottomWidth: 1, borderBottomColor: c.line },
