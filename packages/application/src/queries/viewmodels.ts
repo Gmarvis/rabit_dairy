@@ -250,6 +250,27 @@ export interface NetWorthTrendView {
   max: number;
 }
 
+export type NudgeTone = "alert" | "warn" | "info" | "positive";
+
+export interface Nudge {
+  id: string;
+  kind:
+    | "over_budget"
+    | "overspend_category"
+    | "spending_up"
+    | "large_spend"
+    | "on_track";
+  tone: NudgeTone;
+  /** Ionicons glyph name for the UI. */
+  icon: string;
+  title: string;
+  body: string;
+}
+
+export interface NudgesView {
+  items: Nudge[];
+}
+
 export interface CalendarDay {
   /** Day of month, 1-based. */
   day: number;

@@ -1,12 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
+import { useEffect, useRef } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Circle, Polygon, Polyline } from "react-native-svg";
 import type { NetWorthTrendView } from "@rabbit/application";
 import { Card, MoneyText, Pill, Row, SectionLabel, Tico, withAlpha } from "../../src/components/ui";
 import { CountUpMoney } from "../../src/components/anim";
+import { ONBOARDED_KEY } from "../onboarding";
 import { useAuth, useContainer } from "../../src/lib/auth";
 import { usePeriod } from "../../src/lib/period";
 import { greeting, monthLabel, percent, shortDate } from "../../src/lib/format";
@@ -29,6 +32,17 @@ export default function DashboardScreen() {
   const t = useTheme();
   const s = makeStyles(t);
   const { period } = usePeriod();
+
+  // Show the first-run onboarding once.
+  const checkedOnboarding = useRef(false);
+  useEffect(() => {
+    if (checkedOnboarding.current) return;
+    checkedOnboarding.current = true;
+    AsyncStorage.getItem(ONBOARDED_KEY)
+      .then((v) => { if (v !== "1") router.push("/onboarding"); })
+      .catch(() => {});
+  }, [router]);
+
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard", period.toString()],
     queryFn: () => c.queries.dashboard.execute(c.userId, period),
@@ -40,6 +54,10 @@ export default function DashboardScreen() {
   const { data: habits } = useQuery({
     queryKey: ["habits"],
     queryFn: () => c.queries.habits.execute(c.userId),
+  });
+  const { data: nudges } = useQuery({
+    queryKey: ["nudges", period.toString()],
+    queryFn: () => c.queries.nudges.execute(c.userId, period),
   });
 
   return (
@@ -102,6 +120,28 @@ export default function DashboardScreen() {
               </>
             ) : null}
           </Card>
+
+          {/* Proactive heads-up nudges. */}
+          {nudges && nudges.items.length > 0 ? (
+            <View style={{ gap: space(2), marginTop: space(1) }}>
+              {nudges.items.map((n) => {
+                const tint = n.tone === "alert" ? t.negative : n.tone === "warn" ? t.gold : n.tone === "positive" ? t.positive : t.blue;
+                return (
+                  <Card key={n.id}>
+                    <Row style={{ gap: space(3) }}>
+                      <View style={[s.nudgeIcon, { backgroundColor: withAlpha(tint, 0.15) }]}>
+                        <Ionicons name={n.icon as keyof typeof Ionicons.glyphMap} size={18} color={tint} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={s.nudgeTitle}>{n.title}</Text>
+                        <Text style={s.nudgeBody}>{n.body}</Text>
+                      </View>
+                    </Row>
+                  </Card>
+                );
+              })}
+            </View>
+          ) : null}
 
           {/* This month's cash flow. */}
           <Row between style={{ marginTop: space(1) }}>
@@ -240,6 +280,9 @@ const makeStyles = (c: Palette) =>
     netDelta: { fontSize: 12, fontWeight: "700", fontVariant: ["tabular-nums"] },
     cap: { color: c.ink2, fontSize: 11 },
     sparkCap: { color: c.muted, fontSize: 10, fontWeight: "600" },
+    nudgeIcon: { width: 38, height: 38, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+    nudgeTitle: { color: c.ink, fontSize: 14, fontWeight: "700" },
+    nudgeBody: { color: c.ink2, fontSize: 12, marginTop: 2, lineHeight: 17 },
     streak: { color: c.ink, fontSize: 17, fontWeight: "800", fontVariant: ["tabular-nums"] },
     streakUnit: { color: c.ink2, fontSize: 12, fontWeight: "600" },
     vline: { width: 1, alignSelf: "stretch", backgroundColor: c.line },
