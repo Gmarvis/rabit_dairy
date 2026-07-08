@@ -25,16 +25,20 @@ export function summarise(
   txns: readonly Transaction[],
   currency: CurrencyCode = "XAF",
 ): PeriodSummary {
+  // The credit side of an internal transfer (e.g. moving cash into a savings
+  // account) carries a transferId. It isn't income, spending or fresh saving —
+  // it's the same money changing pockets — so it's left out of the P&L totals.
+  const real = txns.filter((t) => t.transferId === null);
   const income = sumMoney(
-    txns.filter((t) => t.categoryType === "income").map((t) => t.amount),
+    real.filter((t) => t.categoryType === "income").map((t) => t.amount),
     currency,
   );
   const expenses = sumMoney(
-    txns.filter((t) => t.isExpense).map((t) => t.amount),
+    real.filter((t) => t.isExpense).map((t) => t.amount),
     currency,
   );
   const savings = sumMoney(
-    txns.filter((t) => t.categoryType === "savings").map((t) => t.amount),
+    real.filter((t) => t.categoryType === "savings").map((t) => t.amount),
     currency,
   );
   const netBalance = income.minus(expenses).minus(savings);
@@ -45,6 +49,6 @@ export function summarise(
     netBalance,
     savingsRate: savings.ratioOf(income),
     expenseRate: expenses.ratioOf(income),
-    transactionCount: txns.length,
+    transactionCount: real.length,
   };
 }

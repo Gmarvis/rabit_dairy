@@ -24,6 +24,7 @@ export default function SavingsScreen() {
   const [kind, setKind] = useState<Kind>("deposit");
   const [digits, setDigits] = useState("");
   const [receiptPath, setReceiptPath] = useState<string | null>(null);
+  const [fundingId, setFundingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const { data: options } = useQuery({
@@ -32,8 +33,11 @@ export default function SavingsScreen() {
   });
   const savingsAccount = options?.accounts.find((a) => a.type === "bank_savings");
   const savingsCategory = options?.categories.find((cat) => cat.type === "savings");
+  const fundingAccounts = (options?.accounts ?? []).filter((a) => a.id !== savingsAccount?.id);
+  const effectiveFunding = fundingId ?? fundingAccounts[0]?.id ?? null;
+  const fundingName = fundingAccounts.find((a) => a.id === effectiveFunding)?.name ?? "account";
   const amountMajor = parseInt(digits || "0", 10);
-  const canSave = amountMajor > 0 && !!savingsAccount && !!savingsCategory;
+  const canSave = amountMajor > 0 && !!savingsAccount && !!savingsCategory && !!effectiveFunding;
   const today = fullDate(new Date().toISOString());
 
   async function attachReceipt(from: "camera" | "library") {
@@ -60,6 +64,7 @@ export default function SavingsScreen() {
       const res = await c.commands.recordSavings.execute({
         userId: c.userId,
         savingsAccountId: savingsAccount!.id as never,
+        fundingAccountId: effectiveFunding as never,
         savingsCategoryId: savingsCategory!.id as never,
         kind,
         amountMajor,
@@ -106,7 +111,26 @@ export default function SavingsScreen() {
             placeholder="0"
             placeholderTextColor={t.muted}
           />
-          <Text style={s.cur}>FCFA → {savingsAccount?.name ?? "Savings"}</Text>
+          <Text style={s.cur}>
+            FCFA · {kind === "deposit"
+              ? `${fundingName} → ${savingsAccount?.name ?? "Savings"}`
+              : `${savingsAccount?.name ?? "Savings"} → ${fundingName}`}
+          </Text>
+        </View>
+
+        <View>
+          <Text style={s.label}>{kind === "deposit" ? "Move from" : "Move to"}</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space(2), paddingRight: space(4) }}>
+            {fundingAccounts.map((a) => (
+              <Pressable
+                key={a.id}
+                style={[s.chip, effectiveFunding === a.id && s.chipOn]}
+                onPress={() => setFundingId(a.id)}
+              >
+                <Text style={[s.chipText, effectiveFunding === a.id && s.chipTextOn]}>{a.name}</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
         </View>
 
         <View style={s.field}>
@@ -168,6 +192,10 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   segText: { color: c.ink2, fontSize: 13, fontWeight: "700" },
   segTextOn: { color: c.goldInk },
   label: { color: c.muted, fontSize: 11, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase", marginBottom: space(2) },
+  chip: { backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: radius.pill, paddingHorizontal: space(3), paddingVertical: space(2) },
+  chipOn: { backgroundColor: c.gold, borderColor: c.gold },
+  chipText: { color: c.ink2, fontSize: 13, fontWeight: "600" },
+  chipTextOn: { color: c.goldInk },
   amount: { color: c.ink, fontSize: 44, fontWeight: "800", textAlign: "center", fontVariant: ["tabular-nums"], letterSpacing: -1, minWidth: 180 },
   cur: { color: c.ink2, fontSize: 13, fontWeight: "600", marginTop: 2 },
   field: { backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: radius.md, paddingHorizontal: space(4), paddingVertical: space(3), flexDirection: "row", justifyContent: "space-between", alignItems: "center" },

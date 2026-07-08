@@ -2,6 +2,7 @@ import {
   Money,
   Transaction,
   asTransactionId,
+  asTransferId,
   fail,
   ok,
   type AccountId,
@@ -17,6 +18,8 @@ export interface RecordSavingsMovementInput {
   userId: UserId;
   /** The savings account being deposited into / withdrawn from. */
   savingsAccountId: AccountId;
+  /** The everyday account the money moves from (deposit) or back to (withdrawal). */
+  fundingAccountId: AccountId;
   savingsCategoryId: CategoryId;
   kind: "deposit" | "withdrawal";
   amountMajor: number;
@@ -27,9 +30,14 @@ export interface RecordSavingsMovementInput {
 }
 
 /**
- * Command: record a savings deposit or withdrawal against the savings account,
- * with an optional receipt image. A deposit is money `in`, a withdrawal `out`.
- * (Double-entry against the funding account is a Phase-5 enhancement.)
+ * Command: record a savings deposit or withdrawal as a proper double-entry
+ * transfer, so the money moves between accounts instead of vanishing. Two legs
+ * share a transferId:
+ *   • the savings-account leg is the counted one (it's what "saved" measures);
+ *   • the funding-account leg carries the transferId and is left out of the
+ *     income/spending/savings totals — it's the same money changing pockets.
+ * Net worth is therefore unchanged by a transfer, and reconciles with what
+ * you've accumulated.
  */
 export class RecordSavingsMovement {
   constructor(
@@ -44,17 +52,27 @@ export class RecordSavingsMovement {
     if (!(input.amountMajor > 0)) {
       return fail("amount_invalid", "Amount must be greater than zero.");
     }
+    if (input.fundingAccountId === input.savingsAccountId) {
+      return fail("same_account", "Pick a different account to move the money from.");
+    }
 
-    const txn = Transaction.create({
+    const deposit = input.kind === "deposit";
+    const amount = Money.fromMajor(input.amountMajor, "XAF");
+    const occurredAt = input.occurredAt ?? this.clock.nowIso();
+    const transferId = asTransferId(this.ids.next());
+    const description = deposit ? "Savings deposit" : "Savings withdrawal";
+
+    // Counted leg on the savings account (drives the "saved" figure).
+    const savingsLeg = Transaction.create({
       id: asTransactionId(this.ids.next()),
       userId: input.userId,
       accountId: input.savingsAccountId,
       categoryId: input.savingsCategoryId,
       categoryType: "savings",
-      direction: input.kind === "deposit" ? "in" : "out",
-      amount: Money.fromMajor(input.amountMajor, "XAF"),
-      occurredAt: input.occurredAt ?? this.clock.nowIso(),
-      description: input.kind === "deposit" ? "Savings deposit" : "Savings withdrawal",
+      direction: deposit ? "in" : "out",
+      amount,
+      occurredAt,
+      description,
       paymentMethod: "bank_transfer",
       source: input.source ?? (input.receiptPath ? "receipt" : "manual"),
       voiceNotePath: null,
@@ -63,7 +81,27 @@ export class RecordSavingsMovement {
       transferId: null,
     });
 
-    await this.txns.save(txn);
-    return ok({ id: txn.id });
+    // Matching leg on the funding account — carries the transferId, so it's
+    // excluded from P&L totals but still moves the balance.
+    const fundingLeg = Transaction.create({
+      id: asTransactionId(this.ids.next()),
+      userId: input.userId,
+      accountId: input.fundingAccountId,
+      categoryId: input.savingsCategoryId,
+      categoryType: "savings",
+      direction: deposit ? "out" : "in",
+      amount,
+      occurredAt,
+      description,
+      paymentMethod: "bank_transfer",
+      source: input.source ?? "manual",
+      voiceNotePath: null,
+      voiceTranscript: null,
+      receiptPath: null,
+      transferId,
+    });
+
+    await this.txns.saveMany([savingsLeg, fundingLeg]);
+    return ok({ id: savingsLeg.id });
   }
 }
