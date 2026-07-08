@@ -69,31 +69,50 @@ export default function DashboardScreen() {
         <Text style={s.dim}>Loading…</Text>
       ) : (
         <>
-          {/* Net balance — the one number, said once. */}
+          {/* Net worth — all your money, the first thing you see. */}
           <Card hero>
-            <Row between>
-              <SectionLabel>Net balance · this month</SectionLabel>
-              <Pill tone="positive">+{percent(data.summary.savingsRate)}</Pill>
+            <SectionLabel>Total balance · all accounts</SectionLabel>
+            <MoneyText amount={data.netWorth} size={40} style={{ marginTop: 8 }} />
+            <Row between style={{ marginTop: 8 }}>
+              <Text style={s.netSub}>
+                {data.accountCount} account{data.accountCount === 1 ? "" : "s"}
+                {data.dormantCount > 0 ? ` · ${data.dormantCount} dormant` : ""}
+              </Text>
+              <Row style={{ gap: 4 }}>
+                <Ionicons
+                  name={data.netWorthChange.isNegative ? "arrow-down" : "arrow-up"}
+                  size={12}
+                  color={data.netWorthChange.isNegative ? t.negative : t.positive}
+                />
+                <Text style={[s.netDelta, { color: data.netWorthChange.isNegative ? t.negative : t.positive }]}>
+                  {data.netWorthChange.abs().format({ withCode: false })} this month
+                </Text>
+              </Row>
             </Row>
-            <MoneyText amount={data.summary.netBalance} size={40} style={{ marginTop: 8 }} />
+          </Card>
+
+          {/* This month's cash flow. */}
+          <Row between style={{ marginTop: space(1) }}>
+            <SectionLabel>This month</SectionLabel>
+            <Pill tone="positive">{percent(1 - data.summary.expenseRate)} kept</Pill>
+          </Row>
+          <Card>
+            <Row between style={{ alignItems: "stretch" }}>
+              <View style={{ flex: 1 }}>
+                <SectionLabel>Income</SectionLabel>
+                <Text style={[s.statVal, { color: t.positive }]}>{data.summary.income.format({ withCode: false })}</Text>
+              </View>
+              <View style={[{ flex: 1, borderLeftWidth: 1, borderLeftColor: t.line, paddingLeft: space(4) }]}>
+                <SectionLabel>Expenses</SectionLabel>
+                <Text style={[s.statVal, { color: t.negative }]}>{data.summary.expenses.format({ withCode: false })}</Text>
+              </View>
+            </Row>
             <SplitBar expenseRate={data.summary.expenseRate} c={t} />
             <Row between style={{ marginTop: 7 }}>
               <Text style={s.cap}>Spent {percent(data.summary.expenseRate)}</Text>
               <Text style={s.cap}>Kept {percent(1 - data.summary.expenseRate)}</Text>
             </Row>
           </Card>
-
-          {/* Income vs expenses — a two-card mini-quad; colour carries the sign. */}
-          <Row style={{ gap: space(3), alignItems: "stretch" }}>
-            <Card style={{ flex: 1 }}>
-              <SectionLabel>Income</SectionLabel>
-              <Text style={[s.statVal, { color: t.positive }]}>{data.summary.income.format({ withCode: false })}</Text>
-            </Card>
-            <Card style={{ flex: 1 }}>
-              <SectionLabel>Expenses</SectionLabel>
-              <Text style={[s.statVal, { color: t.negative }]}>{data.summary.expenses.format({ withCode: false })}</Text>
-            </Card>
-          </Row>
 
           <Row between style={{ marginTop: space(1) }}>
             <SectionLabel>Recent activity</SectionLabel>
@@ -154,8 +173,10 @@ const makeStyles = (c: Palette) =>
     },
     avatarText: { color: c.gold, fontWeight: "700", fontSize: 12 },
     dim: { color: c.ink2 },
-    statVal: { fontSize: 18, fontWeight: "800", marginTop: 5, fontVariant: ["tabular-nums"] },
-    cap: { color: c.ink2, fontSize: 10 },
+    statVal: { fontSize: 20, fontWeight: "800", marginTop: 5, fontVariant: ["tabular-nums"] },
+    netSub: { color: c.ink2, fontSize: 12 },
+    netDelta: { fontSize: 12, fontWeight: "700", fontVariant: ["tabular-nums"] },
+    cap: { color: c.ink2, fontSize: 11 },
     seeAll: { color: c.gold, fontSize: 10, fontWeight: "700" },
     txn: { flexDirection: "row", alignItems: "center", gap: space(2.5), paddingVertical: space(2.5) },
     txnBorder: { borderBottomWidth: 1, borderBottomColor: c.line },

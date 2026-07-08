@@ -1,4 +1,5 @@
 import {
+  Money,
   summarise,
   type Category,
   type UserId,
@@ -33,6 +34,18 @@ export class GetDashboard {
     const catById = new Map<string, Category>(cats.map((c) => [c.id, c]));
     const accNameById = new Map(accs.map((a) => [a.id, a.name]));
 
+    // Net worth = sum of non-dormant account balances; the period change is the
+    // signed movement across those accounts this period.
+    const netMovements = await Promise.all(accs.map((a) => this.accounts.netMovementOf(userId, a.id)));
+    const dormantIds = new Set(accs.filter((a) => a.isDormant).map((a) => a.id));
+    const netWorth = accs.reduce(
+      (sum, a, i) => (a.isDormant ? sum : sum.plus(a.balance(netMovements[i]!))),
+      Money.zero("XAF"),
+    );
+    const netWorthChange = periodTxns
+      .filter((t) => !dormantIds.has(t.accountId))
+      .reduce((sum, t) => sum.plus(t.signedAmount), Money.zero("XAF"));
+
     const recent: TransactionListItem[] = periodTxns
       .slice(0, recentLimit)
       .map((t) => {
@@ -57,6 +70,10 @@ export class GetDashboard {
       periodLabel: `${period.monthName} ${period.year}`,
       summary: summarise(periodTxns),
       recent,
+      netWorth,
+      netWorthChange,
+      accountCount: accs.length,
+      dormantCount: dormantIds.size,
     };
   }
 }

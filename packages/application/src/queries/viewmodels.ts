@@ -48,6 +48,12 @@ export interface DashboardView {
   periodLabel: string;
   summary: PeriodSummary;
   recent: TransactionListItem[];
+  /** Total money across all non-dormant accounts, right now. */
+  netWorth: Money;
+  /** Change in that total during this period (signed). */
+  netWorthChange: Money;
+  accountCount: number;
+  dormantCount: number;
 }
 
 export interface AccountListItem {
