@@ -1,8 +1,9 @@
-import { useMemo } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useMemo, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "../theme/ThemeProvider";
-import { withAlpha } from "./ui";
-import { chart, type Palette } from "../theme/tokens";
+import { Card, Row, SectionLabel, withAlpha } from "./ui";
+import { chart, space, type Palette } from "../theme/tokens";
 
 const CELL = 15;
 const GAP = 4;
@@ -183,6 +184,100 @@ export function HeatmapLegend({ mode }: { mode: HeatmapMode }) {
     </View>
   );
 }
+
+const HEAT_MODES: { key: HeatmapMode; label: string }[] = [
+  { key: "good", label: "Good days" },
+  { key: "count", label: "Tracked" },
+  { key: "spent", label: "Spending" },
+];
+
+function abbrev(n: number): string {
+  const a = Math.abs(n);
+  if (a >= 1_000_000) return `${(n / 1_000_000).toFixed(a >= 10_000_000 ? 0 : 1)}M`;
+  if (a >= 1_000) return `${Math.round(n / 1_000)}k`;
+  return `${Math.round(n)}`;
+}
+
+/**
+ * The full heat-map card: a Good days / Tracked / Spending toggle over the
+ * grid, a mode-aware legend, and a caption that reflects the tapped day. Shared
+ * by Home and Reports so both stay identical.
+ */
+export function HeatmapCard({
+  dataByDay,
+  scale,
+  today,
+  weeks = 16,
+  streak,
+  initialMode = "good",
+}: {
+  dataByDay: Map<string, { spent: number; count: number }>;
+  scale: HeatmapScale;
+  today: Date;
+  weeks?: number;
+  streak?: number;
+  initialMode?: HeatmapMode;
+}) {
+  const c = useTheme();
+  const s = cardStyles(c);
+  const [mode, setMode] = useState<HeatmapMode>(initialMode);
+  const [day, setDay] = useState<HeatmapDay | null>(null);
+
+  const caption = day
+    ? `${day.date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" })} · ${day.count === 0 ? "nothing logged" : `${day.count} ${day.count === 1 ? "entry" : "entries"} · ${day.spent > 0 ? `${abbrev(day.spent)} FCFA` : "no spend"}`}`
+    : mode === "good"
+      ? "Green = you logged and kept spending at or below your usual. Empty = a day you didn't track."
+      : mode === "count"
+        ? "Darker = more transactions logged that day."
+        : "Darker = more spent that day.";
+
+  return (
+    <Card>
+      <Row between>
+        <SectionLabel>Daily heat-map · {weeks} weeks</SectionLabel>
+        {streak !== undefined && streak > 0 ? (
+          <Row style={{ gap: 5 }}>
+            <Ionicons name="leaf" size={13} color={c.positive} />
+            <Text style={{ color: c.positive, fontSize: 12, fontWeight: "800" }}>{streak}-day streak</Text>
+          </Row>
+        ) : null}
+      </Row>
+      <View style={s.segment}>
+        {HEAT_MODES.map((m) => (
+          <Pressable
+            key={m.key}
+            onPress={() => { setMode(m.key); setDay(null); }}
+            style={[s.seg, mode === m.key && s.segOn]}
+          >
+            <Text style={[s.segText, mode === m.key && s.segTextOn]}>{m.label}</Text>
+          </Pressable>
+        ))}
+      </View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <SpendingHeatmap
+          dataByDay={dataByDay}
+          scale={scale}
+          mode={mode}
+          weeks={weeks}
+          today={today}
+          selectedKey={day?.key ?? null}
+          onDayPress={setDay}
+        />
+      </ScrollView>
+      <HeatmapLegend mode={mode} />
+      <Text style={s.caption}>{caption}</Text>
+    </Card>
+  );
+}
+
+const cardStyles = (c: Palette) => StyleSheet.create({
+  segment: { flexDirection: "row", backgroundColor: c.card2, borderColor: c.line, borderWidth: 1, borderRadius: 13, padding: 3, marginTop: space(2.5) },
+  seg: { flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: space(2), borderRadius: 10 },
+  segOn: { backgroundColor: c.gold },
+  segText: { color: c.ink2, fontSize: 13, fontWeight: "700" },
+  segTextOn: { color: c.goldInk },
+  caption: { color: c.ink2, fontSize: 12, marginTop: 10, lineHeight: 17 },
+});
 
 const styles = StyleSheet.create({
   cell: { width: CELL, height: CELL, borderRadius: 3, marginBottom: GAP, borderWidth: 1 },

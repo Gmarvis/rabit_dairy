@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LineChart } from "react-native-gifted-charts";
 import { YearMonth } from "@rabbit/domain";
 import type { NetWorthTrendView } from "@rabbit/application";
-import { dayHeatColor, isGoodDay } from "../../src/components/Heatmap";
+import { HeatmapCard, isGoodDay } from "../../src/components/Heatmap";
 import { Card, MoneyText, Pill, Row, SectionLabel, Tico, withAlpha } from "../../src/components/ui";
 import { CountUpMoney } from "../../src/components/anim";
 import { ONBOARDED_KEY } from "../onboarding";
@@ -91,12 +91,6 @@ export default function DashboardScreen() {
     const now = new Date();
     const t0 = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
     const keyOf = (d: Date) => d.toISOString().slice(0, 10);
-    const strip = Array.from({ length: 14 }, (_, i) => {
-      const d = new Date(t0);
-      d.setUTCDate(t0.getUTCDate() - (13 - i));
-      const v = m.get(keyOf(d)) ?? { spent: 0, count: 0 };
-      return { key: keyOf(d), spent: v.spent, count: v.count };
-    });
     const isGood = (d: Date) => {
       const v = m.get(keyOf(d));
       return !!v && isGoodDay(v.spent, v.count, target);
@@ -105,7 +99,7 @@ export default function DashboardScreen() {
     const cur = new Date(t0);
     if (!isGood(cur)) cur.setUTCDate(cur.getUTCDate() - 1);
     while (isGood(cur)) { streak += 1; cur.setUTCDate(cur.getUTCDate() - 1); }
-    return { scale, strip, streak, hasData: m.size > 0 };
+    return { dataByDay: m, scale, streak, hasData: m.size > 0 };
   }, [recentTx]);
 
   return (
@@ -271,33 +265,11 @@ export default function DashboardScreen() {
             </View>
           ) : null}
 
-          {/* Good-day streak — logged & under your usual spend. */}
+          {/* Good-day heat-map — toggle Good days / Tracked / Spending inline. */}
           {good.hasData ? (
-            <Pressable onPress={() => router.push("/reports")} style={{ marginTop: space(1) }}>
-              <Card>
-                <Row between>
-                  <View>
-                    <SectionLabel>Good days</SectionLabel>
-                    <Row style={{ gap: 8, marginTop: 6, alignItems: "flex-end" }}>
-                      <Text style={s.goodNum}>{good.streak}</Text>
-                      <Text style={s.goodUnit}>day{good.streak === 1 ? "" : "s"} in a row</Text>
-                    </Row>
-                  </View>
-                  <View style={[s.goodIcon, { backgroundColor: withAlpha(t.positive, 0.15) }]}>
-                    <Ionicons name="leaf" size={18} color={t.positive} />
-                  </View>
-                </Row>
-                <Row style={{ gap: 4, marginTop: space(3) }}>
-                  {good.strip.map((d) => (
-                    <View
-                      key={d.key}
-                      style={[s.stripCell, { backgroundColor: dayHeatColor("good", d.spent, d.count, good.scale, t) }]}
-                    />
-                  ))}
-                </Row>
-                <Text style={s.goodCap}>Logged &amp; at or under your usual spend. Keep the row green.</Text>
-              </Card>
-            </Pressable>
+            <View style={{ marginTop: space(1) }}>
+              <HeatmapCard dataByDay={good.dataByDay} scale={good.scale} today={new Date()} streak={good.streak} />
+            </View>
           ) : null}
 
           {/* Habit streaks — a nudge to keep the diary going. */}

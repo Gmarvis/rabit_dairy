@@ -6,13 +6,7 @@ import { BarChart, LineChart, PieChart } from "react-native-gifted-charts";
 import { YearMonth } from "@rabbit/domain";
 import type { BreakdownDimension, BreakdownSlice, CashFlowView } from "@rabbit/application";
 import { Card, MoneyText, PageHeader, Row, SectionLabel, Tico } from "../src/components/ui";
-import { SpendingHeatmap, HeatmapLegend, type HeatmapDay, type HeatmapMode } from "../src/components/Heatmap";
-
-const HEAT_MODES: { key: HeatmapMode; label: string }[] = [
-  { key: "good", label: "Good days" },
-  { key: "count", label: "Tracked" },
-  { key: "spent", label: "Spending" },
-];
+import { HeatmapCard } from "../src/components/Heatmap";
 import { useContainer } from "../src/lib/auth";
 import { usePeriod } from "../src/lib/period";
 import { iconForCategory } from "../src/theme/icons";
@@ -75,16 +69,6 @@ export default function ReportsScreen() {
     }
     return { dataByDay: m, scale: { spendMax, countMax, target: spendDays > 0 ? totalSpent / spendDays : 0 } };
   }, [recent]);
-  const [heatMode, setHeatMode] = useState<HeatmapMode>("good");
-  const [heatDay, setHeatDay] = useState<HeatmapDay | null>(null);
-
-  const heatCaption = heatDay
-    ? `${heatDay.date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" })} · ${heatDay.count === 0 ? "nothing logged" : `${heatDay.count} ${heatDay.count === 1 ? "entry" : "entries"} · ${heatDay.spent > 0 ? `${abbrev(heatDay.spent)} FCFA` : "no spend"}`}`
-    : heatMode === "good"
-      ? "Green = you logged and kept spending at or below your usual. Empty = a day you didn't track."
-      : heatMode === "count"
-        ? "Darker = more transactions logged that day."
-        : "Darker = more spent that day.";
 
   const slices = report
     ? dim === "category" ? report.byCategory : dim === "account" ? report.byAccount : report.byMethod
@@ -145,32 +129,7 @@ export default function ReportsScreen() {
       ) : null}
 
       {/* ---- Daily heat-map ---- */}
-      <Card>
-        <SectionLabel>Daily heat-map · 16 weeks</SectionLabel>
-        <View style={[s.segment, { marginTop: space(2.5) }]}>
-          {HEAT_MODES.map((m) => (
-            <Pressable
-              key={m.key}
-              onPress={() => { setHeatMode(m.key); setHeatDay(null); }}
-              style={[s.seg, heatMode === m.key && s.segOn]}
-            >
-              <Text style={[s.segText, heatMode === m.key && s.segTextOn]}>{m.label}</Text>
-            </Pressable>
-          ))}
-        </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <SpendingHeatmap
-            dataByDay={dataByDay}
-            scale={scale}
-            mode={heatMode}
-            today={new Date()}
-            selectedKey={heatDay?.key ?? null}
-            onDayPress={setHeatDay}
-          />
-        </ScrollView>
-        <HeatmapLegend mode={heatMode} />
-        <Text style={s.heatCap}>{heatCaption}</Text>
-      </Card>
+      <HeatmapCard dataByDay={dataByDay} scale={scale} today={new Date()} />
 
       {/* ---- Spending breakdown ---- */}
       <SectionLabel>Spending breakdown</SectionLabel>
