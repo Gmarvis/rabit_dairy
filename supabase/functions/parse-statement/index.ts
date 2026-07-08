@@ -1,6 +1,16 @@
-// Edge Function: read a bank / mobile-money statement image and return the
-// candidate transaction rows. The image is sent inline and NOT stored — we only
-// extract the rows; the user confirms them before anything is imported.
+// Edge Function: read a photo or screenshot related to money and extract what
+// it holds. The image is sent inline and NOT stored — we only return the data;
+// the user confirms it before anything is saved.
+//
+// It first CLASSIFIES the image, then extracts accordingly:
+//   • a receipt, or a statement / transaction history  → kind "transactions"
+//   • a banking / mobile-money balance screen           → kind "balance"
+//
+// Reply shape { kind, rows, balances }:
+//   { "kind": "transactions",
+//     "rows": [{date, description, amountMajor, direction, categoryHint}] }
+//   { "kind": "balance",
+//     "balances": [{label, amountMajor}] }
 //
 // Deploy:  supabase functions deploy parse-statement
 // Secret:  shares the same OPENAI_API_KEY as `transcribe`.
@@ -35,12 +45,21 @@ Deno.serve(async (req) => {
   if (!imageBase64) return json({ error: "Missing `imageBase64`." }, 400);
 
   const sys =
-    "You read a bank or mobile-money statement/screenshot and extract its " +
-    "transactions. Currency is XAF (FCFA), whole numbers. `direction` is 'in' " +
-    "for money received/credited, 'out' for money spent/debited/withdrawn. " +
-    "Reply ONLY with minified JSON: " +
-    `{"rows":[{"date":"YYYY-MM-DD"|null,"description":string,"amountMajor":number,` +
-    `"direction":"in"|"out","categoryHint":string|null}]}. ` +
+    "You read a photo or screenshot related to personal finance and extract " +
+    "its data. Currency is XAF (FCFA), whole numbers (strip separators). " +
+    "First decide what the image is:\n" +
+    "• If it shows one or more ACCOUNT BALANCES (a banking app home screen, a " +
+    "mobile-money balance, a wallet total), reply with kind 'balance' and the " +
+    "balance figure(s). `label` is the account/wallet name if visible, else null.\n" +
+    "• Otherwise it is a receipt or a list of transactions: reply with kind " +
+    "'transactions'. A single receipt is ONE row. `direction` is 'in' for money " +
+    "received/credited, 'out' for money spent/debited/withdrawn (a purchase " +
+    "receipt is 'out').\n" +
+    "Reply ONLY with minified JSON of this exact shape: " +
+    `{"kind":"transactions"|"balance",` +
+    `"rows":[{"date":"YYYY-MM-DD"|null,"description":string,"amountMajor":number,"direction":"in"|"out","categoryHint":string|null}],` +
+    `"balances":[{"label":string|null,"amountMajor":number}]}. ` +
+    "Include only the array that matches `kind`; the other may be empty. " +
     (categories.length ? `Prefer categoryHint from: ${categories.join(", ")}.` : "");
 
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -55,7 +74,7 @@ Deno.serve(async (req) => {
         {
           role: "user",
           content: [
-            { type: "text", text: "Extract every transaction you can read." },
+            { type: "text", text: "Classify this image and extract what it holds." },
             { type: "image_url", image_url: { url: `data:${mimeType};base64,${imageBase64}` } },
           ],
         },
@@ -64,11 +83,20 @@ Deno.serve(async (req) => {
   });
   if (!res.ok) return json({ error: `Vision failed: ${await res.text()}` }, 502);
 
-  let rows: unknown[] = [];
+  let out: { kind: string; rows: unknown[]; balances: unknown[] } = {
+    kind: "transactions",
+    rows: [],
+    balances: [],
+  };
   try {
-    rows = JSON.parse((await res.json()).choices[0].message.content).rows ?? [];
+    const parsed = JSON.parse((await res.json()).choices[0].message.content);
+    out = {
+      kind: parsed.kind === "balance" ? "balance" : "transactions",
+      rows: Array.isArray(parsed.rows) ? parsed.rows : [],
+      balances: Array.isArray(parsed.balances) ? parsed.balances : [],
+    };
   } catch {
-    rows = [];
+    /* keep defaults */
   }
-  return json({ rows });
+  return json(out);
 });

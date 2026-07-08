@@ -65,5 +65,14 @@ export class Account {
   }
   reactivate(): void { this.props.isDormant = false; }
 
+  /**
+   * Reconcile the account so its current balance equals `target`. We adjust the
+   * opening balance by the gap, leaving logged transactions untouched:
+   *   balance = opening + netMovement  ⇒  opening = target − netMovement.
+   */
+  reconcileBalanceTo(target: Money, netMovement: Money): void {
+    this.props.openingBalance = target.minus(netMovement);
+  }
+
   snapshot(): Readonly<AccountProps> { return { ...this.props }; }
 }

@@ -27,6 +27,8 @@ export { SetBudget } from "./commands/SetBudget.js";
 export type { SetBudgetInput } from "./commands/SetBudget.js";
 export { CreateAccount } from "./commands/CreateAccount.js";
 export type { CreateAccountInput } from "./commands/CreateAccount.js";
+export { ReconcileAccountBalance } from "./commands/ReconcileAccountBalance.js";
+export type { ReconcileAccountBalanceInput } from "./commands/ReconcileAccountBalance.js";
 export { ImportStatement } from "./commands/ImportStatement.js";
 export type { ImportStatementInput, ImportEntry } from "./commands/ImportStatement.js";
 export { SaveCategory } from "./commands/SaveCategory.js";

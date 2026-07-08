@@ -9,7 +9,7 @@ import type { CategoryType } from "@rabbit/domain";
 import type { EntryCategoryOption } from "@rabbit/application";
 import { Card, ModalHeader, Row, withAlpha } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
-import { parseStatement, type ParsedRow } from "../src/lib/parseStatement";
+import { parseDocument, type ParsedBalance, type ParsedRow } from "../src/lib/parseStatement";
 import { useTheme } from "../src/theme/ThemeProvider";
 import { radius, space, type Palette } from "../src/theme/tokens";
 
@@ -46,6 +46,8 @@ export default function ScanScreen() {
   const s = makeStyles(t);
 
   const [rows, setRows] = useState<ReviewRow[] | null>(null);
+  const [balances, setBalances] = useState<ParsedBalance[] | null>(null);
+  const [balanceIdx, setBalanceIdx] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [accountId, setAccountId] = useState<string | null>(null);
@@ -79,20 +81,42 @@ export default function ScanScreen() {
       }
       setBusy(true);
       const asset = res.assets[0];
-      const parsed = await parseStatement(asset.base64!, asset.mimeType ?? "image/jpeg", cats.map((x) => x.name));
-      const review: ReviewRow[] = (parsed ?? []).map((r) => ({
+      const doc = await parseDocument(asset.base64!, asset.mimeType ?? "image/jpeg", cats.map((x) => x.name));
+
+      if (doc?.kind === "balance" && doc.balances.length) {
+        setBalanceIdx(0);
+        setBalances(doc.balances);
+        return;
+      }
+
+      const review: ReviewRow[] = (doc?.rows ?? []).map((r) => ({
         row: r,
         include: true,
         categoryId: resolveCategory(r.categoryHint, r.direction, cats),
       }));
       setRows(review);
-      if (review.length === 0) setError("Couldn't read any transactions from that image.");
+      if (review.length === 0) setError("Couldn't read anything from that image. Try a clearer photo.");
     } catch {
-      setError("Couldn't read the statement. Try a clearer image.");
+      setError("Couldn't read that image. Try a clearer photo.");
     } finally {
       setBusy(false);
     }
   }
+
+  const reconcileMut = useMutation({
+    mutationFn: async () => {
+      const bal = balances?.[balanceIdx];
+      if (!bal || !effectiveAccountId) throw new Error("Pick an account.");
+      const res = await c.commands.reconcileBalance.execute({
+        userId: c.userId,
+        accountId: effectiveAccountId,
+        targetMajor: bal.amountMajor,
+      });
+      if (!res.ok) throw new Error(res.error.message);
+    },
+    onSuccess: () => { qc.invalidateQueries(); router.back(); },
+    onError: (e) => setError(e instanceof Error ? e.message : "Couldn't update the balance."),
+  });
 
   const selected = (rows ?? []).filter((r) => r.include && r.categoryId);
 
@@ -122,13 +146,78 @@ export default function ScanScreen() {
     return cats.find((c2) => c2.id === id)?.name ?? "Uncategorised";
   }
 
+  // Balance state — an account-balance screenshot was read.
+  if (balances) {
+    const bal = balances[balanceIdx];
+    const accountName = accounts.find((a) => a.id === effectiveAccountId)?.name ?? "account";
+    return (
+      <View style={s.screen}>
+        <View style={{ paddingHorizontal: space(4) }}>
+          <Row between style={{ paddingTop: Math.min(insets.top, space(2)) + space(2), paddingBottom: space(3) }}>
+            <Pressable onPress={() => { setBalances(null); setError(null); }} hitSlop={10} style={s.retake}>
+              <Ionicons name="chevron-back" size={18} color={t.gold} />
+              <Text style={s.upload}>Retake</Text>
+            </Pressable>
+            <Text style={s.reviewTitle}>Account balance</Text>
+            <View style={{ width: 80 }} />
+          </Row>
+        </View>
+        <ScrollView contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), gap: space(3) }}>
+          <Text style={s.reviewSub}>We read this balance from your screen. Pick the account to update — your logged transactions are kept.</Text>
+
+          {balances.length > 1 ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips}>
+              {balances.map((b, i) => (
+                <Pressable key={i} style={[s.chip, balanceIdx === i && s.chipOn]} onPress={() => setBalanceIdx(i)}>
+                  <Text style={[s.chipText, balanceIdx === i && s.chipTextOn]}>
+                    {b.label ? `${b.label} · ` : ""}{b.amountMajor.toLocaleString("en-US")}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          ) : null}
+
+          <Card style={{ alignItems: "center", paddingVertical: space(5) }}>
+            <Text style={s.balLabel}>Detected balance</Text>
+            <Text style={s.balAmount}>{(bal?.amountMajor ?? 0).toLocaleString("en-US")}</Text>
+            <Text style={s.balCur}>FCFA</Text>
+          </Card>
+
+          <Text style={s.label}>Update which account?</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips}>
+            {accounts.map((a) => (
+              <Pressable key={a.id} style={[s.chip, effectiveAccountId === a.id && s.chipOn]} onPress={() => setAccountId(a.id)}>
+                <Text style={[s.chipText, effectiveAccountId === a.id && s.chipTextOn]}>{a.name}</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+
+          {error ? <Text style={s.error}>{error}</Text> : null}
+        </ScrollView>
+        <View style={[s.footer, { paddingBottom: insets.bottom + space(3) }]}>
+          <Pressable
+            style={[s.importBtn, !effectiveAccountId && s.importOff]}
+            onPress={() => effectiveAccountId && reconcileMut.mutate()}
+            disabled={!effectiveAccountId || reconcileMut.isPending}
+          >
+            {reconcileMut.isPending ? (
+              <ActivityIndicator color={t.goldInk} />
+            ) : (
+              <Text style={s.importText}>Update {accountName} balance</Text>
+            )}
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
+
   // Capture state — a tall framed target that fills the sheet.
   if (!rows) {
     return (
       <View style={s.screen}>
         <View style={{ paddingHorizontal: space(4) }}>
           <ModalHeader
-            title="Scan statement"
+            title="Scan"
             onCancel={() => router.back()}
             topInset={insets.top}
             right={
@@ -144,13 +233,13 @@ export default function ScanScreen() {
             {busy ? (
               <>
                 <ActivityIndicator color={t.gold} size="large" />
-                <Text style={s.frameSub}>Reading the statement…</Text>
+                <Text style={s.frameSub}>Reading it…</Text>
               </>
             ) : (
               <>
                 <Ionicons name="camera" size={40} color={t.ink2} />
-                <Text style={s.frameTitle}>Frame your statement</Text>
-                <Text style={s.frameSub}>Point at your bank SMS, MoMo history, or a bank app screenshot. Or upload from your gallery.</Text>
+                <Text style={s.frameTitle}>Frame it</Text>
+                <Text style={s.frameSub}>A receipt, a bank SMS or statement, or your balance screen — we read whichever it is. Or upload from your gallery.</Text>
               </>
             )}
             {/* Corner brackets */}
@@ -281,6 +370,10 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   retake: { flexDirection: "row", alignItems: "center", gap: 2, width: 80 },
   reviewTitle: { color: c.ink, fontSize: 16, fontWeight: "800" },
   reviewSub: { color: c.ink2, fontSize: 14, lineHeight: 20 },
+  label: { color: c.muted, fontSize: 10, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase" },
+  balLabel: { color: c.muted, fontSize: 10, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase" },
+  balAmount: { color: c.ink, fontSize: 40, fontWeight: "800", marginTop: 6, fontVariant: ["tabular-nums"], letterSpacing: -1 },
+  balCur: { color: c.ink2, fontSize: 12, fontWeight: "600", marginTop: 2 },
   check: { width: 26, height: 26, borderRadius: 13, alignItems: "center", justifyContent: "center" },
   checkOn: { backgroundColor: c.gold },
   checkOff: { borderWidth: 2, borderColor: c.muted },
