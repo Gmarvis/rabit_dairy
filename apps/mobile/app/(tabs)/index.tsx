@@ -59,6 +59,10 @@ export default function DashboardScreen() {
     queryKey: ["nudges", period.toString()],
     queryFn: () => c.queries.nudges.execute(c.userId, period),
   });
+  const { data: forecast } = useQuery({
+    queryKey: ["forecast", period.toString()],
+    queryFn: () => c.queries.forecast.execute(c.userId, period),
+  });
 
   return (
     <ScrollView
@@ -165,6 +169,63 @@ export default function DashboardScreen() {
               <Text style={s.cap}>Kept {percent(1 - data.summary.expenseRate)}</Text>
             </Row>
           </Card>
+
+          {/* Forward-looking pace — framed to save more, not spend more. */}
+          {forecast && forecast.isCurrentMonth && forecast.spentSoFar.minor > 0 ? (
+            <View style={{ marginTop: space(1) }}>
+              <Row between>
+                <SectionLabel>Month forecast</SectionLabel>
+                {forecast.paceVsLastMonth !== null ? (
+                  <Pill tone={forecast.paceVsLastMonth <= 0 ? "positive" : "negative"}>
+                    {forecast.paceVsLastMonth <= 0
+                      ? `${percent(Math.abs(forecast.paceVsLastMonth), 0)} under last mo`
+                      : `${percent(forecast.paceVsLastMonth, 0)} over last mo`}
+                  </Pill>
+                ) : null}
+              </Row>
+              <Card style={{ marginTop: space(2.5) }}>
+                {(() => {
+                  const saving = forecast.projectedNet.minor >= 0;
+                  const tint = saving ? t.positive : t.negative;
+                  const headline = saving ? forecast.onTrackToSave : forecast.projectedNet.abs();
+                  const denom = forecast.income.minor > 0 ? forecast.income.minor : forecast.projectedSpend.minor;
+                  const frac = denom > 0 ? Math.min(1, forecast.spentSoFar.minor / denom) : 0;
+                  const proj = denom > 0 ? Math.min(1, forecast.projectedSpend.minor / denom) : 0;
+                  return (
+                    <>
+                      <Text style={s.fcLabel}>{saving ? "On track to save this month" : "Heading over by"}</Text>
+                      <Text style={[s.fcVal, { color: tint }]}>
+                        {headline.format({ withCode: false })}
+                        <Text style={s.fcCur}> FCFA</Text>
+                      </Text>
+                      <Text style={s.fcSub}>
+                        ≈ {forecast.dailyPace.format({ withCode: false })}/day · {forecast.daysLeft} day{forecast.daysLeft === 1 ? "" : "s"} left
+                      </Text>
+
+                      {/* Spent-so-far vs projected, against income. */}
+                      <View style={s.fcTrack}>
+                        <View style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${proj * 100}%`, backgroundColor: withAlpha(t.negative, 0.25) }} />
+                        <View style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${frac * 100}%`, backgroundColor: t.negative, borderRadius: 3 }} />
+                      </View>
+                      <Text style={s.fcCap}>
+                        {forecast.spentSoFar.format({ withCode: false })} spent · ~{forecast.projectedSpend.format({ withCode: false })} projected
+                      </Text>
+
+                      {forecast.saveIfCapped.minor > 0 ? (
+                        <Row style={s.trimRow}>
+                          <Ionicons name="trending-down" size={16} color={t.positive} />
+                          <Text style={s.trimText}>
+                            Ease to {forecast.suggestedDailyCap.format({ withCode: false })}/day and save{" "}
+                            <Text style={{ fontWeight: "800", color: t.positive }}>{forecast.saveIfCapped.format({ withCode: false })} more</Text> before month-end.
+                          </Text>
+                        </Row>
+                      ) : null}
+                    </>
+                  );
+                })()}
+              </Card>
+            </View>
+          ) : null}
 
           {/* Habit streaks — a nudge to keep the diary going. */}
           {habits ? (
@@ -280,6 +341,14 @@ const makeStyles = (c: Palette) =>
     netDelta: { fontSize: 12, fontWeight: "700", fontVariant: ["tabular-nums"] },
     cap: { color: c.ink2, fontSize: 11 },
     sparkCap: { color: c.muted, fontSize: 10, fontWeight: "600" },
+    fcLabel: { color: c.muted, fontSize: 11, fontWeight: "700", letterSpacing: 0.5, textTransform: "uppercase" },
+    fcVal: { fontSize: 28, fontWeight: "800", marginTop: 5, fontVariant: ["tabular-nums"] },
+    fcCur: { fontSize: 13, fontWeight: "600", color: c.ink2 },
+    fcSub: { color: c.ink2, fontSize: 12, marginTop: 4 },
+    fcTrack: { height: 6, borderRadius: 3, backgroundColor: c.card2, overflow: "hidden", marginTop: 14 },
+    fcCap: { color: c.muted, fontSize: 11, marginTop: 7 },
+    trimRow: { gap: 8, marginTop: 14, alignItems: "flex-start" },
+    trimText: { flex: 1, color: c.ink2, fontSize: 12, lineHeight: 17 },
     nudgeIcon: { width: 38, height: 38, borderRadius: 12, alignItems: "center", justifyContent: "center" },
     nudgeTitle: { color: c.ink, fontSize: 14, fontWeight: "700" },
     nudgeBody: { color: c.ink2, fontSize: 12, marginTop: 2, lineHeight: 17 },

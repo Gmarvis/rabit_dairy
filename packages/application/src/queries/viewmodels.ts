@@ -250,6 +250,31 @@ export interface NetWorthTrendView {
   max: number;
 }
 
+export interface ForecastView {
+  periodLabel: string;
+  isCurrentMonth: boolean;
+  isPast: boolean;
+  daysElapsed: number;
+  daysLeft: number;
+  daysInMonth: number;
+  spentSoFar: Money;
+  income: Money;
+  /** Average spend per elapsed day. */
+  dailyPace: Money;
+  /** Projected month-end spend at the current pace (actuals for a past month). */
+  projectedSpend: Money;
+  /** income − projectedSpend (negative = heading over). */
+  projectedNet: Money;
+  /** max(0, projectedNet) — what you'd keep if the pace holds. */
+  onTrackToSave: Money;
+  /** A gentler daily target (≈15% below the current pace). */
+  suggestedDailyCap: Money;
+  /** Extra saved over the remaining days by holding to that cap. */
+  saveIfCapped: Money;
+  /** projectedSpend vs last month's spend, as a ratio change; null if no prior. */
+  paceVsLastMonth: number | null;
+}
+
 export type NudgeTone = "alert" | "warn" | "info" | "positive";
 
 export interface Nudge {
