@@ -250,6 +250,54 @@ export interface NetWorthTrendView {
   max: number;
 }
 
+export interface StreakStat {
+  /** Current unbroken run. */
+  current: number;
+  /** Longest run seen in the look-back window. */
+  best: number;
+  /** Whether the streak is alive right now. */
+  active: boolean;
+}
+
+export interface LoggingHabit extends StreakStat {
+  loggedToday: boolean;
+  lastLoggedAt: string | null;
+}
+
+export interface SavingsHabit extends StreakStat {
+  /** This month's net balance so far. */
+  thisMonthNet: Money;
+  /** Whether this month already qualifies. */
+  onTrack: boolean;
+}
+
+export interface BudgetHabit extends StreakStat {
+  /** Whether any budget has ever been set (drives whether we show this). */
+  hasBudget: boolean;
+  /** Whether this month is under budget so far. */
+  thisMonthUnder: boolean;
+}
+
+export interface SpendGoalHabit {
+  categoryId: string;
+  categoryName: string;
+  categoryColor: string;
+  /** This month's budget for the category — the goal. */
+  target: Money;
+  /** Spent against it so far. */
+  spent: Money;
+  /** Streak of completed months kept under the goal. */
+  current: number;
+  onTrack: boolean;
+}
+
+export interface HabitsView {
+  logging: LoggingHabit;
+  savings: SavingsHabit;
+  budget: BudgetHabit;
+  goals: SpendGoalHabit[];
+}
+
 export interface YearlyOverviewView {
   year: number;
   months: MonthBucket[];

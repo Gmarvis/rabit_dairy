@@ -36,6 +36,10 @@ export default function DashboardScreen() {
     queryKey: ["netWorthTrend", period.toString()],
     queryFn: () => c.queries.netWorthTrend.execute(c.userId, period),
   });
+  const { data: habits } = useQuery({
+    queryKey: ["habits"],
+    queryFn: () => c.queries.habits.execute(c.userId),
+  });
 
   function pickMonth() {
     const buttons = [
@@ -130,6 +134,30 @@ export default function DashboardScreen() {
             </Row>
           </Card>
 
+          {/* Habit streaks — a nudge to keep the diary going. */}
+          {habits ? (
+            <Pressable onPress={() => router.push("/habits")} style={{ marginTop: space(1) }}>
+              <Card>
+                <Row between>
+                  <Row style={{ gap: space(3.5) }}>
+                    <Row style={{ gap: 7 }}>
+                      <Ionicons name="flame" size={16} color={t.gold} />
+                      <Text style={s.streak}>{habits.logging.current}</Text>
+                      <Text style={s.streakUnit}>day{habits.logging.current === 1 ? "" : "s"}</Text>
+                    </Row>
+                    <View style={s.vline} />
+                    <Row style={{ gap: 7 }}>
+                      <Ionicons name="trending-up" size={16} color={t.positive} />
+                      <Text style={s.streak}>{habits.savings.current}</Text>
+                      <Text style={s.streakUnit}>mo saving</Text>
+                    </Row>
+                  </Row>
+                  <Ionicons name="chevron-forward" size={16} color={t.muted} />
+                </Row>
+              </Card>
+            </Pressable>
+          ) : null}
+
           <Row between style={{ marginTop: space(1) }}>
             <SectionLabel>Recent activity</SectionLabel>
             <Pressable onPress={() => router.push("/activity")} hitSlop={8}>
@@ -220,6 +248,9 @@ const makeStyles = (c: Palette) =>
     netDelta: { fontSize: 12, fontWeight: "700", fontVariant: ["tabular-nums"] },
     cap: { color: c.ink2, fontSize: 11 },
     sparkCap: { color: c.muted, fontSize: 10, fontWeight: "600" },
+    streak: { color: c.ink, fontSize: 17, fontWeight: "800", fontVariant: ["tabular-nums"] },
+    streakUnit: { color: c.ink2, fontSize: 12, fontWeight: "600" },
+    vline: { width: 1, alignSelf: "stretch", backgroundColor: c.line },
     seeAll: { color: c.gold, fontSize: 10, fontWeight: "700" },
     txn: { flexDirection: "row", alignItems: "center", gap: space(2.5), paddingVertical: space(2.5) },
     txnBorder: { borderBottomWidth: 1, borderBottomColor: c.line },
