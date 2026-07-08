@@ -3,9 +3,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useEffect, useRef } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Svg, { Circle, Polygon, Polyline } from "react-native-svg";
+import { LineChart } from "react-native-gifted-charts";
 import type { NetWorthTrendView } from "@rabbit/application";
 import { Card, MoneyText, Pill, Row, SectionLabel, Tico, withAlpha } from "../../src/components/ui";
 import { CountUpMoney } from "../../src/components/anim";
@@ -283,29 +283,55 @@ export default function DashboardScreen() {
   );
 }
 
-/** A gently-filled line of net worth over the trailing months. */
+const HERO_W = Dimensions.get("window").width - space(4) * 2 - 44;
+
+/** Interactive net-worth line over the trailing months — drag to read a month. */
 function NetWorthSpark({ trend, c }: { trend: NetWorthTrendView; c: Palette }) {
-  const W = 300, H = 56, pad = 4;
-  const vals = trend.points.map((p) => p.value.minor);
-  const lo = Math.min(trend.min, 0);
-  const span = Math.max(1, trend.max - lo);
   const up = !trend.change.isNegative;
   const stroke = up ? c.positive : c.negative;
-
-  const pts = vals.map((v, i) => {
-    const x = (i / (vals.length - 1)) * (W - pad * 2) + pad;
-    const y = H - pad - ((v - lo) / span) * (H - pad * 2);
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  });
-  const last = pts[pts.length - 1]!.split(",");
-  const area = `${pad},${H} ${pts.join(" ")} ${W - pad},${H}`;
-
+  const data = trend.points.map((p) => ({ value: p.value.minor }));
   return (
-    <Svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ marginTop: 14 }}>
-      <Polygon points={area} fill={withAlpha(stroke, 0.14)} />
-      <Polyline points={pts.join(" ")} fill="none" stroke={stroke} strokeWidth={2.5} strokeLinejoin="round" />
-      <Circle cx={Number(last[0])} cy={Number(last[1])} r={3.5} fill={stroke} />
-    </Svg>
+    <View style={{ marginTop: 14, marginLeft: -8 }}>
+      <LineChart
+        data={data}
+        width={HERO_W - 16}
+        height={64}
+        curved
+        areaChart
+        color={stroke}
+        thickness={2.5}
+        startFillColor={stroke}
+        endFillColor={stroke}
+        startOpacity={0.22}
+        endOpacity={0.02}
+        hideDataPoints
+        hideRules
+        hideYAxisText
+        yAxisThickness={0}
+        xAxisThickness={0}
+        adjustToWidth
+        initialSpacing={6}
+        endSpacing={6}
+        isAnimated
+        animationDuration={800}
+        pointerConfig={{
+          pointerColor: stroke,
+          pointerStripColor: withAlpha(c.ink2, 0.4),
+          pointerStripHeight: 64,
+          radius: 4,
+          pointerLabelWidth: 120,
+          pointerLabelHeight: 30,
+          autoAdjustPointerLabelPosition: true,
+          pointerLabelComponent: (items: { value: number }[]) => (
+            <View style={{ backgroundColor: c.ink, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 }}>
+              <Text style={{ color: c.bg, fontSize: 11, fontWeight: "800" }}>
+                {Number(items[0]?.value ?? 0).toLocaleString("en-US")} FCFA
+              </Text>
+            </View>
+          ),
+        }}
+      />
+    </View>
   );
 }
 

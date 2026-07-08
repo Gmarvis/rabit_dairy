@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BarChart, LineChart, PieChart } from "react-native-gifted-charts";
+import { YearMonth } from "@rabbit/domain";
 import type { BreakdownDimension, BreakdownSlice, CashFlowView } from "@rabbit/application";
 import { Card, MoneyText, PageHeader, Row, SectionLabel, Tico } from "../src/components/ui";
+import { SpendingHeatmap, HeatmapLegend, type HeatmapDay } from "../src/components/Heatmap";
 import { useContainer } from "../src/lib/auth";
 import { usePeriod } from "../src/lib/period";
 import { iconForCategory } from "../src/theme/icons";
@@ -45,6 +47,24 @@ export default function ReportsScreen() {
     queryKey: ["spending-report", period.toString()],
     queryFn: () => c.queries.spendingReport.execute(c.userId, period),
   });
+  const { data: recent } = useQuery({
+    queryKey: ["recent-transactions"],
+    queryFn: () => c.queries.recentTransactions.execute(c.userId, YearMonth.fromDate(new Date())),
+  });
+
+  const { spentByDay, maxSpent } = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const tx of recent ?? []) {
+      if (tx.signedAmount.minor < 0) {
+        const k = new Date(tx.occurredAt).toISOString().slice(0, 10);
+        m.set(k, (m.get(k) ?? 0) + -tx.signedAmount.minor);
+      }
+    }
+    let max = 0;
+    for (const v of m.values()) max = Math.max(max, v);
+    return { spentByDay: m, maxSpent: max };
+  }, [recent]);
+  const [heatDay, setHeatDay] = useState<HeatmapDay | null>(null);
 
   const slices = report
     ? dim === "category" ? report.byCategory : dim === "account" ? report.byAccount : report.byMethod
@@ -103,6 +123,26 @@ export default function ReportsScreen() {
           <SavingsLine data={flow} t={t} />
         </Card>
       ) : null}
+
+      {/* ---- Daily spending heat-map ---- */}
+      <Card>
+        <SectionLabel>Daily spending · heat-map</SectionLabel>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <SpendingHeatmap
+            spentByDay={spentByDay}
+            maxSpent={maxSpent}
+            today={new Date()}
+            selectedKey={heatDay?.key ?? null}
+            onDayPress={setHeatDay}
+          />
+        </ScrollView>
+        <HeatmapLegend />
+        <Text style={s.heatCap}>
+          {heatDay
+            ? `${heatDay.date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" })} · ${heatDay.spent > 0 ? `${abbrev(heatDay.spent)} FCFA spent` : "nothing spent"}`
+            : "Each square is a day — darker means more spent. Tap one to see it."}
+        </Text>
+      </Card>
 
       {/* ---- Spending breakdown ---- */}
       <SectionLabel>Spending breakdown</SectionLabel>
@@ -299,6 +339,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   metaLabel: { color: c.muted, fontSize: 10, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase" },
   mom: { fontSize: 16, fontWeight: "800", marginTop: 2 },
   rate: { color: c.positive, fontSize: 18, fontWeight: "800" },
+  heatCap: { color: c.ink2, fontSize: 12, marginTop: 10, lineHeight: 17 },
   centerPct: { color: c.ink, fontSize: 20, fontWeight: "800" },
   centerLabel: { color: c.ink2, fontSize: 10, maxWidth: CW * 0.3, textAlign: "center" },
   segment: { flexDirection: "row", backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: 13, padding: 3 },

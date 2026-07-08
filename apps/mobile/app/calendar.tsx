@@ -73,11 +73,12 @@ export default function CalendarScreen() {
     [canNext],
   );
 
-  // Heat colour for a day cell, scaled against the month's biggest spend.
+  // Heat colour for a day cell, scaled against the month's biggest spend. Every
+  // day gets at least a faint base tint so the grid reads as a heat-map.
   function heat(minor: number): string {
-    if (!data || data.maxSpent === 0 || minor === 0) return "transparent";
+    if (!data || data.maxSpent === 0 || minor === 0) return withAlpha(t.negative, 0.07);
     const ratio = minor / data.maxSpent;
-    return withAlpha(t.negative, 0.14 + 0.55 * ratio);
+    return withAlpha(t.negative, 0.18 + 0.6 * ratio);
   }
 
   const dayTxns = useMemo(() => {
