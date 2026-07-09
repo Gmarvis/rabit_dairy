@@ -85,10 +85,6 @@ export default function ScanScreen() {
         : ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], base64: true, quality: 0.5 }));
       if (res.canceled || !res.assets[0]?.base64) return;
 
-      if (c.isDemo) {
-        setError("Scanning needs your Supabase backend — add your keys to .env.");
-        return;
-      }
       setBusy(true);
       const asset = res.assets[0];
       const doc = await parseDocument(asset.base64!, asset.mimeType ?? "image/jpeg", cats.map((x) => x.name));

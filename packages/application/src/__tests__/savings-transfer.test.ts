@@ -29,6 +29,7 @@ function savingsAccount() {
     userId: USER,
     name: "Savings",
     type: "bank_savings",
+    role: "savings",
     currency: "XAF",
     institution: "UBA",
     mask: "7130",

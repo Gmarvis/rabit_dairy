@@ -3,6 +3,7 @@
  * Replace with `supabase gen types typescript` output once the project is live.
  */
 import type {
+  AccountRole,
   AccountType,
   CategoryType,
   Direction,
@@ -15,6 +16,8 @@ export interface AccountRow {
   user_id: string;
   name: string;
   type: AccountType;
+  /** What the account is for — may be null on rows created before roles. */
+  role: AccountRole | null;
   currency: string;
   institution: string | null;
   mask: string | null;

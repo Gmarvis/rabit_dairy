@@ -4,6 +4,8 @@ import {
   asAccountId,
   fail,
   ok,
+  roleForType,
+  type AccountRole,
   type AccountType,
   type Result,
   type UserId,
@@ -15,6 +17,8 @@ export interface CreateAccountInput {
   userId: UserId;
   name: string;
   type: AccountType;
+  /** What the account is for. Defaults from the type when omitted. */
+  role?: AccountRole;
   institution?: string | null;
   mask?: string | null;
   openingBalanceMajor?: number;
@@ -37,6 +41,7 @@ export class CreateAccount {
       userId: input.userId,
       name: input.name,
       type: input.type,
+      role: input.role ?? roleForType(input.type),
       currency: "XAF",
       institution: input.institution?.trim() || null,
       mask: input.mask?.trim() || null,

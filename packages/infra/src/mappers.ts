@@ -10,6 +10,7 @@ import {
   asTransactionId,
   asTransferId,
   asUserId,
+  roleForType,
   type CurrencyCode,
 } from "@rabbit/domain";
 import type {
@@ -27,6 +28,7 @@ export const toAccount = (r: AccountRow): Account =>
     userId: asUserId(r.user_id),
     name: r.name,
     type: r.type,
+    role: r.role ?? roleForType(r.type),
     currency: cur(r.currency),
     institution: r.institution,
     mask: r.mask,

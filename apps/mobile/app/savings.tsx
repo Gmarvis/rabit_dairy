@@ -31,7 +31,7 @@ export default function SavingsScreen() {
     queryKey: ["entry-options"],
     queryFn: () => c.queries.entryOptions.execute(c.userId),
   });
-  const savingsAccount = options?.accounts.find((a) => a.type === "bank_savings");
+  const savingsAccount = options?.accounts.find((a) => a.role === "savings");
   const savingsCategory = options?.categories.find((cat) => cat.type === "savings");
   const fundingAccounts = (options?.accounts ?? []).filter((a) => a.id !== savingsAccount?.id);
   const effectiveFunding = fundingId ?? fundingAccounts[0]?.id ?? null;

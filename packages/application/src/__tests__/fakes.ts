@@ -135,6 +135,7 @@ export function salaryAccount(): Account {
     userId: USER,
     name: "Salary account",
     type: "bank_salary",
+    role: "spending",
     currency: "XAF",
     institution: "Afriland",
     mask: "4821",

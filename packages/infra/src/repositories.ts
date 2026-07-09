@@ -81,7 +81,7 @@ export class SupabaseAccountRepository implements AccountRepository {
   async save(a: Account) {
     const s = a.snapshot();
     const row: AccountRow = {
-      id: s.id, user_id: s.userId, name: s.name, type: s.type,
+      id: s.id, user_id: s.userId, name: s.name, type: s.type, role: s.role,
       currency: s.currency, institution: s.institution, mask: s.mask,
       opening_balance: s.openingBalance.minor, is_primary: s.isPrimary,
       is_dormant: s.isDormant,

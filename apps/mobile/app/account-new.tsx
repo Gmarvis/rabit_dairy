@@ -3,7 +3,7 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import type { AccountType } from "@rabbit/domain";
+import { roleForType, type AccountRole, type AccountType } from "@rabbit/domain";
 import { PrimaryButton, Row, ScreenHeader } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
 import { useTheme } from "../src/theme/ThemeProvider";
@@ -17,6 +17,12 @@ const TYPES: { key: AccountType; label: string }[] = [
   { key: "cash", label: "Cash" },
 ];
 
+const ROLES: { key: AccountRole; label: string; hint: string }[] = [
+  { key: "spending", label: "Spending", hint: "Everyday money you can freely use." },
+  { key: "savings", label: "Savings", hint: "Money set aside — its balance counts as saved." },
+  { key: "credit", label: "Credit", hint: "Money you owe — subtracted from your total." },
+];
+
 export default function NewAccountScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -27,6 +33,7 @@ export default function NewAccountScreen() {
 
   const [name, setName] = useState("");
   const [type, setType] = useState<AccountType>("bank_salary");
+  const [role, setRole] = useState<AccountRole>(roleForType("bank_salary"));
   const [institution, setInstitution] = useState("");
   const [mask, setMask] = useState("");
   const [opening, setOpening] = useState("");
@@ -41,6 +48,7 @@ export default function NewAccountScreen() {
         userId: c.userId,
         name: name.trim(),
         type,
+        role,
         institution: isBank ? institution : null,
         mask: isBank ? mask : null,
         openingBalanceMajor: opening ? parseInt(opening, 10) : 0,
@@ -65,11 +73,27 @@ export default function NewAccountScreen() {
           <Text style={s.label}>Type</Text>
           <View style={s.chipsWrap}>
             {TYPES.map((opt) => (
-              <Pressable key={opt.key} style={[s.chip, type === opt.key && s.chipOn]} onPress={() => setType(opt.key)}>
+              <Pressable
+                key={opt.key}
+                style={[s.chip, type === opt.key && s.chipOn]}
+                onPress={() => { setType(opt.key); setRole(roleForType(opt.key)); }}
+              >
                 <Text style={[s.chipText, type === opt.key && s.chipTextOn]}>{opt.label}</Text>
               </Pressable>
             ))}
           </View>
+        </View>
+
+        <View>
+          <Text style={s.label}>Role</Text>
+          <View style={s.chipsWrap}>
+            {ROLES.map((opt) => (
+              <Pressable key={opt.key} style={[s.chip, role === opt.key && s.chipOn]} onPress={() => setRole(opt.key)}>
+                <Text style={[s.chipText, role === opt.key && s.chipTextOn]}>{opt.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <Text style={s.hint}>{ROLES.find((r) => r.key === role)?.hint}</Text>
         </View>
 
         {isBank ? (
@@ -86,7 +110,7 @@ export default function NewAccountScreen() {
         ) : null}
 
         <View>
-          <Text style={s.label}>Opening balance (FCFA)</Text>
+          <Text style={s.label}>{role === "credit" ? "Amount owed (FCFA)" : "Opening balance (FCFA)"}</Text>
           <TextInput style={s.input} value={opening} onChangeText={(v) => setOpening(v.replace(/[^0-9]/g, ""))} keyboardType="number-pad" placeholder="0" placeholderTextColor={pal.muted} />
         </View>
 
@@ -109,6 +133,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   chipOn: { backgroundColor: c.gold, borderColor: c.gold },
   chipText: { color: c.ink2, fontSize: 12, fontWeight: "600" },
   chipTextOn: { color: c.goldInk },
+  hint: { color: c.muted, fontSize: 12, marginTop: 6, lineHeight: 16 },
   error: { color: c.negative, fontSize: 12 },
   footer: { paddingHorizontal: space(4), paddingTop: space(2), borderTopWidth: 1, borderTopColor: c.line, backgroundColor: c.bg },
 });

@@ -26,7 +26,7 @@ function useAuthGate() {
     const onEntry = segments[0] === "auth" || segments[0] === "welcome";
     if (status === "signed_out" && !onEntry) {
       router.replace("/welcome");
-    } else if ((status === "authed" || status === "demo") && onEntry) {
+    } else if (status === "authed" && onEntry) {
       router.replace("/");
     }
   }, [status, segments, router]);

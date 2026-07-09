@@ -1,7 +1,6 @@
 /**
- * Composition root — wires the application-layer use cases to a data source.
- * Uses Supabase when configured, otherwise the in-memory demo data so the UI
- * runs immediately. Screens depend only on this, never on infra directly.
+ * Composition root — wires the application-layer use cases to Supabase. Screens
+ * depend only on this, never on infra directly.
  */
 import { asUserId, type UserId } from "@rabbit/domain";
 import type { FileStorage } from "@rabbit/application";
@@ -46,34 +45,24 @@ import {
   SystemClock,
   UuidIds,
 } from "@rabbit/infra";
-import { isSupabaseConfigured, supabase } from "./supabase";
-import {
-  DEMO_USER_ID,
-  demoAccounts,
-  demoBudgets,
-  demoCategories,
-  demoTransactions,
-} from "../data/demo";
+import { supabase } from "./supabase";
 
 function build(userId: UserId) {
-  const useSupabase = isSupabaseConfigured && supabase;
-  const accounts = useSupabase ? new SupabaseAccountRepository(supabase!) : demoAccounts;
-  const categories = useSupabase ? new SupabaseCategoryRepository(supabase!) : demoCategories;
-  const txns = useSupabase ? new SupabaseTransactionRepository(supabase!) : demoTransactions;
-  const budgets = useSupabase ? new SupabaseBudgetRepository(supabase!) : demoBudgets;
+  if (!supabase) {
+    throw new Error("Supabase is not configured — set your keys in .env.");
+  }
+  const accounts = new SupabaseAccountRepository(supabase);
+  const categories = new SupabaseCategoryRepository(supabase);
+  const txns = new SupabaseTransactionRepository(supabase);
+  const budgets = new SupabaseBudgetRepository(supabase);
 
   const ids = new UuidIds();
   const clock = new SystemClock();
 
-  // Uploads to Supabase Storage when live; in demo mode keeps the local file uri.
-  const storage: FileStorage =
-    useSupabase && supabase
-      ? new SupabaseFileStorage(supabase, userId, ids)
-      : { async upload(_bucket, localUri) { return { path: localUri }; } };
+  const storage: FileStorage = new SupabaseFileStorage(supabase, userId, ids);
 
   return {
     userId,
-    isDemo: !useSupabase,
     storage,
     queries: {
       dashboard: new GetDashboard(txns, categories, accounts),
@@ -116,9 +105,11 @@ export type Container = ReturnType<typeof build>;
 
 let cached: Container | null = null;
 
-/** The active container. In demo mode the user id is fixed. */
+/** The active container, bound to the signed-in user. */
 export function getContainer(sessionUserId?: string): Container {
-  const userId = sessionUserId ? asUserId(sessionUserId) : DEMO_USER_ID;
+  // Signed-out screens redirect to Welcome before they query, so an empty id is
+  // only ever a placeholder — Supabase RLS returns nothing for it anyway.
+  const userId = asUserId(sessionUserId ?? "");
   if (!cached || cached.userId !== userId) cached = build(userId);
   return cached;
 }

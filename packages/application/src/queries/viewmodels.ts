@@ -1,4 +1,5 @@
 import type {
+  AccountRole,
   AccountType,
   CategoryType,
   Direction,
@@ -60,6 +61,7 @@ export interface AccountListItem {
   id: string;
   name: string;
   type: AccountType;
+  role: AccountRole;
   institution: string | null;
   mask: string | null;
   balance: Money;
@@ -68,8 +70,12 @@ export interface AccountListItem {
 }
 
 export interface AccountsOverview {
-  /** Sum of balances excluding dormant accounts. */
+  /** Net of all non-dormant balances (savings + spending − credit owed). */
   totalBalance: Money;
+  /** Money held in savings-role accounts (non-dormant). */
+  saved: Money;
+  /** Money owed across credit-role accounts (non-dormant). */
+  owed: Money;
   accountCount: number;
   dormantCount: number;
   accounts: AccountListItem[];

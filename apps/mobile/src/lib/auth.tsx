@@ -9,7 +9,7 @@ import {
 import { getContainer, type Container } from "./container";
 import { isSupabaseConfigured, supabase } from "./supabase";
 
-type Status = "loading" | "demo" | "authed" | "signed_out";
+type Status = "loading" | "authed" | "signed_out";
 
 interface AuthValue {
   status: Status;
@@ -24,11 +24,10 @@ const AuthContext = createContext<AuthValue>({
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // No backend configured → run on demo data, no sign-in required.
   const [value, setValue] = useState<AuthValue>(
     isSupabaseConfigured
       ? { status: "loading", userId: null, email: null }
-      : { status: "demo", userId: null, email: null },
+      : { status: "signed_out", userId: null, email: null },
   );
 
   useEffect(() => {
@@ -59,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export const useAuth = () => useContext(AuthContext);
 
-/** The composition root bound to the current user (demo or authenticated). */
+/** The composition root bound to the signed-in user. */
 export function useContainer(): Container {
   const { userId } = useAuth();
   return useMemo(() => getContainer(userId ?? undefined), [userId]);

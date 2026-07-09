@@ -11,8 +11,8 @@ export { Category, CATEGORY_TYPES, PAYMENT_METHODS, defaultDirection } from "./c
 export type { CategoryType, PaymentMethod, CategoryProps } from "./category/Category.js";
 
 // Account
-export { Account, ACCOUNT_TYPES } from "./account/Account.js";
-export type { AccountType, AccountProps } from "./account/Account.js";
+export { Account, ACCOUNT_TYPES, ACCOUNT_ROLES, roleForType } from "./account/Account.js";
+export type { AccountType, AccountRole, AccountProps } from "./account/Account.js";
 
 // Transaction
 export { Transaction, netMovement } from "./transaction/Transaction.js";

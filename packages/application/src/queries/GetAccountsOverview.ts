@@ -16,6 +16,7 @@ export class GetAccountsOverview {
           id: a.id,
           name: a.name,
           type: a.type,
+          role: a.role,
           institution: a.institution,
           mask: a.mask,
           balance: a.balance(net),
@@ -25,13 +26,24 @@ export class GetAccountsOverview {
       }),
     );
 
-    // Dormant accounts are excluded from the headline total.
-    const totalBalance = items
-      .filter((i) => !i.isDormant)
+    // Dormant accounts sit out of every headline figure.
+    const live = items.filter((i) => !i.isDormant);
+    // Total = what you hold (savings + spending) minus what you owe (credit).
+    const totalBalance = live.reduce(
+      (acc, i) => (i.role === "credit" ? acc.minus(i.balance) : acc.plus(i.balance)),
+      Money.zero("XAF"),
+    );
+    const saved = live
+      .filter((i) => i.role === "savings")
+      .reduce((acc, i) => acc.plus(i.balance), Money.zero("XAF"));
+    const owed = live
+      .filter((i) => i.role === "credit")
       .reduce((acc, i) => acc.plus(i.balance), Money.zero("XAF"));
 
     return {
       totalBalance,
+      saved,
+      owed,
       accountCount: items.length,
       dormantCount: items.filter((i) => i.isDormant).length,
       accounts: items,

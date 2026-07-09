@@ -58,6 +58,23 @@ export default function AccountsScreen() {
           {data ? `${data.accountCount} accounts · ${data.dormantCount} dormant` : "…"}
         </Text>
 
+        {data && (data.saved.minor > 0 || data.owed.minor > 0) ? (
+          <Row style={{ gap: space(4), marginTop: space(2) }}>
+            {data.saved.minor > 0 ? (
+              <View>
+                <SectionLabel>Saved</SectionLabel>
+                <MoneyText amount={data.saved} currency={false} size={14} style={{ marginTop: 3, color: t.gold }} />
+              </View>
+            ) : null}
+            {data.owed.minor > 0 ? (
+              <View>
+                <SectionLabel>Owed</SectionLabel>
+                <MoneyText amount={data.owed} currency={false} size={14} style={{ marginTop: 3, color: t.negative }} />
+              </View>
+            ) : null}
+          </Row>
+        ) : null}
+
         <View style={s.divider} />
         <Row between>
           <View>
@@ -136,12 +153,9 @@ function AccountRow({ a, last }: { a: AccountListItem; last: boolean }) {
       </View>
       <View style={{ alignItems: "flex-end", gap: 3 }}>
         <MoneyText amount={a.balance} currency={false} size={13} />
+        {a.role === "savings" ? <Pill tone="gold">Savings</Pill> : null}
+        {a.role === "credit" ? <Pill tone="negative">Credit</Pill> : null}
         {a.isPrimary ? <Pill tone="positive">Primary</Pill> : null}
-        {a.type === "bank_savings" ? (
-          <Pill tone="gold">
-            <Ionicons name="camera" size={9} color={t.gold} /> snap
-          </Pill>
-        ) : null}
         {a.isDormant ? <Pill tone="muted">Hidden</Pill> : null}
       </View>
     </PressableScale>

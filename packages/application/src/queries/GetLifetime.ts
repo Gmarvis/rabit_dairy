@@ -32,11 +32,20 @@ export class GetLifetime {
         (movementByAccount.get(t.accountId) ?? Money.zero("XAF")).plus(t.signedAmount),
       );
     }
-    const netWorth = accs.reduce(
-      (sum, a) =>
-        a.isDormant ? sum : sum.plus(a.balance(movementByAccount.get(a.id) ?? Money.zero("XAF"))),
+    const live = accs.filter((a) => !a.isDormant);
+    const balOf = (a: (typeof live)[number]) =>
+      a.balance(movementByAccount.get(a.id) ?? Money.zero("XAF"));
+    // Net worth = what you hold minus what you owe (credit accounts).
+    const netWorth = live.reduce(
+      (sum, a) => sum.plus(a.netWorthContribution(movementByAccount.get(a.id) ?? Money.zero("XAF"))),
       Money.zero("XAF"),
     );
+    // "Saved" is a balance you hold, not a category flow: every franc sitting in
+    // a savings-role account counts — including its opening balance — so opening
+    // a savings account or depositing into it is immediately reflected.
+    const saved = live
+      .filter((a) => a.isSavings)
+      .reduce((sum, a) => sum.plus(balOf(a)), Money.zero("XAF"));
 
     const firstAt = all.length
       ? all.reduce((min, t) => (t.occurredAt < min ? t.occurredAt : min), all[0]!.occurredAt)
@@ -74,7 +83,7 @@ export class GetLifetime {
       netWorth,
       earned: summary.income,
       spent: summary.expenses,
-      saved: summary.savings,
+      saved,
       /** income − spending, all-time (what you kept). */
       net: summary.income.minus(summary.expenses),
       transactionCount: all.length,

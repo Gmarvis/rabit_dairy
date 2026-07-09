@@ -17,11 +17,35 @@ export const ACCOUNT_TYPES: readonly AccountType[] = [
   "cash",
 ];
 
+/**
+ * What an account is *for* — independent of the institution kind. This is the
+ * tag that drives the money logic:
+ *   • spending — everyday money you can freely use (assets).
+ *   • savings  — money deliberately set aside; its whole balance counts as
+ *     "saved", and moving money in is a savings transaction.
+ *   • credit   — money you owe (a liability); its balance is subtracted from
+ *     net worth and the total.
+ */
+export type AccountRole = "spending" | "savings" | "credit";
+
+export const ACCOUNT_ROLES: readonly AccountRole[] = [
+  "spending",
+  "savings",
+  "credit",
+];
+
+/** Sensible default role for a given account type (used to backfill old rows). */
+export function roleForType(type: AccountType): AccountRole {
+  return type === "bank_savings" ? "savings" : "spending";
+}
+
 export interface AccountProps {
   id: AccountId;
   userId: UserId;
   name: string;
   type: AccountType;
+  /** What the account is for. Drives the savings / liability logic. */
+  role: AccountRole;
   currency: CurrencyCode;
   institution: string | null;
   /** Last digits shown in the UI, e.g. "4821". Never the full number. */
@@ -43,7 +67,13 @@ export class Account {
   get id() { return this.props.id; }
   get name() { return this.props.name; }
   get type() { return this.props.type; }
+  get role() { return this.props.role; }
   get currency() { return this.props.currency; }
+
+  /** Money set aside — its balance counts toward "saved". */
+  get isSavings() { return this.props.role === "savings"; }
+  /** Money owed — its balance is a liability, subtracted from net worth. */
+  get isLiability() { return this.props.role === "credit"; }
   get institution() { return this.props.institution; }
   get mask() { return this.props.mask; }
   get openingBalance() { return this.props.openingBalance; }
@@ -57,6 +87,15 @@ export class Account {
    */
   balance(netMovement: Money): Money {
     return this.props.openingBalance.plus(netMovement);
+  }
+
+  /**
+   * How this account moves net worth: its balance if it holds money (spending
+   * or savings), or the negative of its balance if it's a liability (credit).
+   */
+  netWorthContribution(netMovement: Money): Money {
+    const bal = this.balance(netMovement);
+    return this.props.role === "credit" ? bal.negated() : bal;
   }
 
   markDormant(): void {

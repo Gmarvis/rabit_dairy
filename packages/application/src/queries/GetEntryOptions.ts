@@ -1,4 +1,5 @@
 import type {
+  AccountRole,
   AccountType,
   CategoryType,
   PaymentMethod,
@@ -21,6 +22,7 @@ export interface EntryAccountOption {
   id: string;
   name: string;
   type: AccountType;
+  role: AccountRole;
   isPrimary: boolean;
 }
 
@@ -57,6 +59,7 @@ export class GetEntryOptions {
           id: a.id,
           name: a.name,
           type: a.type,
+          role: a.role,
           isPrimary: a.isPrimary,
         })),
     };
