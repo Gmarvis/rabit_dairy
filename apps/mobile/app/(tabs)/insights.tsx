@@ -81,8 +81,22 @@ export default function InsightsScreen() {
                   <>
                     <MoneyText amount={data.summary.netBalance} signed currency={false} size={18} style={{ marginTop: 4 }} />
                     <Row style={{ gap: space(3), marginTop: space(2) }}>
-                      <Dot color={t.blue} label={`${percent(data.summary.savingsRate)} saved`} t={t} />
-                      <Dot color={t.negative} label={`${percent(data.summary.expenseRate)} spent`} t={t} />
+                      {/* % of income when there's income to divide by; otherwise
+                          the raw amounts, so spending from savings never reads 0%. */}
+                      <Dot
+                        color={t.blue}
+                        label={data.summary.income.minor > 0
+                          ? `${percent(data.summary.savingsRate)} saved`
+                          : `${data.summary.savings.format({ withCode: false })} saved`}
+                        t={t}
+                      />
+                      <Dot
+                        color={t.negative}
+                        label={data.summary.income.minor > 0
+                          ? `${percent(data.summary.expenseRate)} spent`
+                          : `${data.summary.expenses.format({ withCode: false })} spent`}
+                        t={t}
+                      />
                     </Row>
                   </>
                 ) : (

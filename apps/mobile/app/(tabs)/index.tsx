@@ -199,13 +199,15 @@ export default function DashboardScreen() {
               setting aside — the same "kept" the Insights screen shows. */}
           {(() => {
             const { income, expenses, expenseRate, savingsRate } = data.summary;
-            const hasActivity = income.minor > 0 || expenses.minor > 0;
+            const hasIncome = income.minor > 0;
+            const hasActivity = hasIncome || expenses.minor > 0;
             const keptRate = Math.max(0, 1 - expenseRate - savingsRate);
             return (
               <>
                 <Row between style={{ marginTop: space(1) }}>
                   <SectionLabel>This month</SectionLabel>
-                  {hasActivity ? <Pill tone="positive">{percent(keptRate)} kept</Pill> : null}
+                  {/* "Kept" is a share of income — only meaningful with income. */}
+                  {hasIncome ? <Pill tone="positive">{percent(keptRate)} kept</Pill> : null}
                 </Row>
                 <Card>
                   <Row between style={{ alignItems: "stretch" }}>
@@ -218,7 +220,9 @@ export default function DashboardScreen() {
                       <Text style={[s.statVal, { color: t.negative }]}>{expenses.format({ withCode: false })}</Text>
                     </View>
                   </Row>
-                  {hasActivity ? (
+                  {!hasActivity ? (
+                    <Text style={[s.cap, { marginTop: 12 }]}>Nothing logged this month yet — tap ＋ to start.</Text>
+                  ) : hasIncome ? (
                     <>
                       <SplitBar expenseRate={expenseRate} savingsRate={savingsRate} c={t} />
                       <Row between style={{ marginTop: 7 }}>
@@ -228,7 +232,9 @@ export default function DashboardScreen() {
                       </Row>
                     </>
                   ) : (
-                    <Text style={[s.cap, { marginTop: 12 }]}>Nothing logged this month yet — tap ＋ to start.</Text>
+                    <Text style={[s.cap, { marginTop: 12 }]}>
+                      Spent {expenses.format({ withCode: false })} from your balance — no income logged this month.
+                    </Text>
                   )}
                 </Card>
               </>
