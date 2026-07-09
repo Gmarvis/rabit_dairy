@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, ScrollView, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider, useAuth } from "../src/lib/auth";
 import { LockGate } from "../src/lib/lock";
@@ -12,6 +12,18 @@ import {
   useTheme,
   useThemeControls,
 } from "../src/theme/ThemeProvider";
+
+// Hide scroll indicators everywhere — a native app never shows a scrollbar.
+// ScrollView is a class component, so a defaultProps patch covers every screen
+// (and anything added later) without touching each call site.
+{
+  const SV = ScrollView as unknown as { defaultProps?: Record<string, unknown> };
+  SV.defaultProps = {
+    ...SV.defaultProps,
+    showsVerticalScrollIndicator: false,
+    showsHorizontalScrollIndicator: false,
+  };
+}
 
 const queryClient = new QueryClient();
 

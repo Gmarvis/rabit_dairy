@@ -62,7 +62,7 @@ export default function SearchScreen() {
         </Pressable>
       </Row>
 
-      <ScrollView
+      <ScrollView showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(6) }}
       >

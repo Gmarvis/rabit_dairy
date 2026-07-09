@@ -113,7 +113,7 @@ export default function CalendarScreen() {
         </Pressable>
       </Row>
 
-      <ScrollView contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4) }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4) }}>
         <Row style={s.weekRow}>
           {WEEKDAYS.map((w, i) => (
             <Text key={i} style={s.weekday}>{w}</Text>

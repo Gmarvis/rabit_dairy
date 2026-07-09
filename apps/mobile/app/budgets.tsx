@@ -113,7 +113,7 @@ export default function BudgetsScreen() {
 
   return (
     <View style={s.screen}>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), paddingTop: 0, gap: space(3) }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), paddingTop: 0, gap: space(3) }}>
         <PageHeader
           eyebrow="Monthly budgets"
           title={monthLabel(period)}

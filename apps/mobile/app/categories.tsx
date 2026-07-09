@@ -22,7 +22,7 @@ export default function CategoriesScreen() {
   });
 
   return (
-    <ScrollView
+    <ScrollView showsVerticalScrollIndicator={false}
       style={s.screen}
       contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(6) }}
     >

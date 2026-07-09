@@ -86,7 +86,7 @@ export default function SavingsScreen() {
         />
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), gap: space(4) }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), gap: space(4) }}>
         {!savingsAccount || !savingsCategory ? (
           <View style={s.notice}>
             <Ionicons name="alert-circle-outline" size={16} color={t.negative} />

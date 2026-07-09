@@ -74,7 +74,7 @@ export default function ReportsScreen() {
   const focused = slices[activeSlice];
 
   return (
-    <ScrollView
+    <ScrollView showsVerticalScrollIndicator={false}
       style={s.screen}
       contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(6), paddingTop: 0, gap: space(3) }}
     >

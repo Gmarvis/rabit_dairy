@@ -43,7 +43,7 @@ export default function InsightsScreen() {
   });
 
   return (
-    <ScrollView
+    <ScrollView showsVerticalScrollIndicator={false}
       style={s.screen}
       contentContainerStyle={{ padding: space(4), paddingTop: insets.top + space(2), gap: space(3) }}
     >

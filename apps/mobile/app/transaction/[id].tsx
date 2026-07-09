@@ -148,7 +148,7 @@ export default function TransactionScreen() {
         <Text style={s.dim}>This transaction no longer exists.</Text>
       ) : !editing ? (
         /* ---------- Detail view (screen 05) ---------- */
-        <ScrollView contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(6), gap: space(3) }}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(6), gap: space(3) }}>
           <View style={{ alignItems: "center", marginTop: space(2) }}>
             <Tico icon={iconForCategory(txn.categoryName, txn.categoryType)} color={txn.categoryColor} size={56} />
             <Text style={[s.bigAmount, { color: out ? t.negative : t.positive }]}>
@@ -186,7 +186,7 @@ export default function TransactionScreen() {
       ) : (
         /* ---------- Edit form (scrollable — no cramped keypad) ---------- */
         <>
-          <ScrollView
+          <ScrollView showsVerticalScrollIndicator={false}
             style={{ flex: 1 }}
             contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(6), gap: space(3) }}
             keyboardShouldPersistTaps="handled"

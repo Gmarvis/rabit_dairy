@@ -22,7 +22,7 @@ export default function BudgetScreen() {
   const overallPct = Math.max(0, Math.min(1, data?.overallPercentUsed ?? 0));
 
   return (
-    <ScrollView
+    <ScrollView showsVerticalScrollIndicator={false}
       style={s.screen}
       contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), paddingTop: 0, gap: space(3) }}
     >

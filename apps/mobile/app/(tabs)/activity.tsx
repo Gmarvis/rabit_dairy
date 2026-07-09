@@ -58,7 +58,7 @@ export default function ActivityScreen() {
   }
 
   return (
-    <ScrollView
+    <ScrollView showsVerticalScrollIndicator={false}
       style={s.screen}
       contentContainerStyle={{ padding: space(4), paddingTop: insets.top + space(2), gap: space(2) }}
     >
@@ -69,7 +69,7 @@ export default function ActivityScreen() {
         </Pressable>
       </Row>
 
-      <ScrollView
+      <ScrollView showsVerticalScrollIndicator={false}
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ gap: space(2), paddingVertical: space(1.5) }}

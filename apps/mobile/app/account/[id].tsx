@@ -51,7 +51,7 @@ export default function AccountDetailScreen() {
   }
 
   return (
-    <ScrollView
+    <ScrollView showsVerticalScrollIndicator={false}
       style={s.screen}
       contentContainerStyle={{ padding: space(4), paddingTop: insets.top + space(2), gap: space(3) }}
     >

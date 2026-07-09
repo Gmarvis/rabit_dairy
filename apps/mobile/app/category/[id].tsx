@@ -116,7 +116,7 @@ export default function CategoryEditScreen() {
 
   return (
     <View style={s.screen}>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), gap: space(3) }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), gap: space(3) }}>
         <ScreenHeader
           title={isNew ? "New category" : "Edit category"}
           onClose={() => router.back()}

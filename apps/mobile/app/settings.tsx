@@ -111,7 +111,7 @@ export default function SettingsScreen() {
   const initials = displayName(email).split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
 
   return (
-    <ScrollView
+    <ScrollView showsVerticalScrollIndicator={false}
       style={s.screen}
       contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(6), gap: space(3) }}
     >

@@ -185,7 +185,7 @@ export default function ScanScreen() {
             <View style={{ width: 80 }} />
           </Row>
         </View>
-        <ScrollView contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), gap: space(3) }}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), gap: space(3) }}>
           <Text style={s.reviewSub}>We read this balance from your screen. Pick the account to update — your logged transactions are kept.</Text>
 
           {balances.length > 1 ? (
@@ -300,7 +300,7 @@ export default function ScanScreen() {
           <View style={{ width: 80 }} />
         </Row>
       </View>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), gap: space(3) }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), gap: space(3) }}>
         <Text style={s.reviewSub}>We read these from your statement. Uncheck any you don't want, tap a category to fix it, then import.</Text>
 
         <ChipRow label="Import into">

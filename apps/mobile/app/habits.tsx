@@ -39,7 +39,7 @@ export default function HabitsScreen() {
 
   return (
     <View style={s.screen}>
-    <ScrollView
+    <ScrollView showsVerticalScrollIndicator={false}
       contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(6) }}
     >
       <PageHeader eyebrow="Your money routine" title="Habits" topInset={insets.top} />

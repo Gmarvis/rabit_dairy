@@ -192,7 +192,7 @@ export default function VoiceScreen() {
       {reviewing ? (
         /* ---------- Review the parsed transaction ---------- */
         <>
-          <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(3), gap: space(3) }}>
+          <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(3), gap: space(3) }}>
             <HeardCard s={s} transcript={transcript} parsing={parsing} maxHeight={116} />
 
             <Segment<Group>

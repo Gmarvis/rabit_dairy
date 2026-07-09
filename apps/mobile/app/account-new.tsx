@@ -87,7 +87,7 @@ export default function NewAccountScreen() {
 
   return (
     <View style={s.screen}>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), gap: space(3) }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), gap: space(3) }}>
         <ScreenHeader title={editing ? "Edit account" : "New account"} onClose={() => router.back()} topInset={insets.top} />
 
         <View>

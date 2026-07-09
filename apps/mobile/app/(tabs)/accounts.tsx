@@ -37,7 +37,7 @@ export default function AccountsScreen() {
   const wallets = data?.accounts.filter((a) => !a.type.startsWith("bank_")) ?? [];
 
   return (
-    <ScrollView
+    <ScrollView showsVerticalScrollIndicator={false}
       style={s.screen}
       contentContainerStyle={{ padding: space(4), paddingTop: insets.top + space(2), gap: space(3) }}
     >
