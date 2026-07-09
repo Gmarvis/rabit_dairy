@@ -81,8 +81,9 @@ export default function InsightsScreen() {
         </Row>
       </Card>
 
-      {/* All-time — the full-lifetime overview. */}
-      {life && life.transactionCount > 0 ? (
+      {/* All-time — the full-lifetime overview. Shown as soon as there's money
+          held or anything logged, so it never silently disappears. */}
+      {life && (life.transactionCount > 0 || life.netWorth.minor > 0) ? (
         <Card>
           <Row between>
             <SectionLabel>All-time</SectionLabel>
@@ -93,7 +94,11 @@ export default function InsightsScreen() {
             ) : null}
           </Row>
           <MoneyText amount={life.net} signed size={24} style={{ marginTop: 6 }} />
-          <Text style={s.keptLine}>accumulated · everything earned minus spending</Text>
+          <Text style={s.keptLine}>
+            {life.transactionCount > 0
+              ? "accumulated · everything earned minus spending"
+              : "accumulated so far · start logging income & spending to grow this"}
+          </Text>
           <View style={s.divider} />
           <Row between>
             <View>
