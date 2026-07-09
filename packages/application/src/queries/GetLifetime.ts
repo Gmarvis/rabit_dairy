@@ -54,15 +54,18 @@ export class GetLifetime {
       ? all.reduce((max, t) => (t.occurredAt > max ? t.occurredAt : max), all[0]!.occurredAt)
       : null;
 
-    // Accumulated-over-time: the running total of what you've kept (income
-    // minus spending; setting money aside is not spending), month by month
-    // from the first active month to the last. Ends at `net`.
+    // Accumulated-over-time = net worth month by month, so the curve ends
+    // exactly at the headline. Transfers between your own accounts cancel out
+    // across accounts, so a month's change in net worth is just income minus
+    // spending. We start from the opening baseline (money held before the first
+    // logged month = netWorth minus the whole earned-minus-spent run) and add
+    // each month's flow on top.
     const monthAccum = new Map<string, Money>();
     for (const t of all) {
       let delta: Money;
       if (t.categoryType === "income") delta = t.amount;
       else if (t.isExpense) delta = t.amount.negated();
-      else continue; // savings / transfers don't change what you've accumulated
+      else continue; // internal transfers don't change net worth
       const k = t.occurredAt.slice(0, 7); // YYYY-MM
       monthAccum.set(k, (monthAccum.get(k) ?? Money.zero("XAF")).plus(delta));
     }
@@ -70,7 +73,8 @@ export class GetLifetime {
     if (firstAt && lastAt) {
       const last = YearMonth.parse(lastAt.slice(0, 7));
       let ym = YearMonth.parse(firstAt.slice(0, 7));
-      let cum = Money.zero("XAF");
+      // Opening baseline: net worth held before any logged flow.
+      let cum = netWorth.minus(summary.income.minus(summary.expenses));
       for (let i = 0; i < 600; i++) {
         cum = cum.plus(monthAccum.get(ym.toString()) ?? Money.zero("XAF"));
         series.push({ label: ym.monthName.slice(0, 3), value: cum.minor });

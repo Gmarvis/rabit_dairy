@@ -93,12 +93,8 @@ export default function InsightsScreen() {
               </Text>
             ) : null}
           </Row>
-          <MoneyText amount={life.net} signed size={24} style={{ marginTop: 6 }} />
-          <Text style={s.keptLine}>
-            {life.transactionCount > 0
-              ? "accumulated · everything earned minus spending"
-              : "accumulated so far · start logging income & spending to grow this"}
-          </Text>
+          <MoneyText amount={life.netWorth} size={26} style={{ marginTop: 6 }} />
+          <Text style={s.keptLine}>total accumulated · everything you hold across all accounts</Text>
           <View style={s.divider} />
           <Row between>
             <View>
