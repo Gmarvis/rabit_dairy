@@ -6,7 +6,7 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { YearMonth } from "@rabbit/domain";
 import type { TransactionListItem } from "@rabbit/application";
-import { MoneyText, Row, Tico } from "../src/components/ui";
+import { MoneyText, Row, SkeletonList, Tico } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
 import { fullDate, methodLabel } from "../src/lib/format";
 import { iconForCategory } from "../src/theme/icons";
@@ -71,8 +71,15 @@ export default function SearchScreen() {
             <Ionicons name="search" size={30} color={t.muted} />
             <Text style={s.hintText}>Search by name, category, account, method or amount — across the last 12 months.</Text>
           </View>
+        ) : data === undefined ? (
+          <View style={{ marginTop: space(3) }}>
+            <SkeletonList rows={5} />
+          </View>
         ) : results.length === 0 ? (
-          <Text style={s.none}>No matches for “{query.trim()}”.</Text>
+          <View style={s.hint}>
+            <Ionicons name="file-tray-outline" size={30} color={t.muted} />
+            <Text style={s.hintText}>No matches for “{query.trim()}”. Try a different name, category or amount.</Text>
+          </View>
         ) : (
           <>
             <Text style={s.count}>{results.length} result{results.length === 1 ? "" : "s"}</Text>

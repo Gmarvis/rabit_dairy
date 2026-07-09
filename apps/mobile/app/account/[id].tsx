@@ -5,7 +5,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Circle, Polyline } from "react-native-svg";
 import type { AccountId } from "@rabbit/domain";
-import { Card, MoneyText, Pill, Row, SectionLabel, Tico } from "../../src/components/ui";
+import { Card, MoneyText, Pill, Row, SectionLabel, SkeletonHero, SkeletonList, Tico } from "../../src/components/ui";
 import { useContainer } from "../../src/lib/auth";
 import { dayLabel, methodLabel } from "../../src/lib/format";
 import { iconForAccount, iconForCategory } from "../../src/theme/icons";
@@ -39,7 +39,10 @@ export default function AccountDetailScreen() {
       </Row>
 
       {isLoading || !data ? (
-        <Card><Text style={s.dim}>Loading…</Text></Card>
+        <>
+          <SkeletonHero />
+          <SkeletonList rows={5} />
+        </>
       ) : (
         <>
           <Card hero>

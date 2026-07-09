@@ -1,8 +1,8 @@
-import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { Fragment, useEffect, useState } from "react";
 import {
+  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,7 +13,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { type CategoryType } from "@rabbit/domain";
 import type { BudgetEditorItem } from "@rabbit/application";
-import { Card, PageHeader, PrimaryButton, Row, SectionLabel } from "../src/components/ui";
+import { Card, PageHeader, PrimaryButton, Row, SectionLabel, SkeletonList } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
 import { usePeriod } from "../src/lib/period";
 import { monthLabel } from "../src/lib/format";
@@ -80,10 +80,26 @@ export default function BudgetsScreen() {
     },
   });
 
-  async function copyLastMonth() {
-    const prev = await c.queries.budgets.execute(c.userId, period.previous());
-    setAmounts(
-      Object.fromEntries(prev.items.map((i) => [i.categoryId, i.amountMajor ? String(i.amountMajor) : ""])),
+  const [copying, setCopying] = useState(false);
+  function copyLastMonth() {
+    Alert.alert(
+      "Copy last month's budgets?",
+      "This replaces every amount here with last month's — including anything you've just typed.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Copy",
+          onPress: async () => {
+            setCopying(true);
+            try {
+              const prev = await c.queries.budgets.execute(c.userId, period.previous());
+              setAmounts(Object.fromEntries(prev.items.map((i) => [i.categoryId, i.amountMajor ? String(i.amountMajor) : ""])));
+            } finally {
+              setCopying(false);
+            }
+          },
+        },
+      ],
     );
   }
 
@@ -102,8 +118,16 @@ export default function BudgetsScreen() {
           eyebrow="Monthly budgets"
           title={monthLabel(period)}
           topInset={insets.top}
-          right={<View style={s.pencil}><Ionicons name="pencil" size={16} color={t.gold} /></View>}
         />
+
+      {!data ? (
+        <>
+          <SectionLabel>Fixed expenses</SectionLabel>
+          <SkeletonList rows={3} />
+          <SectionLabel>Variable expenses</SectionLabel>
+          <SkeletonList rows={3} />
+        </>
+      ) : null}
 
       {TYPE_ORDER.map((type) => {
         const items = grouped(type);
@@ -125,6 +149,7 @@ export default function BudgetsScreen() {
                     keyboardType="number-pad"
                     placeholder="0"
                     placeholderTextColor={t.muted}
+                    accessibilityLabel={`${it.name} budget in FCFA`}
                   />
                 </View>
               ))}
@@ -140,8 +165,8 @@ export default function BudgetsScreen() {
           </Row>
         </Card>
 
-        <Pressable onPress={copyLastMonth} style={{ alignSelf: "center", paddingVertical: space(2) }}>
-          <Text style={s.copy}>Copy last month's budgets  →</Text>
+        <Pressable onPress={copyLastMonth} disabled={copying} hitSlop={8} accessibilityRole="button" style={{ alignSelf: "center", paddingVertical: space(2) }}>
+          <Text style={[s.copy, copying && { opacity: 0.5 }]}>{copying ? "Copying…" : "Copy last month's budgets  →"}</Text>
         </Pressable>
       </ScrollView>
 

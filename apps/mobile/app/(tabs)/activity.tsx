@@ -4,7 +4,8 @@ import { Fragment, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { TransactionListItem } from "@rabbit/application";
-import { MoneyText, Row, Tico } from "../../src/components/ui";
+import { MoneyText, Row, SkeletonList, Tico } from "../../src/components/ui";
+import { PressableScale } from "../../src/components/anim";
 import { useContainer } from "../../src/lib/auth";
 import { usePeriod } from "../../src/lib/period";
 import { dayHeader, methodLabel } from "../../src/lib/format";
@@ -83,17 +84,32 @@ export default function ActivityScreen() {
         })}
       </ScrollView>
 
-      {groups.size === 0 ? (
-        <Text style={[s.meta, { marginTop: space(4) }]}>No transactions this month.</Text>
+      {data === undefined ? (
+        <View style={{ marginTop: space(2) }}><SkeletonList rows={6} /></View>
+      ) : groups.size === 0 ? (
+        <View style={s.empty}>
+          <Ionicons name="receipt-outline" size={30} color={t.muted} />
+          <Text style={s.emptyText}>
+            {filter === "all"
+              ? "No transactions this month yet."
+              : `No ${FILTERS.find((f) => f.key === filter)?.label.toLowerCase()} transactions this month.`}
+          </Text>
+          {filter !== "all" ? (
+            <Pressable onPress={() => setFilter("all")} hitSlop={8} accessibilityRole="button">
+              <Text style={s.clear}>Clear filter</Text>
+            </Pressable>
+          ) : null}
+        </View>
       ) : null}
 
       {[...groups.entries()].map(([day, items]) => (
         <Fragment key={day}>
           <Text style={s.day}>{day}</Text>
           {items.map((tx, i) => (
-            <Pressable
+            <PressableScale
               key={tx.id}
               style={[s.txn, i < items.length - 1 && s.border]}
+              accessibilityLabel={`${tx.title}, ${tx.categoryName}`}
               onPress={() => router.push(`/transaction/${tx.id}`)}
             >
               <Tico icon={iconForCategory(tx.categoryName, tx.categoryType)} color={tx.categoryColor} />
@@ -108,8 +124,8 @@ export default function ActivityScreen() {
                   {tx.hasReceipt ? <Ionicons name="camera" size={11} color={t.gold} /> : null}
                 </View>
               </View>
-              <MoneyText amount={tx.signedAmount} signed currency={false} size={13} />
-            </Pressable>
+              <MoneyText amount={tx.signedAmount} signed currency={false} size={15} />
+            </PressableScale>
           ))}
         </Fragment>
       ))}
@@ -129,10 +145,13 @@ const makeStyles = (c: Palette) =>
     chipOn: { backgroundColor: c.goldSoft, borderColor: c.goldBorder },
     chipText: { color: c.ink2, fontSize: 12, fontWeight: "600" },
     chipTextOn: { color: c.gold, fontWeight: "700" },
-    day: { color: c.muted, fontSize: 10, fontWeight: "700", letterSpacing: 0.5, textTransform: "uppercase", marginTop: space(2) },
+    day: { color: c.muted, fontSize: 11, fontWeight: "700", letterSpacing: 0.5, textTransform: "uppercase", marginTop: space(2) },
     txn: { flexDirection: "row", alignItems: "center", gap: space(2.5), paddingVertical: space(2.5) },
     border: { borderBottomWidth: 1, borderBottomColor: c.line },
-    txnTitle: { color: c.ink, fontSize: 13, fontWeight: "600" },
-    metaRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 1 },
-    meta: { color: c.muted, fontSize: 10 },
+    txnTitle: { color: c.ink, fontSize: 15, fontWeight: "600" },
+    metaRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 2 },
+    meta: { color: c.muted, fontSize: 12 },
+    empty: { alignItems: "center", gap: space(2), marginTop: space(10), paddingHorizontal: space(8) },
+    emptyText: { color: c.ink2, fontSize: 14, textAlign: "center", lineHeight: 20 },
+    clear: { color: c.gold, fontSize: 13, fontWeight: "700", marginTop: space(1) },
   });

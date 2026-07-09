@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Card, MoneyText, PageHeader, Row, SectionLabel, withAlpha } from "../src/components/ui";
+import { Card, PageHeader, ProgressBar, Row, SectionLabel, SkeletonList, withAlpha } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
 import { usePeriod } from "../src/lib/period";
 import { monthLabel, percent } from "../src/lib/format";
@@ -28,6 +28,8 @@ export default function BudgetScreen() {
     >
       <PageHeader eyebrow="Budget vs actual" title={monthLabel(period)} topInset={insets.top} />
 
+      {!data ? <SkeletonList rows={5} /> : null}
+
       {data?.lines.length === 0 ? (
         <Card><Text style={s.dim}>No spending or budgets set for this month yet.</Text></Card>
       ) : null}
@@ -44,8 +46,8 @@ export default function BudgetScreen() {
               <Text style={s.cat}>{l.categoryName}</Text>
               <Text style={[s.status, { color: statusColor }]}>{statusText}</Text>
             </Row>
-            <View style={s.track}>
-              <View style={{ width: `${pct * 100}%`, backgroundColor: statusColor, height: "100%", borderRadius: 5 }} />
+            <View style={{ marginTop: 10 }}>
+              <ProgressBar progress={pct} tone={over ? "negative" : l.status === "at" ? "gold" : "positive"} />
             </View>
             <Row between style={{ marginTop: 6 }}>
               <Text style={s.meta}>{l.actual.format({ withCode: false })} spent</Text>
@@ -63,8 +65,8 @@ export default function BudgetScreen() {
             <SectionLabel>Spent of budget</SectionLabel>
             <Text style={s.overall}>{data.totalBudget.isZero ? "—" : percent(data.overallPercentUsed, 0)}</Text>
           </Row>
-          <View style={[s.track, { marginTop: 10 }]}>
-            <View style={{ width: `${overallPct * 100}%`, backgroundColor: t.positive, height: "100%", borderRadius: 5 }} />
+          <View style={{ marginTop: 10 }}>
+            <ProgressBar progress={overallPct} tone="positive" />
           </View>
         </Card>
       ) : null}

@@ -3,7 +3,7 @@ import { Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-nati
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Circle } from "react-native-svg";
 import type { CategorySlice } from "@rabbit/application";
-import { Card, MoneyText, PageHeader, Row, SectionLabel } from "../src/components/ui";
+import { Card, MoneyText, PageHeader, SkeletonBlock, SkeletonList } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
 import { usePeriod } from "../src/lib/period";
 import { monthLabel, percent } from "../src/lib/format";
@@ -44,7 +44,7 @@ export default function MonthlyReportScreen() {
         title={monthLabel(period)}
         topInset={insets.top}
         right={
-          <Pressable style={s.exportPill} onPress={exportReport}>
+          <Pressable style={s.exportPill} onPress={exportReport} accessibilityRole="button" hitSlop={8}>
             <Text style={s.exportText}>Export</Text>
           </Pressable>
         }
@@ -56,20 +56,21 @@ export default function MonthlyReportScreen() {
             <View style={s.donutWrap}>
               <Donut slices={data.byCategory} total={data.summary.expenses.major} trackColor={t.card2} />
               <View style={s.center}>
-                <Text style={s.centerBig}>{data.summary.expenses.format({ withCode: false })}</Text>
+                <Text style={s.centerBig} adjustsFontSizeToFit numberOfLines={1}>{data.summary.expenses.format({ withCode: false })}</Text>
                 <Text style={s.centerSub}>spent · {data.summary.transactionCount} txns</Text>
               </View>
             </View>
           </Card>
 
           <Card style={{ paddingVertical: space(1) }}>
-            {data.topExpenses.length === 0 ? (
+            {data.byCategory.length === 0 ? (
               <Text style={[s.dim, { paddingVertical: space(2) }]}>No expenses this month.</Text>
             ) : (
-              data.topExpenses.map((slice, i) => (
-                <View key={slice.categoryName} style={[s.row, i < data.topExpenses.length - 1 && s.border]}>
+              data.byCategory.map((slice, i) => (
+                <View key={slice.categoryName} style={[s.row, i < data.byCategory.length - 1 && s.border]}>
                   <View style={[s.dot, { backgroundColor: slice.color }]} />
-                  <Text style={s.cat}>{slice.categoryName}</Text>
+                  <Text style={s.cat} numberOfLines={1}>{slice.categoryName}</Text>
+                  <MoneyText amount={slice.amount} currency={false} size={14} />
                   <Text style={s.pct}>{percent(slice.percentOfExpenses, 0)}</Text>
                 </View>
               ))
@@ -77,7 +78,10 @@ export default function MonthlyReportScreen() {
           </Card>
         </>
       ) : (
-        <Card><Text style={s.dim}>Loading…</Text></Card>
+        <>
+          <SkeletonBlock height={176} />
+          <SkeletonList rows={4} />
+        </>
       )}
     </ScrollView>
   );
@@ -101,7 +105,7 @@ function Donut({ slices, total, trackColor }: { slices: CategorySlice[]; total: 
         <Circle
           key={i}
           cx={60} cy={60} r={R} fill="none"
-          stroke={a.color} strokeWidth={15} strokeLinecap="round"
+          stroke={a.color} strokeWidth={15} strokeLinecap="butt"
           strokeDasharray={a.dash} strokeDashoffset={a.offset}
         />
       ))}

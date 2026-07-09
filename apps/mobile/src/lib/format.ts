@@ -45,3 +45,11 @@ const METHOD_LABELS: Record<string, string> = {
 };
 export const methodLabel = (m: string | null): string =>
   m ? METHOD_LABELS[m] ?? m : "";
+
+/** Compact number for chart axes / tight labels: 1_200 → "1k", 3_400_000 → "3.4M". */
+export function abbrev(n: number): string {
+  const a = Math.abs(n);
+  if (a >= 1_000_000) return `${(n / 1_000_000).toFixed(a >= 10_000_000 ? 0 : 1)}M`;
+  if (a >= 1_000) return `${Math.round(n / 1_000)}k`;
+  return `${Math.round(n)}`;
+}

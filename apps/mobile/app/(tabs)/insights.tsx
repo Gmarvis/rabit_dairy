@@ -5,23 +5,16 @@ import { Dimensions, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LineChart, PieChart } from "react-native-gifted-charts";
 import type { PeriodSummary } from "@rabbit/domain";
-import { Card, MoneyText, Row, SectionLabel } from "../../src/components/ui";
+import { Card, MoneyText, Row, SectionLabel, Skeleton } from "../../src/components/ui";
 import { PressableScale } from "../../src/components/anim";
 import { useContainer } from "../../src/lib/auth";
 import { usePeriod } from "../../src/lib/period";
-import { monthLabel, percent } from "../../src/lib/format";
+import { abbrev, monthLabel, percent } from "../../src/lib/format";
 import { useTheme } from "../../src/theme/ThemeProvider";
 import { radius, space, type Palette } from "../../src/theme/tokens";
 
 const TILE_W = (Dimensions.get("window").width - space(4) * 2 - space(3)) / 2;
 const CHART_W = Dimensions.get("window").width - space(4) * 2 - 44;
-
-function abbrev(n: number): string {
-  const a = Math.abs(n);
-  if (a >= 1_000_000) return `${(n / 1_000_000).toFixed(a >= 10_000_000 ? 0 : 1)}M`;
-  if (a >= 1_000) return `${Math.round(n / 1_000)}k`;
-  return `${Math.round(n)}`;
-}
 
 const LINKS: { href: Href; icon: keyof typeof Ionicons.glyphMap; title: string; sub: string }[] = [
   { href: "/reports", icon: "analytics", title: "Reports", sub: "Cash flow, breakdown & trends — interactive" },
@@ -71,7 +64,12 @@ export default function InsightsScreen() {
                   <Dot color={t.negative} label={`${percent(data.summary.expenseRate)} spent`} t={t} />
                 </Row>
               </>
-            ) : null}
+            ) : (
+              <>
+                <Skeleton width={170} height={26} radius={8} style={{ marginTop: space(2) }} />
+                <Skeleton width={140} height={12} style={{ marginTop: space(3) }} />
+              </>
+            )}
           </View>
           {data && data.summary.income.minor > 0 ? <IncomeSplit summary={data.summary} t={t} /> : null}
         </Row>

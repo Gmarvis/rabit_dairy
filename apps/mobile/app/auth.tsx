@@ -1,7 +1,11 @@
+import { Ionicons } from "@expo/vector-icons";
+import { useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import {
-  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -10,6 +14,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { resendConfirmation, signIn, signUp } from "../src/lib/auth";
 import { googleAvailable, signInWithGoogle } from "../src/lib/google";
+import { PrimaryButton } from "../src/components/ui";
 import { useTheme } from "../src/theme/ThemeProvider";
 import { radius, space, type Palette } from "../src/theme/tokens";
 
@@ -27,13 +32,18 @@ export default function AuthScreen() {
   const insets = useSafeAreaInsets();
   const c = useTheme();
   const styles = makeStyles(c);
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const params = useLocalSearchParams<{ mode?: string }>();
+  const [mode, setMode] = useState<"signin" | "signup">(params.mode === "signup" ? "signup" : "signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [showResend, setShowResend] = useState(false);
+  const [focused, setFocused] = useState<"email" | "password" | null>(null);
+  const [reveal, setReveal] = useState(false);
+
+  const canSubmit = email.trim().length > 0 && password.length > 0 && !busy;
 
   async function submit() {
     setError(null);
@@ -84,93 +94,118 @@ export default function AuthScreen() {
   }
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top + space(10) }]}>
-      <View style={styles.logo}>
-        <Text style={{ fontSize: 22 }}>🐇</Text>
-      </View>
-      <Text style={styles.title}>
-        {mode === "signin" ? "Welcome back" : "Create your diary"}
-      </Text>
-      <Text style={styles.sub}>
-        {mode === "signin" ? "Sign in to your diary" : "Start tracking in seconds"}
-      </Text>
-
-      <View style={styles.field}>
-        <Text style={styles.label}>Email</Text>
-        <TextInput
-          value={email}
-          onChangeText={setEmail}
-          placeholder="you@example.com"
-          placeholderTextColor={c.muted}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoCorrect={false}
-          style={styles.input}
-        />
-      </View>
-      <View style={styles.field}>
-        <Text style={styles.label}>Password</Text>
-        <TextInput
-          value={password}
-          onChangeText={setPassword}
-          placeholder="••••••••"
-          placeholderTextColor={c.muted}
-          secureTextEntry
-          style={styles.input}
-        />
-      </View>
-
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-      {info ? <Text style={styles.info}>{info}</Text> : null}
-      {showResend ? (
-        <Pressable onPress={resend} style={{ marginBottom: space(2) }}>
-          <Text style={styles.resend}>Resend confirmation email</Text>
-        </Pressable>
-      ) : null}
-
-      <Pressable style={styles.button} onPress={submit} disabled={busy}>
-        {busy ? (
-          <ActivityIndicator color={c.goldInk} />
-        ) : (
-          <Text style={styles.buttonText}>
-            {mode === "signin" ? "Sign in" : "Create account"}
-          </Text>
-        )}
-      </Pressable>
-
-      {googleAvailable ? (
-        <>
-          <View style={styles.divider}>
-            <View style={styles.line} />
-            <Text style={styles.or}>or</Text>
-            <View style={styles.line} />
-          </View>
-          <Pressable style={styles.google} onPress={google} disabled={busy}>
-            <Text style={styles.googleText}>Continue with Google</Text>
-          </Pressable>
-        </>
-      ) : null}
-
-      <Pressable
-        onPress={() => {
-          setError(null);
-          setMode((m) => (m === "signin" ? "signup" : "signin"));
-        }}
-        style={{ marginTop: space(4) }}
+    <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <ScrollView
+        contentContainerStyle={{ padding: space(6), paddingTop: insets.top + space(10), flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.switch}>
-          {mode === "signin"
-            ? "New here? Create an account"
-            : "Already have an account? Sign in"}
+        <View style={styles.logo}>
+          <Text style={{ fontSize: 22 }}>🐇</Text>
+        </View>
+        <Text style={styles.title}>
+          {mode === "signin" ? "Welcome back" : "Create your diary"}
         </Text>
-      </Pressable>
-    </View>
+        <Text style={styles.sub}>
+          {mode === "signin" ? "Sign in to your diary" : "Start tracking in seconds"}
+        </Text>
+
+        <View style={styles.field}>
+          <Text style={styles.label}>Email</Text>
+          <View style={[styles.inputWrap, focused === "email" && styles.inputWrapOn]}>
+            <TextInput
+              value={email}
+              onChangeText={setEmail}
+              onFocus={() => setFocused("email")}
+              onBlur={() => setFocused(null)}
+              placeholder="you@example.com"
+              placeholderTextColor={c.muted}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="email"
+              returnKeyType="next"
+              style={styles.input}
+            />
+          </View>
+        </View>
+        <View style={styles.field}>
+          <Text style={styles.label}>Password</Text>
+          <View style={[styles.inputWrap, focused === "password" && styles.inputWrapOn]}>
+            <TextInput
+              value={password}
+              onChangeText={setPassword}
+              onFocus={() => setFocused("password")}
+              onBlur={() => setFocused(null)}
+              placeholder="••••••••"
+              placeholderTextColor={c.muted}
+              secureTextEntry={!reveal}
+              autoCapitalize="none"
+              autoComplete={mode === "signin" ? "current-password" : "new-password"}
+              returnKeyType="go"
+              onSubmitEditing={() => canSubmit && submit()}
+              style={styles.input}
+            />
+            <Pressable onPress={() => setReveal((r) => !r)} hitSlop={10} accessibilityLabel={reveal ? "Hide password" : "Show password"}>
+              <Ionicons name={reveal ? "eye-off-outline" : "eye-outline"} size={20} color={c.muted} />
+            </Pressable>
+          </View>
+        </View>
+
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {info ? <Text style={styles.info}>{info}</Text> : null}
+        {showResend ? (
+          <Pressable onPress={resend} style={{ marginBottom: space(2) }} accessibilityRole="button">
+            <Text style={styles.resend}>Resend confirmation email</Text>
+          </Pressable>
+        ) : null}
+
+        <View style={{ marginTop: space(2) }}>
+          <PrimaryButton
+            label={mode === "signin" ? "Sign in" : "Create account"}
+            onPress={submit}
+            loading={busy}
+            disabled={!canSubmit}
+          />
+        </View>
+
+        {googleAvailable ? (
+          <>
+            <View style={styles.divider}>
+              <View style={styles.line} />
+              <Text style={styles.or}>or</Text>
+              <View style={styles.line} />
+            </View>
+            <Pressable style={[styles.google, busy && { opacity: 0.5 }]} onPress={google} disabled={busy} accessibilityRole="button">
+              <Text style={styles.googleText}>Continue with Google</Text>
+            </Pressable>
+          </>
+        ) : null}
+
+        <Pressable
+          onPress={() => {
+            setError(null);
+            setInfo(null);
+            setShowResend(false);
+            setMode((m) => (m === "signin" ? "signup" : "signin"));
+          }}
+          style={{ marginTop: space(4) }}
+          accessibilityRole="button"
+        >
+          <Text style={styles.switch}>
+            {mode === "signin"
+              ? "New here? Create an account"
+              : "Already have an account? Sign in"}
+          </Text>
+        </Pressable>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const makeStyles = (c: Palette) =>
   StyleSheet.create({
-    screen: { flex: 1, backgroundColor: c.bg, padding: space(6) },
+    screen: { flex: 1, backgroundColor: c.bg },
     logo: {
       width: 46, height: 46, borderRadius: radius.md, backgroundColor: c.card2,
       alignItems: "center", justifyContent: "center", marginBottom: space(5),
@@ -182,11 +217,13 @@ const makeStyles = (c: Palette) =>
       color: c.muted, fontSize: 10, fontWeight: "700", letterSpacing: 0.8,
       textTransform: "uppercase", marginBottom: 6,
     },
-    input: {
+    inputWrap: {
+      flexDirection: "row", alignItems: "center", gap: space(2),
       backgroundColor: c.card, borderColor: c.line, borderWidth: 1,
-      borderRadius: radius.md, paddingHorizontal: space(3.5), paddingVertical: space(3),
-      color: c.ink, fontSize: 15,
+      borderRadius: radius.md, paddingHorizontal: space(3.5),
     },
+    inputWrapOn: { borderColor: c.gold },
+    input: { flex: 1, paddingVertical: space(3), color: c.ink, fontSize: 15 },
     error: { color: c.negative, fontSize: 12, marginBottom: space(2) },
     info: { color: c.ink2, fontSize: 12, lineHeight: 17, marginBottom: space(2) },
     resend: { color: c.gold, fontSize: 13, fontWeight: "700" },
@@ -195,10 +232,5 @@ const makeStyles = (c: Palette) =>
     or: { color: c.muted, fontSize: 11 },
     google: { marginTop: space(4), borderWidth: 1, borderColor: c.line, borderRadius: radius.md, paddingVertical: space(3.5), alignItems: "center", backgroundColor: c.card },
     googleText: { color: c.ink, fontSize: 15, fontWeight: "700" },
-    button: {
-      backgroundColor: c.gold, borderRadius: radius.md, padding: space(3.5),
-      alignItems: "center", marginTop: space(2),
-    },
-    buttonText: { color: c.goldInk, fontWeight: "800", fontSize: 15 },
     switch: { color: c.gold, fontSize: 13, textAlign: "center", fontWeight: "600" },
   });

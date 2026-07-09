@@ -3,11 +3,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { CategoryType } from "@rabbit/domain";
 import type { EntryCategoryOption } from "@rabbit/application";
-import { Card, ModalHeader, Row, withAlpha } from "../src/components/ui";
+import { Card, ChipRow, ModalHeader, PrimaryButton, Row, SelectChip, withAlpha } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
 import { parseDocument, type ParsedBalance, type ParsedRow } from "../src/lib/parseStatement";
 import { useTheme } from "../src/theme/ThemeProvider";
@@ -50,7 +50,9 @@ export default function ScanScreen() {
   const [balanceIdx, setBalanceIdx] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [needsSettings, setNeedsSettings] = useState(false);
   const [accountId, setAccountId] = useState<string | null>(null);
+  const [editRow, setEditRow] = useState<number | null>(null);
 
   const { data: options } = useQuery({
     queryKey: ["entry-options"],
@@ -63,12 +65,20 @@ export default function ScanScreen() {
 
   async function pick(from: "camera" | "library") {
     setError(null);
+    setNeedsSettings(false);
     try {
       const perm =
         from === "camera"
           ? await ImagePicker.requestCameraPermissionsAsync()
           : await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!perm.granted) return setError("Permission needed to add the image.");
+      if (!perm.granted) {
+        const source = from === "camera" ? "Camera" : "Photo";
+        if (perm.canAskAgain === false) {
+          setNeedsSettings(true);
+          return setError(`${source} access is turned off. Enable it in Settings to ${from === "camera" ? "scan" : "upload"}.`);
+        }
+        return setError(`${source} access is needed to ${from === "camera" ? "scan a document" : "upload from your gallery"}.`);
+      }
 
       const res = await (from === "camera"
         ? ImagePicker.launchCameraAsync({ base64: true, quality: 0.5 })
@@ -94,8 +104,13 @@ export default function ScanScreen() {
         include: true,
         categoryId: resolveCategory(r.categoryHint, r.direction, cats),
       }));
+      // An empty parse must NOT drop into the "Review 0 rows" dead state —
+      // stay on capture and explain, so the user can retake.
+      if (review.length === 0) {
+        setError("Couldn't read anything from that image. Try a clearer, flatter photo in good light.");
+        return;
+      }
       setRows(review);
-      if (review.length === 0) setError("Couldn't read anything from that image. Try a clearer photo.");
     } catch (e) {
       // Surface the real reason (e.g. function not deployed / key missing) so it's debuggable.
       setError(e instanceof Error ? e.message : "Couldn't read that image. Try a clearer photo.");
@@ -143,8 +158,19 @@ export default function ScanScreen() {
   function toggle(i: number) {
     setRows((rs) => rs?.map((r, j) => (j === i ? { ...r, include: !r.include } : r)) ?? null);
   }
+  function setRowCategory(i: number, categoryId: string) {
+    setRows((rs) => rs?.map((r, j) => (j === i ? { ...r, categoryId } : r)) ?? null);
+    setEditRow(null);
+  }
   function nameFor(id: string | null) {
     return cats.find((c2) => c2.id === id)?.name ?? "Uncategorised";
+  }
+  function colorFor(id: string | null) {
+    return cats.find((c2) => c2.id === id)?.color ?? t.muted;
+  }
+  const EXPENSE_TYPES: CategoryType[] = ["fixed_expense", "variable_expense", "business_cost"];
+  function catsFor(direction: "in" | "out") {
+    return cats.filter((cat) => (direction === "in" ? cat.type === "income" : EXPENSE_TYPES.includes(cat.type as CategoryType)));
   }
 
   // Balance state — an account-balance screenshot was read.
@@ -167,15 +193,16 @@ export default function ScanScreen() {
           <Text style={s.reviewSub}>We read this balance from your screen. Pick the account to update — your logged transactions are kept.</Text>
 
           {balances.length > 1 ? (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips}>
+            <ChipRow label="Which balance?">
               {balances.map((b, i) => (
-                <Pressable key={i} style={[s.chip, balanceIdx === i && s.chipOn]} onPress={() => setBalanceIdx(i)}>
-                  <Text style={[s.chipText, balanceIdx === i && s.chipTextOn]}>
-                    {b.label ? `${b.label} · ` : ""}{b.amountMajor.toLocaleString("en-US")}
-                  </Text>
-                </Pressable>
+                <SelectChip
+                  key={i}
+                  label={`${b.label ? `${b.label} · ` : ""}${b.amountMajor.toLocaleString("en-US")}`}
+                  selected={balanceIdx === i}
+                  onPress={() => setBalanceIdx(i)}
+                />
               ))}
-            </ScrollView>
+            </ChipRow>
           ) : null}
 
           <Card style={{ alignItems: "center", paddingVertical: space(5) }}>
@@ -184,29 +211,21 @@ export default function ScanScreen() {
             <Text style={s.balCur}>FCFA</Text>
           </Card>
 
-          <Text style={s.label}>Update which account?</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips}>
+          <ChipRow label="Update which account?">
             {accounts.map((a) => (
-              <Pressable key={a.id} style={[s.chip, effectiveAccountId === a.id && s.chipOn]} onPress={() => setAccountId(a.id)}>
-                <Text style={[s.chipText, effectiveAccountId === a.id && s.chipTextOn]}>{a.name}</Text>
-              </Pressable>
+              <SelectChip key={a.id} label={a.name} selected={effectiveAccountId === a.id} onPress={() => setAccountId(a.id)} />
             ))}
-          </ScrollView>
+          </ChipRow>
 
           {error ? <Text style={s.error}>{error}</Text> : null}
         </ScrollView>
         <View style={[s.footer, { paddingBottom: insets.bottom + space(3) }]}>
-          <Pressable
-            style={[s.importBtn, !effectiveAccountId && s.importOff]}
-            onPress={() => effectiveAccountId && reconcileMut.mutate()}
-            disabled={!effectiveAccountId || reconcileMut.isPending}
-          >
-            {reconcileMut.isPending ? (
-              <ActivityIndicator color={t.goldInk} />
-            ) : (
-              <Text style={s.importText}>Update {accountName} balance</Text>
-            )}
-          </Pressable>
+          <PrimaryButton
+            label={`Update ${accountName} balance`}
+            onPress={() => reconcileMut.mutate()}
+            disabled={!effectiveAccountId}
+            loading={reconcileMut.isPending}
+          />
         </View>
       </View>
     );
@@ -253,14 +272,19 @@ export default function ScanScreen() {
 
         <View style={[s.footer, { paddingBottom: insets.bottom + space(3) }]}>
           <Row style={{ gap: space(3) }}>
-            <Action label="Capture" primary onPress={() => pick("camera")} />
-            <Action label="Gallery" onPress={() => pick("library")} />
+            <Action label="Capture" primary onPress={() => pick("camera")} disabled={busy} />
+            <Action label="Gallery" onPress={() => pick("library")} disabled={busy} />
           </Row>
           <Row style={{ gap: 6, justifyContent: "center", marginTop: space(3) }}>
             <Ionicons name="lock-closed" size={12} color={t.muted} />
             <Text style={s.privacy}>The image isn't stored — only the rows you confirm are saved.</Text>
           </Row>
           {error ? <Text style={[s.error, { marginTop: space(2) }]}>{error}</Text> : null}
+          {needsSettings ? (
+            <Pressable onPress={() => Linking.openSettings()} hitSlop={8} accessibilityRole="button" style={{ alignSelf: "center", marginTop: space(2) }}>
+              <Text style={s.upload}>Open Settings</Text>
+            </Pressable>
+          ) : null}
         </View>
       </View>
     );
@@ -281,27 +305,45 @@ export default function ScanScreen() {
         </Row>
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), gap: space(3) }}>
-        <Text style={s.reviewSub}>We read these from your statement. Uncheck any you don't want, fix a category, then import.</Text>
+        <Text style={s.reviewSub}>We read these from your statement. Uncheck any you don't want, tap a category to fix it, then import.</Text>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips}>
+        <ChipRow label="Import into">
           {accounts.map((a) => (
-            <Pressable key={a.id} style={[s.chip, effectiveAccountId === a.id && s.chipOn]} onPress={() => setAccountId(a.id)}>
-              <Text style={[s.chipText, effectiveAccountId === a.id && s.chipTextOn]}>{a.name}</Text>
-            </Pressable>
+            <SelectChip key={a.id} label={a.name} selected={effectiveAccountId === a.id} onPress={() => setAccountId(a.id)} />
           ))}
-        </ScrollView>
+        </ChipRow>
 
         <Card style={{ paddingVertical: space(1) }}>
           {rows.map((r, i) => (
-            <Pressable key={i} style={[s.rowItem, i < rows.length - 1 && s.border, !r.include && { opacity: 0.5 }]} onPress={() => toggle(i)}>
-              <View style={[s.check, r.include ? s.checkOn : s.checkOff]}>
-                {r.include ? <Ionicons name="checkmark" size={15} color={t.goldInk} /> : null}
+            <View key={i} style={[i < rows.length - 1 && s.border]}>
+              <View style={[s.rowItem, !r.include && { opacity: 0.5 }]}>
+                <Pressable onPress={() => toggle(i)} hitSlop={6} accessibilityRole="checkbox" accessibilityState={{ checked: r.include }}>
+                  <View style={[s.check, r.include ? s.checkOn : s.checkOff]}>
+                    {r.include ? <Ionicons name="checkmark" size={15} color={t.goldInk} /> : null}
+                  </View>
+                </Pressable>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.rowTitle} numberOfLines={1}>{r.row.description}</Text>
+                  <Pressable onPress={() => setEditRow(editRow === i ? null : i)} hitSlop={6} accessibilityRole="button" style={s.catPill}>
+                    <View style={[s.catDot, { backgroundColor: colorFor(r.categoryId) }]} />
+                    <Text style={s.catPillText}>{nameFor(r.categoryId)}</Text>
+                    <Ionicons name={editRow === i ? "chevron-up" : "chevron-down"} size={12} color={t.muted} />
+                  </Pressable>
+                </View>
+                <Text style={[s.amt, { color: r.row.direction === "out" ? t.negative : t.positive }]}>
+                  {r.row.direction === "out" ? "−" : "+"}{r.row.amountMajor.toLocaleString("en-US")}
+                </Text>
               </View>
-              <Text style={s.rowTitle}>{r.row.description}</Text>
-              <Text style={[s.amt, { color: r.row.direction === "out" ? t.negative : t.positive }]}>
-                {r.row.direction === "out" ? "−" : "+"}{r.row.amountMajor.toLocaleString("en-US")}
-              </Text>
-            </Pressable>
+              {editRow === i ? (
+                <View style={{ paddingBottom: space(3) }}>
+                  <ChipRow label="Category">
+                    {catsFor(r.row.direction).map((cat) => (
+                      <SelectChip key={cat.id} label={cat.name} color={cat.color} selected={r.categoryId === cat.id} onPress={() => setRowCategory(i, cat.id)} />
+                    ))}
+                  </ChipRow>
+                </View>
+              ) : null}
+            </View>
           ))}
         </Card>
 
@@ -309,10 +351,10 @@ export default function ScanScreen() {
           <Card style={s.hint}>
             <Row style={{ gap: 6 }}>
               <Ionicons name="information-circle" size={15} color={t.blue} />
-              <Text style={s.hintTitle}>Needs a category</Text>
+              <Text style={s.hintTitle}>Double-check the categories</Text>
             </Row>
             <Text style={s.hintText}>
-              We guessed <Text style={{ fontWeight: "800", color: t.ink }}>{nameFor(guessed.categoryId)}</Text> for “{guessed.row.description}”. You can change it after import.
+              We guessed <Text style={{ fontWeight: "800", color: t.ink }}>{nameFor(guessed.categoryId)}</Text> for “{guessed.row.description}”. Tap the category under any row to change it before importing.
             </Text>
           </Card>
         ) : null}
@@ -321,27 +363,27 @@ export default function ScanScreen() {
       </ScrollView>
 
       <View style={[s.footer, { paddingBottom: insets.bottom + space(3) }]}>
-        <Pressable
-          style={[s.importBtn, selected.length === 0 && s.importOff]}
-          onPress={() => selected.length && importMut.mutate()}
-          disabled={selected.length === 0 || importMut.isPending}
-        >
-          {importMut.isPending ? (
-            <ActivityIndicator color={t.goldInk} />
-          ) : (
-            <Text style={s.importText}>Import {selected.length} transaction{selected.length === 1 ? "" : "s"}</Text>
-          )}
-        </Pressable>
+        <PrimaryButton
+          label={`Import ${selected.length} transaction${selected.length === 1 ? "" : "s"}`}
+          onPress={() => importMut.mutate()}
+          disabled={selected.length === 0}
+          loading={importMut.isPending}
+        />
       </View>
     </View>
   );
 }
 
-function Action({ label, primary, onPress }: { label: string; primary?: boolean; onPress: () => void }) {
+function Action({ label, primary, onPress, disabled }: { label: string; primary?: boolean; onPress: () => void; disabled?: boolean }) {
   const c = useTheme();
   const s = makeStyles(c);
   return (
-    <Pressable style={[s.action, primary && s.actionPrimary]} onPress={onPress}>
+    <Pressable
+      style={({ pressed }) => [s.action, primary && s.actionPrimary, disabled && { opacity: 0.4 }, pressed && !disabled && { opacity: 0.85 }]}
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+    >
       <Text style={[s.actionText, primary && s.actionTextPrimary]}>{label}</Text>
     </Pressable>
   );
@@ -393,6 +435,9 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   rowItem: { flexDirection: "row", alignItems: "center", gap: space(2.5), paddingVertical: space(3) },
   border: { borderBottomWidth: 1, borderBottomColor: c.line },
   rowTitle: { color: c.ink, fontSize: 14, fontWeight: "600" },
+  catPill: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 4, alignSelf: "flex-start" },
+  catDot: { width: 8, height: 8, borderRadius: 4 },
+  catPillText: { color: c.ink2, fontSize: 12, fontWeight: "600" },
   rowMeta: { color: c.muted, fontSize: 12, marginTop: 2 },
   amt: { fontSize: 15, fontWeight: "800", fontVariant: ["tabular-nums"] },
   importBtn: { backgroundColor: c.gold, borderRadius: radius.lg, paddingVertical: space(4), alignItems: "center" },

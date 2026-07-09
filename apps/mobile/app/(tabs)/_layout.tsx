@@ -1,6 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs, useRouter } from "expo-router";
-import { Pressable, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { PressableScale } from "../../src/components/anim";
 import { useTheme } from "../../src/theme/ThemeProvider";
 
 /** The centre ＋ button that opens the Add hub modal. */
@@ -8,26 +10,27 @@ function AddButton() {
   const router = useRouter();
   const c = useTheme();
   return (
-    <Pressable
+    <PressableScale
       accessibilityLabel="Add a transaction"
-      accessibilityRole="button"
+      to={0.88}
       style={[styles.fab, { backgroundColor: c.gold, shadowColor: c.gold, borderColor: c.bg }]}
       onPress={() => router.push("/add")}
     >
       <Ionicons name="add" size={28} color={c.goldInk} />
-    </Pressable>
+    </PressableScale>
   );
 }
 
 export default function TabsLayout() {
   const c = useTheme();
+  const insets = useSafeAreaInsets();
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: c.gold,
         tabBarInactiveTintColor: c.muted,
-        tabBarStyle: { backgroundColor: c.tabBar, borderTopColor: c.line, borderTopWidth: 1, height: 88, paddingTop: 10, paddingBottom: 10 },
+        tabBarStyle: { backgroundColor: c.tabBar, borderTopColor: c.line, borderTopWidth: 1, height: 60 + insets.bottom, paddingTop: 10, paddingBottom: Math.max(insets.bottom, 10) },
         tabBarItemStyle: { paddingTop: 4 },
         tabBarLabelStyle: styles.tabLabel,
       }}

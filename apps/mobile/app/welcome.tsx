@@ -2,6 +2,7 @@ import { useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Circle, Ellipse } from "react-native-svg";
+import { PrimaryButton } from "../src/components/ui";
 import { useTheme } from "../src/theme/ThemeProvider";
 import { radius, space, type Palette } from "../src/theme/tokens";
 
@@ -47,10 +48,8 @@ export default function WelcomeScreen() {
       </ScrollView>
 
       <View style={{ gap: space(2.5) }}>
-        <Pressable style={s.primary} onPress={() => router.push("/auth")} accessibilityRole="button">
-          <Text style={s.primaryText}>Get started</Text>
-        </Pressable>
-        <Pressable style={s.ghost} onPress={() => router.push("/auth")} accessibilityRole="button">
+        <PrimaryButton label="Get started" onPress={() => router.push("/auth?mode=signup")} />
+        <Pressable style={s.ghost} onPress={() => router.push("/auth?mode=signin")} accessibilityRole="button">
           <Text style={s.ghostText}>I already have an account</Text>
         </Pressable>
       </View>

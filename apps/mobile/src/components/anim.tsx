@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
+  AccessibilityInfo,
   Animated,
   Dimensions,
   Easing,
@@ -11,7 +12,24 @@ import {
   type ViewStyle,
 } from "react-native";
 import { chart } from "../theme/tokens";
+import { duration, easing, springPress } from "../theme/motion";
 import { useTheme } from "../theme/ThemeProvider";
+
+/**
+ * Tracks the OS "reduce motion" setting. Reduced motion means gentler, fewer
+ * animations — we keep opacity/colour fades (they aid comprehension) and drop
+ * movement, scaling, and celebratory bursts.
+ */
+export function useReducedMotion(): boolean {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    AccessibilityInfo.isReduceMotionEnabled().then((v) => { if (alive) setReduced(v); });
+    const sub = AccessibilityInfo.addEventListener("reduceMotionChanged", setReduced);
+    return () => { alive = false; sub.remove(); };
+  }, []);
+  return reduced;
+}
 
 /**
  * A Pressable that springs down slightly while held — the tactile
@@ -35,9 +53,12 @@ export function PressableScale({
   hitSlop?: number;
   to?: number;
 }) {
+  const reduced = useReducedMotion();
   const scale = useRef(new Animated.Value(1)).current;
-  const spring = (v: number) =>
-    Animated.spring(scale, { toValue: v, useNativeDriver: true, speed: 40, bounciness: 0 }).start();
+  const spring = (v: number) => {
+    if (reduced) return; // keep the press instant, no scaling motion
+    Animated.spring(scale, { toValue: v, ...springPress }).start();
+  };
   return (
     <Pressable
       onPressIn={() => spring(to)}
@@ -70,21 +91,23 @@ export function CountUpMoney({
   style?: StyleProp<TextStyle>;
 }) {
   const c = useTheme();
+  const reduced = useReducedMotion();
   const anim = useRef(new Animated.Value(value)).current;
   const from = useRef(value);
   const [display, setDisplay] = useState(value);
 
   useEffect(() => {
+    if (reduced) { setDisplay(value); from.current = value; return; }
     anim.setValue(from.current);
     const id = anim.addListener(({ value: v }) => setDisplay(Math.round(v)));
     Animated.timing(anim, {
       toValue: value,
       duration,
-      easing: Easing.out(Easing.cubic),
+      easing: easing.out,
       useNativeDriver: false,
     }).start(() => { from.current = value; });
     return () => anim.removeListener(id);
-  }, [value, duration, anim]);
+  }, [value, duration, anim, reduced]);
 
   return (
     <Text style={[{ color: c.ink, fontSize: size, fontWeight: "800", fontVariant: ["tabular-nums"], letterSpacing: -0.5 }, style]}>
@@ -106,20 +129,25 @@ export function FadeInUp({
   distance?: number;
   style?: StyleProp<ViewStyle>;
 }) {
+  const reduced = useReducedMotion();
   const p = useRef(new Animated.Value(0)).current;
   useEffect(() => {
+    if (reduced) { p.setValue(1); return; } // fade only handled below; skip the lift
     Animated.timing(p, {
       toValue: 1,
-      duration: 420,
+      duration: duration.enter,
       delay,
-      easing: Easing.out(Easing.cubic),
+      easing: easing.out,
       useNativeDriver: true,
     }).start();
-  }, [p, delay]);
+  }, [p, delay, reduced]);
   return (
     <Animated.View
       style={[
-        { opacity: p, transform: [{ translateY: p.interpolate({ inputRange: [0, 1], outputRange: [distance, 0] }) }] },
+        {
+          opacity: p,
+          transform: [{ translateY: reduced ? 0 : p.interpolate({ inputRange: [0, 1], outputRange: [distance, 0] }) }],
+        },
         style,
       ]}
     >
@@ -137,6 +165,7 @@ const SCREEN_H = Dimensions.get("window").height;
  * nothing until `play` flips true, then clears itself when the burst ends.
  */
 export function Confetti({ play, count = 20 }: { play: boolean; count?: number }) {
+  const reduced = useReducedMotion();
   const p = useRef(new Animated.Value(0)).current;
   const [visible, setVisible] = useState(false);
 
@@ -157,16 +186,16 @@ export function Confetti({ play, count = 20 }: { play: boolean; count?: number }
   );
 
   useEffect(() => {
-    if (!play) return;
+    if (!play || reduced) return; // no celebratory motion when reduced
     setVisible(true);
     p.setValue(0);
     Animated.timing(p, {
       toValue: 1,
-      duration: 1200,
+      duration: duration.celebrate,
       easing: Easing.out(Easing.quad),
       useNativeDriver: true,
     }).start(() => setVisible(false));
-  }, [play, p]);
+  }, [play, p, reduced]);
 
   if (!visible) return null;
 

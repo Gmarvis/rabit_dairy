@@ -6,7 +6,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { AccountType, CategoryType, PaymentMethod, TransactionId } from "@rabbit/domain";
 import type { EntryAccountOption } from "@rabbit/application";
-import { Card, Pill, Row, Tico } from "../../src/components/ui";
+import { Card, ChipRow, Pill, PrimaryButton, Row, SectionLabel, Segment, SelectChip, Skeleton, SkeletonList, Tico, withAlpha } from "../../src/components/ui";
 import { useContainer } from "../../src/lib/auth";
 import { fullDate, methodLabel } from "../../src/lib/format";
 import { iconForCategory } from "../../src/theme/icons";
@@ -129,21 +129,23 @@ export default function TransactionScreen() {
           <Ionicons name="chevron-back" size={18} color={t.gold} />
           <Text style={s.navText}>{editing ? "Cancel" : "Back"}</Text>
         </Pressable>
-        {txn ? (
-          editing ? (
-            <Pressable onPress={() => canSave && save.mutate()} hitSlop={10} disabled={!canSave}>
-              <Text style={[s.navText, { opacity: canSave ? 1 : 0.4 }]}>Save</Text>
-            </Pressable>
-          ) : (
-            <Pressable onPress={() => setEditing(true)} hitSlop={10}>
-              <Text style={s.navTextMuted}>Edit</Text>
-            </Pressable>
-          )
+        {txn && !editing ? (
+          <Pressable onPress={() => setEditing(true)} hitSlop={10} accessibilityRole="button">
+            <Text style={s.navTextMuted}>Edit</Text>
+          </Pressable>
         ) : null}
       </Row>
 
-      {isLoading || !txn ? (
-        <Text style={s.dim}>{isLoading ? "Loading…" : "This transaction no longer exists."}</Text>
+      {isLoading ? (
+        <View style={{ paddingHorizontal: space(4), gap: space(3) }}>
+          <View style={{ alignItems: "center", gap: space(3), marginTop: space(2) }}>
+            <Skeleton width={56} height={56} radius={18} />
+            <Skeleton width={160} height={30} radius={10} />
+          </View>
+          <SkeletonList rows={4} />
+        </View>
+      ) : !txn ? (
+        <Text style={s.dim}>This transaction no longer exists.</Text>
       ) : !editing ? (
         /* ---------- Detail view (screen 05) ---------- */
         <ScrollView contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(6), gap: space(3) }}>
@@ -174,72 +176,79 @@ export default function TransactionScreen() {
             </Card>
           ) : null}
 
-          <Pressable onPress={confirmDelete} disabled={remove.isPending} hitSlop={8} style={{ marginTop: space(2) }}>
+          {error ? <Text style={[s.error, { textAlign: "center" }]}>{error}</Text> : null}
+
+          <Pressable onPress={confirmDelete} disabled={remove.isPending} hitSlop={8} accessibilityRole="button" style={s.deleteBtn}>
+            <Ionicons name="trash-outline" size={16} color={t.negative} />
             <Text style={s.delete}>{remove.isPending ? "Deleting…" : "Delete transaction"}</Text>
           </Pressable>
         </ScrollView>
       ) : (
         /* ---------- Edit form (scrollable — no cramped keypad) ---------- */
-        <ScrollView
-          contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(6), gap: space(3) }}
-          keyboardShouldPersistTaps="handled"
-        >
-          <View style={s.segment}>
-            {(["income", "expense", "savings"] as Group[]).map((g) => (
-              <Pressable key={g} style={[s.seg, group === g && s.segOn]} onPress={() => { setGroup(g); setCategoryId(null); }}>
-                <Text style={[s.segText, group === g && s.segTextOn]}>{g[0]!.toUpperCase() + g.slice(1)}</Text>
-              </Pressable>
-            ))}
-          </View>
-
-          <View style={{ alignItems: "center", marginTop: space(2) }}>
-            <Text style={s.label}>Amount</Text>
-            <TextInput
-              style={s.amountInput}
-              value={digits}
-              onChangeText={(v) => { setError(null); setDigits(v.replace(/[^0-9]/g, "")); }}
-              keyboardType="number-pad"
-              placeholder="0"
-              placeholderTextColor={t.muted}
+        <>
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(6), gap: space(3) }}
+            keyboardShouldPersistTaps="handled"
+          >
+            <Segment
+              options={[
+                { value: "income", label: "Income" },
+                { value: "expense", label: "Expense" },
+                { value: "savings", label: "Savings" },
+              ]}
+              value={group}
+              onChange={(g) => { setGroup(g); setCategoryId(null); }}
             />
-            <Text style={s.cur}>FCFA</Text>
-          </View>
 
-          <View>
-            <Text style={s.label}>Category</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips}>
+            <View style={{ alignItems: "center", marginTop: space(2) }}>
+              <SectionLabel style={{ letterSpacing: 1.5 }}>Amount</SectionLabel>
+              <TextInput
+                style={s.amountInput}
+                value={digits}
+                onChangeText={(v) => { setError(null); setDigits(v.replace(/[^0-9]/g, "")); }}
+                keyboardType="number-pad"
+                placeholder="0"
+                placeholderTextColor={t.muted}
+              />
+              <Text style={s.cur}>FCFA</Text>
+            </View>
+
+            <ChipRow label="Category">
               {categories.map((cat) => (
-                <Chip key={cat.id} label={cat.name} color={cat.color} selected={categoryId === cat.id} onPress={() => setCategoryId(cat.id)} />
+                <SelectChip key={cat.id} label={cat.name} color={cat.color} selected={categoryId === cat.id} onPress={() => setCategoryId(cat.id)} />
               ))}
-            </ScrollView>
-          </View>
+            </ChipRow>
 
-          <View>
-            <Text style={s.label}>Account</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips}>
+            <ChipRow label="Account">
               {accounts.map((a) => (
-                <Chip key={a.id} label={a.name} selected={accountId === a.id} onPress={() => setAccountId(a.id)} />
+                <SelectChip key={a.id} label={a.name} selected={accountId === a.id} onPress={() => setAccountId(a.id)} />
               ))}
-            </ScrollView>
+            </ChipRow>
+
+            <View>
+              <Text style={s.label}>Note</Text>
+              <TextInput
+                style={s.note}
+                value={description}
+                onChangeText={setDescription}
+                placeholder="What was this for?"
+                placeholderTextColor={t.muted}
+              />
+            </View>
+
+            {error ? <Text style={s.error}>{error}</Text> : null}
+
+            <Pressable onPress={confirmDelete} disabled={remove.isPending} hitSlop={8} accessibilityRole="button" style={s.deleteBtn}>
+              <Ionicons name="trash-outline" size={16} color={t.negative} />
+              <Text style={s.delete}>{remove.isPending ? "Deleting…" : "Delete transaction"}</Text>
+            </Pressable>
+          </ScrollView>
+
+          <View style={[s.footer, { paddingBottom: insets.bottom + space(3) }]}>
+            <PrimaryButton label="Save changes" onPress={() => save.mutate()} disabled={!canSave} loading={save.isPending} />
           </View>
-
-          <View>
-            <Text style={s.label}>Note</Text>
-            <TextInput
-              style={s.note}
-              value={description}
-              onChangeText={setDescription}
-              placeholder="What was this for?"
-              placeholderTextColor={t.muted}
-            />
-          </View>
-
-          {error ? <Text style={s.error}>{error}</Text> : null}
-
-          <Pressable onPress={confirmDelete} disabled={remove.isPending} hitSlop={8} style={{ marginTop: space(1) }}>
-            <Text style={s.delete}>{remove.isPending ? "Deleting…" : "Delete transaction"}</Text>
-          </Pressable>
-        </ScrollView>
+        </>
       )}
     </View>
   );
@@ -251,17 +260,6 @@ function DetailRow({ label, value, right, s, last }: { label: string; value?: st
       <Text style={s.detailLabel}>{label}</Text>
       {right ?? <Text style={s.detailValue}>{value}</Text>}
     </Row>
-  );
-}
-
-function Chip({ label, color, selected, onPress }: { label: string; color?: string; selected: boolean; onPress: () => void }) {
-  const c = useTheme();
-  const s = makeStyles(c);
-  return (
-    <Pressable style={[s.chip, selected && s.chipOn]} onPress={onPress}>
-      {color ? <View style={[s.dot, { backgroundColor: color }]} /> : null}
-      <Text style={[s.chipText, selected && s.chipTextOn]}>{label}</Text>
-    </Pressable>
   );
 }
 
@@ -282,22 +280,13 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   voiceCard: { backgroundColor: c.goldSoft, borderColor: c.goldBorder },
   voiceLabel: { color: c.gold, fontSize: 11, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase" },
   transcript: { color: c.ink, fontSize: 14, fontStyle: "italic", lineHeight: 20, marginTop: space(2) },
-  delete: { color: c.negative, fontSize: 14, fontWeight: "700", textAlign: "center", paddingVertical: space(2) },
+  delete: { color: c.negative, fontSize: 14, fontWeight: "700" },
+  deleteBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, marginTop: space(2), paddingVertical: space(3), borderRadius: radius.md, borderWidth: 1, borderColor: withAlpha(c.negative, 0.35) },
+  footer: { paddingHorizontal: space(4), paddingTop: space(2), borderTopWidth: 1, borderTopColor: c.line },
   // edit form
-  segment: { flexDirection: "row", backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: radius.md, padding: 3 },
-  seg: { flex: 1, paddingVertical: space(2), borderRadius: radius.sm, alignItems: "center" },
-  segOn: { backgroundColor: c.gold },
-  segText: { color: c.ink2, fontSize: 12, fontWeight: "700" },
-  segTextOn: { color: c.goldInk },
   label: { color: c.muted, fontSize: 11, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase", marginBottom: space(2) },
-  amountInput: { color: c.ink, fontSize: 40, fontWeight: "800", textAlign: "center", fontVariant: ["tabular-nums"], letterSpacing: -1, minWidth: 160, marginTop: 4 },
-  cur: { color: c.ink2, fontSize: 12, fontWeight: "600" },
-  chips: { gap: space(2), paddingRight: space(4) },
-  chip: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: radius.pill, paddingHorizontal: space(3), paddingVertical: space(2) },
-  chipOn: { backgroundColor: c.gold, borderColor: c.gold },
-  chipText: { color: c.ink2, fontSize: 13, fontWeight: "600" },
-  chipTextOn: { color: c.goldInk },
-  dot: { width: 9, height: 9, borderRadius: 3 },
-  note: { backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: radius.md, paddingHorizontal: space(3), paddingVertical: space(3), color: c.ink, fontSize: 15 },
-  error: { color: c.negative, fontSize: 12 },
+  amountInput: { color: c.ink, fontSize: 48, fontWeight: "800", textAlign: "center", fontVariant: ["tabular-nums"], letterSpacing: -1, minWidth: 160, marginTop: space(2) },
+  cur: { color: c.ink2, fontSize: 13, fontWeight: "700", letterSpacing: 1, marginTop: space(1) },
+  note: { backgroundColor: c.field, borderColor: c.line, borderWidth: 1, borderRadius: radius.md, paddingHorizontal: space(3.5), paddingVertical: space(3.5), color: c.ink, fontSize: 15 },
+  error: { color: c.negative, fontSize: 13, fontWeight: "600" },
 });

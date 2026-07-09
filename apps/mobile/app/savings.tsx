@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ModalHeader, PrimaryButton, Row } from "../src/components/ui";
+import { ChipRow, ModalHeader, PrimaryButton, Row, SelectChip, withAlpha } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
 import { fullDate } from "../src/lib/format";
 import { useTheme } from "../src/theme/ThemeProvider";
@@ -47,7 +47,7 @@ export default function SavingsScreen() {
         from === "camera"
           ? await ImagePicker.requestCameraPermissionsAsync()
           : await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!perm.granted) return setError("Permission needed to add the receipt.");
+      if (!perm.granted) return setError(from === "camera" ? "Camera access is needed to snap a receipt." : "Photo access is needed to attach a receipt.");
       const res = await (from === "camera"
         ? ImagePicker.launchCameraAsync({ quality: 0.5 })
         : ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.5 }));
@@ -83,15 +83,17 @@ export default function SavingsScreen() {
           title={kind === "deposit" ? "Record deposit" : "Record withdrawal"}
           onCancel={() => router.back()}
           topInset={insets.top}
-          right={
-            <Pressable onPress={() => canSave && save.mutate()} hitSlop={10} disabled={!canSave}>
-              <Text style={[s.save, { opacity: canSave ? 1 : 0.4 }]}>Save</Text>
-            </Pressable>
-          }
         />
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), gap: space(4) }}>
+        {!savingsAccount || !savingsCategory ? (
+          <View style={s.notice}>
+            <Ionicons name="alert-circle-outline" size={16} color={t.negative} />
+            <Text style={s.noticeText}>Add a savings account and a savings category first — then you can record a {kind}.</Text>
+          </View>
+        ) : null}
+
         <View style={s.segment}>
           {(["deposit", "withdrawal"] as Kind[]).map((k) => (
             <Pressable key={k} style={[s.seg, kind === k && s.segOn]} onPress={() => setKind(k)}>
@@ -118,20 +120,11 @@ export default function SavingsScreen() {
           </Text>
         </View>
 
-        <View>
-          <Text style={s.label}>{kind === "deposit" ? "Move from" : "Move to"}</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space(2), paddingRight: space(4) }}>
-            {fundingAccounts.map((a) => (
-              <Pressable
-                key={a.id}
-                style={[s.chip, effectiveFunding === a.id && s.chipOn]}
-                onPress={() => setFundingId(a.id)}
-              >
-                <Text style={[s.chipText, effectiveFunding === a.id && s.chipTextOn]}>{a.name}</Text>
-              </Pressable>
-            ))}
-          </ScrollView>
-        </View>
+        <ChipRow label={kind === "deposit" ? "Move from" : "Move to"}>
+          {fundingAccounts.map((a) => (
+            <SelectChip key={a.id} label={a.name} selected={effectiveFunding === a.id} onPress={() => setFundingId(a.id)} />
+          ))}
+        </ChipRow>
 
         <View style={s.field}>
           <Text style={s.fieldLabel}>Date</Text>
@@ -165,9 +158,6 @@ export default function SavingsScreen() {
           )}
         </View>
 
-        {!savingsAccount || !savingsCategory ? (
-          <Text style={s.error}>Add a savings account and a savings category first.</Text>
-        ) : null}
         {error ? <Text style={s.error}>{error}</Text> : null}
       </ScrollView>
 
@@ -208,5 +198,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   proofBtn: { flex: 1, flexDirection: "row", gap: 8, backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: radius.md, paddingVertical: space(3.5), alignItems: "center", justifyContent: "center" },
   proofBtnText: { color: c.ink, fontSize: 14, fontWeight: "700" },
   error: { color: c.negative, fontSize: 13, textAlign: "center" },
+  notice: { flexDirection: "row", alignItems: "center", gap: space(2), backgroundColor: withAlpha(c.negative, 0.1), borderColor: withAlpha(c.negative, 0.3), borderWidth: 1, borderRadius: radius.md, padding: space(3) },
+  noticeText: { color: c.ink2, fontSize: 13, flex: 1, lineHeight: 18 },
   footer: { paddingHorizontal: space(4), paddingTop: space(2) },
 });

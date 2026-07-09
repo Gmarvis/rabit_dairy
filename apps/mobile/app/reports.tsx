@@ -5,12 +5,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BarChart, LineChart, PieChart } from "react-native-gifted-charts";
 import { YearMonth } from "@rabbit/domain";
 import type { BreakdownDimension, BreakdownSlice, CashFlowView } from "@rabbit/application";
-import { Card, MoneyText, PageHeader, Row, SectionLabel, Tico } from "../src/components/ui";
+import { Card, MoneyText, PageHeader, Row, SectionLabel, Skeleton, Tico } from "../src/components/ui";
 import { HeatmapCard } from "../src/components/Heatmap";
 import { useContainer } from "../src/lib/auth";
 import { usePeriod } from "../src/lib/period";
 import { iconForCategory } from "../src/theme/icons";
-import { monthLabel, percent, shortDate } from "../src/lib/format";
+import { abbrev, monthLabel, percent, shortDate } from "../src/lib/format";
 import { chart, space, type Palette } from "../src/theme/tokens";
 import { useTheme } from "../src/theme/ThemeProvider";
 
@@ -23,13 +23,6 @@ const DIMS: { key: BreakdownDimension; label: string }[] = [
 const CW = Dimensions.get("window").width - space(4) * 2 - 40; // card inner width
 
 /** Compact FCFA label, e.g. 1.2M / 820k / 500. */
-function abbrev(n: number): string {
-  const a = Math.abs(n);
-  if (a >= 1_000_000) return `${(n / 1_000_000).toFixed(a >= 10_000_000 ? 0 : 1)}M`;
-  if (a >= 1_000) return `${Math.round(n / 1_000)}k`;
-  return `${Math.round(n)}`;
-}
-
 export default function ReportsScreen() {
   const insets = useSafeAreaInsets();
   const c = useContainer();
@@ -93,7 +86,7 @@ export default function ReportsScreen() {
           <SectionLabel>Cash flow · 6 months</SectionLabel>
           <Text style={s.unit}>tap a bar</Text>
         </Row>
-        {flow ? <CashFlowChart data={flow} t={t} /> : null}
+        {flow ? <CashFlowChart data={flow} t={t} /> : <Skeleton width="100%" height={150} radius={13} style={{ marginTop: space(3) }} />}
         <Row style={{ gap: space(3), marginTop: space(2) }}>
           <Legend color={chart.green} label="Income" t={t} />
           <Legend color={chart.red} label="Expense" t={t} />
@@ -145,7 +138,9 @@ export default function ReportsScreen() {
         ))}
       </View>
       <Card>
-        {slices.length === 0 ? (
+        {!report ? (
+          <Skeleton width="100%" height={200} radius={13} />
+        ) : slices.length === 0 ? (
           <Text style={[s.dim, { paddingVertical: space(3), textAlign: "center" }]}>No spending this month.</Text>
         ) : (
           <>

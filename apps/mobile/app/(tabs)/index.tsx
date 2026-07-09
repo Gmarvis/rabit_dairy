@@ -9,8 +9,8 @@ import { LineChart } from "react-native-gifted-charts";
 import { YearMonth } from "@rabbit/domain";
 import type { NetWorthTrendView } from "@rabbit/application";
 import { HeatmapCard, isGoodDay } from "../../src/components/Heatmap";
-import { Card, MoneyText, Pill, Row, SectionLabel, Tico, withAlpha } from "../../src/components/ui";
-import { CountUpMoney } from "../../src/components/anim";
+import { Card, EmptyState, ErrorState, MoneyText, Pill, Row, SectionLabel, SkeletonHero, SkeletonList, Tico, withAlpha } from "../../src/components/ui";
+import { CountUpMoney, PressableScale } from "../../src/components/anim";
 import { ONBOARDED_KEY } from "../onboarding";
 import { useAuth, useContainer } from "../../src/lib/auth";
 import { usePeriod } from "../../src/lib/period";
@@ -45,7 +45,7 @@ export default function DashboardScreen() {
       .catch(() => {});
   }, [router]);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["dashboard", period.toString()],
     queryFn: () => c.queries.dashboard.execute(c.userId, period),
   });
@@ -132,8 +132,13 @@ export default function DashboardScreen() {
         <HeatmapCard dataByDay={good.dataByDay} scale={good.scale} today={new Date()} streak={good.streak} />
       ) : null}
 
-      {isLoading || !data ? (
-        <Text style={s.dim}>Loading…</Text>
+      {isError ? (
+        <ErrorState message="We couldn't load your dashboard." onRetry={() => refetch()} />
+      ) : isLoading || !data ? (
+        <>
+          <SkeletonHero />
+          <SkeletonList rows={5} />
+        </>
       ) : (
         <>
           {/* Net worth — all your money, the first thing you see. */}
@@ -296,30 +301,41 @@ export default function DashboardScreen() {
 
           <Row between style={{ marginTop: space(1) }}>
             <SectionLabel>Recent activity</SectionLabel>
-            <Pressable onPress={() => router.push("/activity")} hitSlop={8}>
-              <Text style={s.seeAll}>See all</Text>
-            </Pressable>
-          </Row>
-          <View>
-            {data.recent.map((t2, i) => (
-              <Pressable
-                key={t2.id}
-                style={[s.txn, i < data.recent.length - 1 && s.txnBorder]}
-                onPress={() => router.push(`/transaction/${t2.id}`)}
-              >
-                <Tico icon={iconForCategory(t2.categoryName, t2.categoryType)} color={t2.categoryColor} size={40} />
-                <View style={{ flex: 1 }}>
-                  <Text style={s.txnTitle}>{t2.title}</Text>
-                  <Row style={{ gap: 5 }}>
-                    <Text style={s.txnMeta}>{t2.categoryName} · {shortDate(t2.occurredAt)}</Text>
-                    {t2.hasVoiceNote ? <Ionicons name="mic" size={12} color={t.gold} /> : null}
-                    {t2.hasReceipt ? <Ionicons name="camera" size={12} color={t.gold} /> : null}
-                  </Row>
-                </View>
-                <MoneyText amount={t2.signedAmount} signed currency={false} size={15} />
+            {data.recent.length > 0 ? (
+              <Pressable onPress={() => router.push("/activity")} hitSlop={8} accessibilityRole="button">
+                <Text style={s.seeAll}>See all</Text>
               </Pressable>
-            ))}
-          </View>
+            ) : null}
+          </Row>
+          {data.recent.length === 0 ? (
+            <EmptyState
+              icon="add-circle-outline"
+              title="No activity yet"
+              hint="Tap the ＋ button to log your first income or expense."
+            />
+          ) : (
+            <View>
+              {data.recent.map((t2, i) => (
+                <PressableScale
+                  key={t2.id}
+                  style={[s.txn, i < data.recent.length - 1 && s.txnBorder]}
+                  accessibilityLabel={`${t2.title}, ${t2.categoryName}`}
+                  onPress={() => router.push(`/transaction/${t2.id}`)}
+                >
+                  <Tico icon={iconForCategory(t2.categoryName, t2.categoryType)} color={t2.categoryColor} size={40} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.txnTitle}>{t2.title}</Text>
+                    <Row style={{ gap: 5 }}>
+                      <Text style={s.txnMeta}>{t2.categoryName} · {shortDate(t2.occurredAt)}</Text>
+                      {t2.hasVoiceNote ? <Ionicons name="mic" size={12} color={t.gold} /> : null}
+                      {t2.hasReceipt ? <Ionicons name="camera" size={12} color={t.gold} /> : null}
+                    </Row>
+                  </View>
+                  <MoneyText amount={t2.signedAmount} signed currency={false} size={15} />
+                </PressableScale>
+              ))}
+            </View>
+          )}
         </>
       )}
     </ScrollView>
@@ -429,7 +445,7 @@ const makeStyles = (c: Palette) =>
     streak: { color: c.ink, fontSize: 17, fontWeight: "800", fontVariant: ["tabular-nums"] },
     streakUnit: { color: c.ink2, fontSize: 12, fontWeight: "600" },
     vline: { width: 1, alignSelf: "stretch", backgroundColor: c.line },
-    seeAll: { color: c.gold, fontSize: 10, fontWeight: "700" },
+    seeAll: { color: c.gold, fontSize: 13, fontWeight: "700" },
     txn: { flexDirection: "row", alignItems: "center", gap: space(2.5), paddingVertical: space(2.5) },
     txnBorder: { borderBottomWidth: 1, borderBottomColor: c.line },
     txnTitle: { color: c.ink, fontSize: 15, fontWeight: "600" },

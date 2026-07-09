@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { YearMonth } from "@rabbit/domain";
-import { Card, MoneyText, PrimaryButton, Row, Tico, withAlpha } from "../src/components/ui";
+import { Card, MoneyText, PrimaryButton, Row, Skeleton, Tico, withAlpha } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
 import { usePeriod } from "../src/lib/period";
 import { shortDate } from "../src/lib/format";
@@ -122,6 +122,13 @@ export default function CalendarScreen() {
 
         <Animated.View style={{ transform: [{ translateX: pan }] }} {...responder.panHandlers}>
           <View style={s.grid}>
+            {!data
+              ? Array.from({ length: 35 }).map((_, i) => (
+                  <View key={`sk${i}`} style={s.cell}>
+                    <Skeleton width={CELL - 6} height={CELL - 6} radius={12} />
+                  </View>
+                ))
+              : null}
             {cells.map((day, i) => {
               if (day === null) return <View key={`b${i}`} style={s.cell} />;
               const cell = data!.days[day - 1]!;

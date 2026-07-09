@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "../theme/ThemeProvider";
 import { Card, Row, SectionLabel, withAlpha } from "./ui";
+import { abbrev } from "../lib/format";
 import { chart, space, type Palette } from "../theme/tokens";
 
 const CELL = 15;
@@ -190,13 +191,6 @@ const HEAT_MODES: { key: HeatmapMode; label: string }[] = [
   { key: "count", label: "Tracked" },
   { key: "spent", label: "Spending" },
 ];
-
-function abbrev(n: number): string {
-  const a = Math.abs(n);
-  if (a >= 1_000_000) return `${(n / 1_000_000).toFixed(a >= 10_000_000 ? 0 : 1)}M`;
-  if (a >= 1_000) return `${Math.round(n / 1_000)}k`;
-  return `${Math.round(n)}`;
-}
 
 /**
  * The full heat-map card: a Good days / Tracked / Spending toggle over the

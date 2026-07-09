@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Card, PageHeader, Row, SectionLabel } from "../src/components/ui";
+import { Card, PageHeader, Row, SectionLabel, SkeletonList } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
 import { methodLabel } from "../src/lib/format";
 import { useTheme } from "../src/theme/ThemeProvider";
@@ -42,7 +42,10 @@ export default function CategoriesScreen() {
       />
 
       {isLoading || !data ? (
-        <Text style={s.dim}>Loading…</Text>
+        <View style={{ marginTop: space(4), gap: space(3) }}>
+          <SkeletonList rows={4} />
+          <SkeletonList rows={3} />
+        </View>
       ) : data.groups.length === 0 ? (
         <Card>
           <Text style={s.emptyTitle}>No categories yet</Text>

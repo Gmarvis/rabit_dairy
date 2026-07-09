@@ -6,21 +6,14 @@ import Svg, { Rect, Text as SvgText } from "react-native-svg";
 import { LineChart } from "react-native-gifted-charts";
 import { Money } from "@rabbit/domain";
 import type { YearlyOverviewView } from "@rabbit/application";
-import { Card, MoneyText, PageHeader, Row, SectionLabel } from "../src/components/ui";
+import { Card, MoneyText, PageHeader, Row, SectionLabel, SkeletonBlock, SkeletonHero } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
 import { usePeriod } from "../src/lib/period";
-import { percent } from "../src/lib/format";
+import { abbrev, percent } from "../src/lib/format";
 import { chart, space, type Palette } from "../src/theme/tokens";
 import { useTheme } from "../src/theme/ThemeProvider";
 
 const YW = Dimensions.get("window").width - space(4) * 2 - 44;
-
-function abbrev(n: number): string {
-  const a = Math.abs(n);
-  if (a >= 1_000_000) return `${(n / 1_000_000).toFixed(a >= 10_000_000 ? 0 : 1)}M`;
-  if (a >= 1_000) return `${Math.round(n / 1_000)}k`;
-  return `${Math.round(n)}`;
-}
 
 export default function YearlyOverviewScreen() {
   const insets = useSafeAreaInsets();
@@ -81,7 +74,11 @@ export default function YearlyOverviewScreen() {
           </Card>
         </>
       ) : (
-        <Card><Text style={s.dim}>Loading…</Text></Card>
+        <>
+          <SkeletonHero />
+          <SkeletonBlock height={200} />
+          <SkeletonBlock height={160} />
+        </>
       )}
     </ScrollView>
   );

@@ -4,7 +4,8 @@ import { useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { AccountListItem } from "@rabbit/application";
-import { Card, MoneyText, Pill, Row, SectionLabel, Tico } from "../../src/components/ui";
+import { Card, EmptyState, MoneyText, Pill, PrimaryButton, Row, SectionLabel, SkeletonList, Tico } from "../../src/components/ui";
+import { PressableScale } from "../../src/components/anim";
 import { useContainer } from "../../src/lib/auth";
 import { usePeriod } from "../../src/lib/period";
 import { monthLabel } from "../../src/lib/format";
@@ -70,19 +71,45 @@ export default function AccountsScreen() {
         </Row>
       </Card>
 
-      <SectionLabel>Bank</SectionLabel>
-      <Card style={{ paddingVertical: space(1) }}>
-        {banks.map((a, i) => (
-          <AccountRow key={a.id} a={a} last={i === banks.length - 1} />
-        ))}
-      </Card>
+      {data === undefined ? (
+        <>
+          <SectionLabel>Bank</SectionLabel>
+          <SkeletonList rows={2} />
+          <SectionLabel>Mobile money & cash</SectionLabel>
+          <SkeletonList rows={2} />
+        </>
+      ) : data.accounts.length === 0 ? (
+        <EmptyState
+          icon="wallet-outline"
+          title="No accounts yet"
+          hint="Add a bank, mobile-money or cash account to start tracking your balances."
+          action={<PrimaryButton label="Add an account" onPress={() => router.push("/account-new")} />}
+        />
+      ) : (
+        <>
+          {banks.length > 0 ? (
+            <>
+              <SectionLabel>Bank</SectionLabel>
+              <Card style={{ paddingVertical: space(1) }}>
+                {banks.map((a, i) => (
+                  <AccountRow key={a.id} a={a} last={i === banks.length - 1} />
+                ))}
+              </Card>
+            </>
+          ) : null}
 
-      <SectionLabel>Mobile money & cash</SectionLabel>
-      <Card style={{ paddingVertical: space(1) }}>
-        {wallets.map((a, i) => (
-          <AccountRow key={a.id} a={a} last={i === wallets.length - 1} />
-        ))}
-      </Card>
+          {wallets.length > 0 ? (
+            <>
+              <SectionLabel>Mobile money & cash</SectionLabel>
+              <Card style={{ paddingVertical: space(1) }}>
+                {wallets.map((a, i) => (
+                  <AccountRow key={a.id} a={a} last={i === wallets.length - 1} />
+                ))}
+              </Card>
+            </>
+          ) : null}
+        </>
+      )}
     </ScrollView>
   );
 }
@@ -92,8 +119,9 @@ function AccountRow({ a, last }: { a: AccountListItem; last: boolean }) {
   const t = useTheme();
   const s = makeStyles(t);
   return (
-    <Pressable
+    <PressableScale
       style={[s.row, !last && s.rowBorder, a.isDormant && { opacity: 0.5 }]}
+      accessibilityLabel={a.name}
       onPress={() => router.push(`/account/${a.id}`)}
     >
       <Tico icon={iconForAccount(a.type)} size={30} />
@@ -116,7 +144,7 @@ function AccountRow({ a, last }: { a: AccountListItem; last: boolean }) {
         ) : null}
         {a.isDormant ? <Pill tone="muted">Hidden</Pill> : null}
       </View>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -130,6 +158,6 @@ const makeStyles = (c: Palette) =>
     divider: { height: 1, backgroundColor: c.line, marginVertical: space(3) },
     row: { flexDirection: "row", alignItems: "center", gap: space(2.5), paddingVertical: space(2.5) },
     rowBorder: { borderBottomWidth: 1, borderBottomColor: c.line },
-    name: { color: c.ink, fontSize: 13, fontWeight: "600" },
-    meta: { color: c.muted, fontSize: 10, marginTop: 1 },
+    name: { color: c.ink, fontSize: 15, fontWeight: "600" },
+    meta: { color: c.muted, fontSize: 12, marginTop: 1 },
   });

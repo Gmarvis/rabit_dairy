@@ -16,8 +16,8 @@
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "start": "npm run start -w @rabbit/mobile",
-    "android": "expo run:android",
-    "ios": "expo run:ios"
+    "android": "npm run android -w @rabbit/mobile",
+    "ios": "npm run ios -w @rabbit/mobile"
   },
   "devDependencies": {
     "typescript": "^5.6.3",

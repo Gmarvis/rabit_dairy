@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
+import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider, useAuth } from "../src/lib/auth";
 import { LockGate } from "../src/lib/lock";
@@ -34,6 +35,18 @@ function useAuthGate() {
 function RootNavigator() {
   useAuthGate();
   const theme = useTheme();
+  const { status } = useAuth();
+
+  // Hold on a branded splash until auth resolves, so a signed-out user never
+  // sees a flash of (tabs) before being redirected to Welcome.
+  if (status === "loading") {
+    return (
+      <View style={{ flex: 1, backgroundColor: theme.bg, alignItems: "center", justifyContent: "center" }}>
+        <ActivityIndicator color={theme.gold} />
+      </View>
+    );
+  }
+
   return (
     <Stack
       screenOptions={{

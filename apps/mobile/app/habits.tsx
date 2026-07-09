@@ -5,7 +5,7 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { SpendGoalHabit, StreakStat } from "@rabbit/application";
 import { Confetti } from "../src/components/anim";
-import { Card, PageHeader, Pill, Row, SectionLabel, Tico } from "../src/components/ui";
+import { Card, PageHeader, Pill, ProgressBar, Row, SectionLabel, SkeletonHero, SkeletonList, Tico } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
 import { useTheme } from "../src/theme/ThemeProvider";
 import { space, type Palette } from "../src/theme/tokens";
@@ -45,7 +45,10 @@ export default function HabitsScreen() {
       <PageHeader eyebrow="Your money routine" title="Habits" topInset={insets.top} />
 
       {isLoading || !data ? (
-        <Text style={s.dim}>Loading…</Text>
+        <View style={{ gap: space(3) }}>
+          <SkeletonHero />
+          <SkeletonList rows={3} />
+        </View>
       ) : (
         <>
           {/* Logging streak — the headline habit. */}
@@ -117,7 +120,7 @@ export default function HabitsScreen() {
                       </Row>
                     ) : null}
                   </Row>
-                  <GoalBar spent={g.spent.minor} target={g.target.minor} c={t} />
+                  <GoalBar spent={g.spent.minor} target={g.target.minor} />
                   <Row between style={{ marginTop: 6 }}>
                     <Text style={[s.goalMeta, { color: g.onTrack ? t.positive : t.negative }]}>
                       {g.spent.format({ withCode: false })} spent
@@ -169,20 +172,15 @@ function StreakRow({
   );
 }
 
-function GoalBar({ spent, target, c }: { spent: number; target: number; c: Palette }) {
+function GoalBar({ spent, target }: { spent: number; target: number }) {
   const ratio = target > 0 ? Math.min(1, spent / target) : 0;
   const over = target > 0 && spent > target;
   return (
-    <View style={[gStyles.track, { backgroundColor: c.card2 }]}>
-      <View style={{ flex: ratio, backgroundColor: over ? c.negative : c.positive }} />
-      <View style={{ flex: 1 - ratio }} />
+    <View style={{ marginTop: 12 }}>
+      <ProgressBar progress={ratio} tone={over ? "negative" : "positive"} height={6} />
     </View>
   );
 }
-
-const gStyles = StyleSheet.create({
-  track: { flexDirection: "row", height: 6, borderRadius: 3, overflow: "hidden", marginTop: 12 },
-});
 
 const makeStyles = (c: Palette) => StyleSheet.create({
   screen: { flex: 1, backgroundColor: c.bg },

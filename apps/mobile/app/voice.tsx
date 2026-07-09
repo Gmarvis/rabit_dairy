@@ -1,12 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { AccountType, CategoryType, PaymentMethod } from "@rabbit/domain";
 import type { EntryCategoryOption } from "@rabbit/application";
-import { Card, PrimaryButton, Row } from "../src/components/ui";
+import { AmountHero, AmountKeypad, Card, ChipRow, PrimaryButton, Row, Segment, SelectChip } from "../src/components/ui";
+import { useReducedMotion } from "../src/components/anim";
 import { Listening } from "../src/components/Listening";
 import { useContainer } from "../src/lib/auth";
 import { amountFromText } from "../src/lib/word2num";
@@ -141,6 +142,16 @@ export default function VoiceScreen() {
     Speech.ExpoSpeechRecognitionModule.start({ lang: "en-US", interimResults: true, continuous: true });
   }
 
+  function press(key: string) {
+    setError(null);
+    if (key === "del") { setDigits((d) => d.slice(0, -1)); return; }
+    setDigits((d) => {
+      if (d === "" || d === "0") return key === "000" ? d : key;
+      const next = d + key;
+      return next.length <= 12 ? next : d;
+    });
+  }
+
   const amountMajor = parseInt(digits || "0", 10);
   const canSave = amountMajor > 0 && !!categoryId && !!effectiveAccountId;
   const reviewing = !listening && transcript.trim().length > 0;
@@ -180,67 +191,67 @@ export default function VoiceScreen() {
 
       {reviewing ? (
         /* ---------- Review the parsed transaction ---------- */
-        <ScrollView contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), gap: space(3) }}>
-          <Card style={s.heardCard}>
-            <Text style={s.heardLabel}>Heard so far</Text>
-            <Text style={s.heardText}>&ldquo;{transcript}&rdquo;</Text>
-            {parsing ? <Text style={s.reading}>Reading the amount &amp; category…</Text> : null}
-          </Card>
+        <>
+          <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(3), gap: space(3) }}>
+            <HeardCard s={s} transcript={transcript} parsing={parsing} maxHeight={116} />
 
-          <View style={s.segment}>
-            {(["income", "expense", "savings"] as Group[]).map((g) => (
-              <Pressable key={g} style={[s.seg, group === g && s.segOn]} onPress={() => { setGroup(g); setCategoryId(null); }}>
-                <Text style={[s.segText, group === g && s.segTextOn]}>{g[0]!.toUpperCase() + g.slice(1)}</Text>
-              </Pressable>
-            ))}
-          </View>
+            <Segment<Group>
+              options={[
+                { value: "income", label: "Income" },
+                { value: "expense", label: "Expense" },
+                { value: "savings", label: "Savings" },
+              ]}
+              value={group}
+              onChange={(g) => { setGroup(g); setCategoryId(null); }}
+            />
 
-          <View style={{ alignItems: "center" }}>
-            <Text style={s.label}>Amount</Text>
-            <Text style={[s.amount, amountMajor === 0 && { color: pal.muted }]}>{amountMajor.toLocaleString("en-US")}</Text>
-            <Text style={s.cur}>FCFA</Text>
-          </View>
+            <View style={{ paddingVertical: space(1) }}>
+              <AmountHero value={amountMajor} size={44} caret />
+            </View>
 
-          <View>
-            <Text style={s.label}>Category</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips}>
+            <ChipRow label="Category">
               {categories.map((cat) => (
-                <Chip key={cat.id} label={cat.name} color={cat.color} selected={categoryId === cat.id} onPress={() => setCategoryId(cat.id)} />
+                <SelectChip key={cat.id} label={cat.name} color={cat.color} selected={categoryId === cat.id} onPress={() => setCategoryId(cat.id)} />
               ))}
-            </ScrollView>
-          </View>
+            </ChipRow>
 
-          <View>
-            <Text style={s.label}>Account</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips}>
+            <ChipRow label="Account">
               {accounts.map((a) => (
-                <Chip key={a.id} label={a.name} selected={effectiveAccountId === a.id} onPress={() => setAccountId(a.id)} />
+                <SelectChip key={a.id} label={a.name} selected={effectiveAccountId === a.id} onPress={() => setAccountId(a.id)} />
               ))}
-            </ScrollView>
-          </View>
+            </ChipRow>
 
-          {error ? <Text style={s.error}>{error}</Text> : null}
-        </ScrollView>
+            {error ? <Text style={s.error}>{error}</Text> : null}
+          </ScrollView>
+
+          {/* Editable amount — a failed parse is never a dead end. */}
+          <View style={{ paddingHorizontal: space(4), paddingTop: space(2) }}>
+            <AmountKeypad onKey={press} />
+          </View>
+        </>
       ) : (
         /* ---------- Recording ---------- */
         <View style={s.recordBody}>
-          <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: space(4) }}>
+          <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: space(5) }}>
             {listening ? (
               <>
                 <Text style={s.listening}>LISTENING…</Text>
-                <Listening size={140} playing />
+                <View style={{ alignItems: "center", justifyContent: "center" }}>
+                  <View style={s.waveGlow} />
+                  <Listening size={150} playing />
+                </View>
               </>
             ) : (
-              <Text style={s.prompt}>Tap the mic and say{"\n"}what you spent &amp; why</Text>
+              <>
+                <View style={s.micHint}>
+                  <Ionicons name="mic-outline" size={30} color={pal.gold} />
+                </View>
+                <Text style={s.prompt}>Tap the mic and say{"\n"}what you spent &amp; why</Text>
+              </>
             )}
           </View>
 
-          {transcript ? (
-            <Card style={s.heardCard}>
-              <Text style={s.heardLabel}>Heard so far</Text>
-              <Text style={s.heardText}>&ldquo;{transcript}&rdquo;</Text>
-            </Card>
-          ) : null}
+          {transcript ? <HeardCard s={s} transcript={transcript} maxHeight={220} /> : null}
 
           {error ? <Text style={[s.error, { textAlign: "center" }]}>{error}</Text> : null}
         </View>
@@ -256,10 +267,11 @@ export default function VoiceScreen() {
             </Pressable>
           </>
         ) : (
-          <View style={{ alignItems: "center" }}>
+          <View style={{ alignItems: "center", justifyContent: "center" }}>
+            {listening ? <PulseRing color={pal.negative} /> : null}
             <Pressable
               onPress={toggleListen}
-              style={[s.recordBtn, { backgroundColor: listening ? pal.negative : pal.gold }]}
+              style={[s.recordBtn, { backgroundColor: listening ? pal.negative : pal.gold, shadowColor: listening ? pal.negative : pal.gold }]}
               accessibilityLabel={listening ? "Stop recording" : "Start recording"}
             >
               {listening ? <View style={s.stopSquare} /> : <Ionicons name="mic" size={30} color={pal.goldInk} />}
@@ -276,14 +288,49 @@ function accountMethod(accounts: { id: string; type: AccountType }[], id: string
   return a ? methodForAccount(a.type) : "cash";
 }
 
-function Chip({ label, color, selected, onPress }: { label: string; color?: string; selected: boolean; onPress: () => void }) {
-  const c = useTheme();
-  const s = makeStyles(c);
+/**
+ * The transcript readout. Height-capped with an inner scroll that follows the
+ * latest words, so a long recording never buries the controls below it.
+ */
+function HeardCard({ s, transcript, parsing, maxHeight }: { s: ReturnType<typeof makeStyles>; transcript: string; parsing?: boolean; maxHeight: number }) {
+  const scroll = useRef<ScrollView>(null);
   return (
-    <Pressable style={[s.chip, selected && s.chipOn]} onPress={onPress}>
-      {color ? <View style={[s.dot, { backgroundColor: color }]} /> : null}
-      <Text style={[s.chipText, selected && s.chipTextOn]}>{label}</Text>
-    </Pressable>
+    <Card style={s.heardCard}>
+      <Text style={s.heardLabel}>Heard so far</Text>
+      <ScrollView
+        ref={scroll}
+        style={{ maxHeight, marginTop: space(2) }}
+        showsVerticalScrollIndicator={false}
+        onContentSizeChange={() => scroll.current?.scrollToEnd({ animated: true })}
+      >
+        <Text style={s.heardText}>&ldquo;{transcript}&rdquo;</Text>
+      </ScrollView>
+      {parsing ? <Text style={s.reading}>Reading the amount &amp; category…</Text> : null}
+    </Card>
+  );
+}
+
+/** An expanding, fading ring behind the record button while recording. */
+function PulseRing({ color }: { color: string }) {
+  const reduced = useReducedMotion();
+  const t = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (reduced) return;
+    const loop = Animated.loop(Animated.timing(t, { toValue: 1, duration: 1600, easing: Easing.out(Easing.ease), useNativeDriver: true }));
+    loop.start();
+    return () => loop.stop();
+  }, [t, reduced]);
+  if (reduced) return null;
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={{
+        position: "absolute",
+        width: 72, height: 72, borderRadius: 36, backgroundColor: color,
+        opacity: t.interpolate({ inputRange: [0, 1], outputRange: [0.35, 0] }),
+        transform: [{ scale: t.interpolate({ inputRange: [0, 1], outputRange: [1, 2.2] }) }],
+      }}
+    />
   );
 }
 
@@ -295,28 +342,21 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   timer: { color: c.negative, fontSize: 13, fontWeight: "700", fontVariant: ["tabular-nums"] },
   recordBody: { flex: 1, paddingHorizontal: space(4) },
   listening: { color: c.ink2, fontSize: 13, fontWeight: "700", letterSpacing: 3 },
+  waveGlow: { position: "absolute", width: 190, height: 190, borderRadius: 95, backgroundColor: c.goldSoft },
+  micHint: { width: 64, height: 64, borderRadius: 32, backgroundColor: c.goldSoft, alignItems: "center", justifyContent: "center" },
   prompt: { color: c.ink2, fontSize: 15, textAlign: "center", lineHeight: 22 },
-  recordBtn: { width: 72, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center", shadowColor: c.gold, shadowOpacity: 0.4, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 8 },
+  recordBtn: { width: 72, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center", shadowOpacity: 0.4, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 8 },
   stopSquare: { width: 24, height: 24, borderRadius: 6, backgroundColor: "#fff" },
   again: { color: c.ink2, fontSize: 13, fontWeight: "600" },
   heardCard: { backgroundColor: c.goldSoft, borderColor: c.goldBorder },
   heardLabel: { color: c.gold, fontSize: 11, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase" },
-  heardText: { color: c.ink, fontSize: 14, lineHeight: 21, marginTop: space(2) },
+  heardText: { color: c.ink, fontSize: 14, lineHeight: 21 },
   reading: { color: c.gold, fontSize: 11, fontWeight: "700", marginTop: space(2) },
   segment: { flexDirection: "row", backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: radius.md, padding: 3 },
-  seg: { flex: 1, paddingVertical: space(2), borderRadius: radius.sm, alignItems: "center" },
-  segOn: { backgroundColor: c.gold },
-  segText: { color: c.ink2, fontSize: 12, fontWeight: "700" },
+  seg: { flex: 1, paddingVertical: space(2.5), borderRadius: radius.sm, alignItems: "center" },
+  segOn: { backgroundColor: c.gold, shadowColor: c.gold, shadowOpacity: 0.35, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
+  segText: { color: c.ink2, fontSize: 13, fontWeight: "700" },
   segTextOn: { color: c.goldInk },
-  label: { color: c.muted, fontSize: 11, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 },
-  amount: { color: c.ink, fontSize: 36, fontWeight: "800", fontVariant: ["tabular-nums"], letterSpacing: -1 },
-  cur: { color: c.ink2, fontSize: 12, fontWeight: "600" },
-  chips: { gap: space(2), paddingRight: space(4) },
-  chip: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: radius.pill, paddingHorizontal: space(3), paddingVertical: space(2) },
-  chipOn: { backgroundColor: c.gold, borderColor: c.gold },
-  chipText: { color: c.ink2, fontSize: 13, fontWeight: "600" },
-  chipTextOn: { color: c.goldInk },
-  dot: { width: 9, height: 9, borderRadius: 3 },
-  error: { color: c.negative, fontSize: 12 },
+  error: { color: c.negative, fontSize: 13, fontWeight: "600" },
   footer: { paddingHorizontal: space(4), paddingTop: space(2) },
 });
