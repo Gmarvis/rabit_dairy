@@ -56,13 +56,19 @@ export default function InsightsScreen() {
             {data ? (
               <>
                 <MoneyText amount={data.netWorth} size={26} style={{ marginTop: 6 }} />
-                <Text style={s.keptLine}>
-                  {data.summary.netBalance.format({ withCode: false })} kept in {monthLabel(period)}
-                </Text>
-                <Row style={{ gap: space(3), marginTop: space(2) }}>
-                  <Dot color={t.blue} label={`${percent(data.summary.savingsRate)} saved`} t={t} />
-                  <Dot color={t.negative} label={`${percent(data.summary.expenseRate)} spent`} t={t} />
-                </Row>
+                {data.summary.income.minor > 0 || data.summary.expenses.minor > 0 ? (
+                  <>
+                    <Text style={s.keptLine}>
+                      {data.summary.netBalance.format({ withCode: false })} kept in {monthLabel(period)}
+                    </Text>
+                    <Row style={{ gap: space(3), marginTop: space(2) }}>
+                      <Dot color={t.blue} label={`${percent(data.summary.savingsRate)} saved`} t={t} />
+                      <Dot color={t.negative} label={`${percent(data.summary.expenseRate)} spent`} t={t} />
+                    </Row>
+                  </>
+                ) : (
+                  <Text style={s.keptLine}>Nothing logged in {monthLabel(period)} yet</Text>
+                )}
               </>
             ) : (
               <>

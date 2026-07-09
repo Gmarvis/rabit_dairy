@@ -29,7 +29,7 @@ export class GetNetWorthTrend {
       accs.map((a) => this.accounts.netMovementOf(userId, a.id)),
     );
     const current = accs.reduce(
-      (sum, a, i) => (a.isDormant ? sum : sum.plus(a.balance(movements[i]!))),
+      (sum, a, i) => (a.isDormant ? sum : sum.plus(a.netWorthContribution(movements[i]!))),
       Money.zero("XAF"),
     );
 

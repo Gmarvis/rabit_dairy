@@ -195,28 +195,45 @@ export default function DashboardScreen() {
             </View>
           ) : null}
 
-          {/* This month's cash flow. */}
-          <Row between style={{ marginTop: space(1) }}>
-            <SectionLabel>This month</SectionLabel>
-            <Pill tone="positive">{percent(1 - data.summary.expenseRate)} kept</Pill>
-          </Row>
-          <Card>
-            <Row between style={{ alignItems: "stretch" }}>
-              <View style={{ flex: 1 }}>
-                <SectionLabel>Income</SectionLabel>
-                <Text style={[s.statVal, { color: t.positive }]}>{data.summary.income.format({ withCode: false })}</Text>
-              </View>
-              <View style={[{ flex: 1, borderLeftWidth: 1, borderLeftColor: t.line, paddingLeft: space(4) }]}>
-                <SectionLabel>Expenses</SectionLabel>
-                <Text style={[s.statVal, { color: t.negative }]}>{data.summary.expenses.format({ withCode: false })}</Text>
-              </View>
-            </Row>
-            <SplitBar expenseRate={data.summary.expenseRate} c={t} />
-            <Row between style={{ marginTop: 7 }}>
-              <Text style={s.cap}>Spent {percent(data.summary.expenseRate)}</Text>
-              <Text style={s.cap}>Kept {percent(1 - data.summary.expenseRate)}</Text>
-            </Row>
-          </Card>
+          {/* This month's cash flow. Kept = income left after spending AND
+              setting aside — the same "kept" the Insights screen shows. */}
+          {(() => {
+            const { income, expenses, expenseRate, savingsRate } = data.summary;
+            const hasActivity = income.minor > 0 || expenses.minor > 0;
+            const keptRate = Math.max(0, 1 - expenseRate - savingsRate);
+            return (
+              <>
+                <Row between style={{ marginTop: space(1) }}>
+                  <SectionLabel>This month</SectionLabel>
+                  {hasActivity ? <Pill tone="positive">{percent(keptRate)} kept</Pill> : null}
+                </Row>
+                <Card>
+                  <Row between style={{ alignItems: "stretch" }}>
+                    <View style={{ flex: 1 }}>
+                      <SectionLabel>Income</SectionLabel>
+                      <Text style={[s.statVal, { color: t.positive }]}>{income.format({ withCode: false })}</Text>
+                    </View>
+                    <View style={[{ flex: 1, borderLeftWidth: 1, borderLeftColor: t.line, paddingLeft: space(4) }]}>
+                      <SectionLabel>Expenses</SectionLabel>
+                      <Text style={[s.statVal, { color: t.negative }]}>{expenses.format({ withCode: false })}</Text>
+                    </View>
+                  </Row>
+                  {hasActivity ? (
+                    <>
+                      <SplitBar expenseRate={expenseRate} savingsRate={savingsRate} c={t} />
+                      <Row between style={{ marginTop: 7 }}>
+                        <Text style={s.cap}>Spent {percent(expenseRate)}</Text>
+                        {savingsRate > 0 ? <Text style={s.cap}>Saved {percent(savingsRate)}</Text> : null}
+                        <Text style={s.cap}>Kept {percent(keptRate)}</Text>
+                      </Row>
+                    </>
+                  ) : (
+                    <Text style={[s.cap, { marginTop: 12 }]}>Nothing logged this month yet — tap ＋ to start.</Text>
+                  )}
+                </Card>
+              </>
+            );
+          })()}
 
           {/* Forward-looking pace — framed to save more, not spend more. */}
           {forecast && forecast.isCurrentMonth && forecast.spentSoFar.minor > 0 ? (
@@ -394,12 +411,15 @@ function NetWorthSpark({ trend, c }: { trend: NetWorthTrendView; c: Palette }) {
   );
 }
 
-function SplitBar({ expenseRate, c }: { expenseRate: number; c: Palette }) {
+function SplitBar({ expenseRate, savingsRate, c }: { expenseRate: number; savingsRate: number; c: Palette }) {
   const spent = Math.max(0, Math.min(1, expenseRate));
+  const saved = Math.max(0, Math.min(1 - spent, savingsRate));
+  const kept = Math.max(0, 1 - spent - saved);
   return (
     <View style={[styles.splitTrack, { backgroundColor: c.card2 }]}>
       <View style={{ flex: spent, backgroundColor: c.negative }} />
-      <View style={{ flex: 1 - spent, backgroundColor: c.positive }} />
+      <View style={{ flex: saved, backgroundColor: c.blue }} />
+      <View style={{ flex: kept, backgroundColor: c.positive }} />
     </View>
   );
 }

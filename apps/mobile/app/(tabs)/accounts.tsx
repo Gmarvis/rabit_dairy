@@ -55,7 +55,9 @@ export default function AccountsScreen() {
         <SectionLabel>Total balance</SectionLabel>
         {data ? <MoneyText amount={data.totalBalance} size={28} style={{ marginTop: 4 }} /> : null}
         <Text style={s.sub}>
-          {data ? `${data.accountCount} accounts · ${data.dormantCount} dormant` : "…"}
+          {data
+            ? `${data.accountCount} account${data.accountCount === 1 ? "" : "s"}${data.dormantCount > 0 ? ` · ${data.dormantCount} dormant` : ""}`
+            : "…"}
         </Text>
 
         {data && (data.saved.minor > 0 || data.owed.minor > 0) ? (

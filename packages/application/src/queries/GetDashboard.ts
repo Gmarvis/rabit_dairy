@@ -39,7 +39,7 @@ export class GetDashboard {
     const netMovements = await Promise.all(accs.map((a) => this.accounts.netMovementOf(userId, a.id)));
     const dormantIds = new Set(accs.filter((a) => a.isDormant).map((a) => a.id));
     const netWorth = accs.reduce(
-      (sum, a, i) => (a.isDormant ? sum : sum.plus(a.balance(netMovements[i]!))),
+      (sum, a, i) => (a.isDormant ? sum : sum.plus(a.netWorthContribution(netMovements[i]!))),
       Money.zero("XAF"),
     );
     const netWorthChange = periodTxns
