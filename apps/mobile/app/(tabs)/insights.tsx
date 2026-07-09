@@ -49,116 +49,116 @@ export default function InsightsScreen() {
     >
       <Text style={s.title}>Insights</Text>
 
-      <Card hero>
-        <Row between style={{ alignItems: "center" }}>
-          <View style={{ flex: 1 }}>
-            <SectionLabel>Total balance · all accounts</SectionLabel>
-            {data ? (
-              <>
-                <MoneyText amount={data.netWorth} size={26} style={{ marginTop: 6 }} />
-                {data.summary.income.minor > 0 || data.summary.expenses.minor > 0 ? (
+      {(() => {
+        const balance = data?.netWorth ?? life?.netWorth;
+        const monthActive = !!data && (data.summary.income.minor > 0 || data.summary.expenses.minor > 0);
+        const hasLifetime = !!life && (life.transactionCount > 0 || life.netWorth.minor > 0);
+        return (
+          <Card hero>
+            {/* Hero: the balance, stated once. */}
+            <Row between style={{ alignItems: "flex-start" }}>
+              <SectionLabel>Total balance · all accounts</SectionLabel>
+              {life?.since ? (
+                <Text style={s.since}>
+                  since {new Date(life.since).toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" })}
+                </Text>
+              ) : null}
+            </Row>
+            {balance ? (
+              <MoneyText amount={balance} size={32} style={{ marginTop: 6 }} />
+            ) : (
+              <Skeleton width={200} height={32} radius={8} style={{ marginTop: space(2) }} />
+            )}
+
+            {/* This month: how the balance moved, with the income split alongside. */}
+            <View style={s.divider} />
+            <Row between style={{ alignItems: "center" }}>
+              <View style={{ flex: 1 }}>
+                <SectionLabel>This month · {monthLabel(period)}</SectionLabel>
+                {!data ? (
+                  <Skeleton width={140} height={12} style={{ marginTop: space(2) }} />
+                ) : monthActive ? (
                   <>
-                    <Text style={s.keptLine}>
-                      {data.summary.netBalance.format({ withCode: false })} kept in {monthLabel(period)}
-                    </Text>
+                    <MoneyText amount={data.summary.netBalance} signed currency={false} size={18} style={{ marginTop: 4 }} />
                     <Row style={{ gap: space(3), marginTop: space(2) }}>
                       <Dot color={t.blue} label={`${percent(data.summary.savingsRate)} saved`} t={t} />
                       <Dot color={t.negative} label={`${percent(data.summary.expenseRate)} spent`} t={t} />
                     </Row>
                   </>
                 ) : (
-                  <Text style={s.keptLine}>Nothing logged in {monthLabel(period)} yet</Text>
+                  <Text style={s.keptLine}>Nothing logged yet</Text>
                 )}
-              </>
-            ) : (
-              <>
-                <Skeleton width={170} height={26} radius={8} style={{ marginTop: space(2) }} />
-                <Skeleton width={140} height={12} style={{ marginTop: space(3) }} />
-              </>
-            )}
-          </View>
-          {data && data.summary.income.minor > 0 ? <IncomeSplit summary={data.summary} t={t} /> : null}
-        </Row>
-      </Card>
-
-      {/* All-time — the full-lifetime overview. Shown as soon as there's money
-          held or anything logged, so it never silently disappears. */}
-      {life && (life.transactionCount > 0 || life.netWorth.minor > 0) ? (
-        <Card>
-          <Row between>
-            <SectionLabel>All-time</SectionLabel>
-            {life.since ? (
-              <Text style={s.since}>
-                since {new Date(life.since).toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" })}
-              </Text>
-            ) : null}
-          </Row>
-          <MoneyText amount={life.netWorth} size={26} style={{ marginTop: 6 }} />
-          <Text style={s.keptLine}>total accumulated · everything you hold across all accounts</Text>
-          <View style={s.divider} />
-          <Row between>
-            <View>
-              <SectionLabel>Earned</SectionLabel>
-              <Text style={[s.stat, { color: t.positive }]}>{life.earned.format({ withCode: false })}</Text>
-            </View>
-            <View style={{ alignItems: "center" }}>
-              <SectionLabel>Spent</SectionLabel>
-              <Text style={[s.stat, { color: t.negative }]}>{life.spent.format({ withCode: false })}</Text>
-            </View>
-            <View style={{ alignItems: "flex-end" }}>
-              <SectionLabel>Saved</SectionLabel>
-              <Text style={[s.stat, { color: t.blue }]}>{life.saved.format({ withCode: false })}</Text>
-            </View>
-          </Row>
-
-          {life.series.length > 1 ? (
-            <>
-              <View style={s.divider} />
-              <SectionLabel>Accumulated over time</SectionLabel>
-              <View style={{ marginTop: space(2), marginLeft: -8 }}>
-                <LineChart
-                  data={life.series.map((p) => ({ value: p.value, label: p.label }))}
-                  width={CHART_W - 16}
-                  height={120}
-                  curved
-                  areaChart
-                  color={t.positive}
-                  thickness={2.5}
-                  startFillColor={t.positive}
-                  endFillColor={t.positive}
-                  startOpacity={0.22}
-                  endOpacity={0.02}
-                  hideDataPoints
-                  hideRules
-                  hideYAxisText
-                  yAxisThickness={0}
-                  xAxisThickness={0}
-                  adjustToWidth
-                  initialSpacing={8}
-                  endSpacing={8}
-                  xAxisLabelTextStyle={{ color: t.muted, fontSize: 9 }}
-                  isAnimated
-                  animationDuration={800}
-                  pointerConfig={{
-                    pointerColor: t.positive,
-                    pointerStripColor: t.line,
-                    pointerStripHeight: 120,
-                    radius: 4,
-                    pointerLabelWidth: 120,
-                    pointerLabelHeight: 30,
-                    autoAdjustPointerLabelPosition: true,
-                    pointerLabelComponent: (items: { value: number }[]) => (
-                      <View style={{ backgroundColor: t.ink, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 }}>
-                        <Text style={{ color: t.bg, fontSize: 11, fontWeight: "800" }}>{abbrev(items[0]?.value ?? 0)} FCFA</Text>
-                      </View>
-                    ),
-                  }}
-                />
               </View>
-            </>
-          ) : null}
-        </Card>
-      ) : null}
+              {data && data.summary.income.minor > 0 ? <IncomeSplit summary={data.summary} t={t} /> : null}
+            </Row>
+
+            {/* All-time: lifetime earned / spent / saved + the accumulation curve. */}
+            {hasLifetime ? (
+              <>
+                <View style={s.divider} />
+                <SectionLabel>All-time</SectionLabel>
+                <Row between style={{ marginTop: space(2) }}>
+                  <View>
+                    <Text style={s.statLabel}>Earned</Text>
+                    <Text style={[s.stat, { color: t.positive }]}>{life!.earned.format({ withCode: false })}</Text>
+                  </View>
+                  <View style={{ alignItems: "center" }}>
+                    <Text style={s.statLabel}>Spent</Text>
+                    <Text style={[s.stat, { color: t.negative }]}>{life!.spent.format({ withCode: false })}</Text>
+                  </View>
+                  <View style={{ alignItems: "flex-end" }}>
+                    <Text style={s.statLabel}>Saved</Text>
+                    <Text style={[s.stat, { color: t.blue }]}>{life!.saved.format({ withCode: false })}</Text>
+                  </View>
+                </Row>
+
+                {life!.series.length > 1 ? (
+                  <View style={{ marginTop: space(3), marginLeft: -8 }}>
+                    <LineChart
+                      data={life!.series.map((p) => ({ value: p.value, label: p.label }))}
+                      width={CHART_W - 16}
+                      height={120}
+                      curved
+                      areaChart
+                      color={t.positive}
+                      thickness={2.5}
+                      startFillColor={t.positive}
+                      endFillColor={t.positive}
+                      startOpacity={0.22}
+                      endOpacity={0.02}
+                      hideDataPoints
+                      hideRules
+                      hideYAxisText
+                      yAxisThickness={0}
+                      xAxisThickness={0}
+                      adjustToWidth
+                      initialSpacing={8}
+                      endSpacing={8}
+                      xAxisLabelTextStyle={{ color: t.muted, fontSize: 9 }}
+                      isAnimated
+                      animationDuration={800}
+                      pointerConfig={{
+                        pointerColor: t.positive,
+                        pointerStripColor: t.line,
+                        pointerStripHeight: 120,
+                        radius: 4,
+                        pointerLabelWidth: 120,
+                        pointerLabelHeight: 30,
+                        autoAdjustPointerLabelPosition: true,
+                        pointerLabelComponent: (items: { value: number }[]) => (
+                          <View style={{ backgroundColor: t.ink, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 }}>
+                            <Text style={{ color: t.bg, fontSize: 11, fontWeight: "800" }}>{abbrev(items[0]?.value ?? 0)} FCFA</Text>
+                          </View>
+                        ),
+                      }}
+                    />
+                  </View>
+                ) : null}
+              </>
+            ) : null}
+          </Card>
+        );
+      })()}
 
       <View style={s.grid}>
         {LINKS.map((l) => (
@@ -205,6 +205,7 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   keptLine: { color: c.ink2, fontSize: 12, marginTop: 4 },
   since: { color: c.muted, fontSize: 11, fontVariant: ["tabular-nums"] },
   divider: { height: 1, backgroundColor: c.line, marginVertical: space(3) },
+  statLabel: { color: c.muted, fontSize: 11, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase" },
   stat: { fontSize: 15, fontWeight: "800", marginTop: 3, fontVariant: ["tabular-nums"] },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: space(3) },
   tile: { minHeight: 132 },
