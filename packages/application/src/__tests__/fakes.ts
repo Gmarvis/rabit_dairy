@@ -103,6 +103,9 @@ export class InMemoryAccounts implements AccountRepository {
   async save(a: Account) {
     this.store.set(a.id, a);
   }
+  async delete(_u: UserId, id: AccountId) {
+    this.store.delete(id);
+  }
 }
 
 export function salaryCategory(): Category {

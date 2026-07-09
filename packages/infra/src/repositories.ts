@@ -88,6 +88,10 @@ export class SupabaseAccountRepository implements AccountRepository {
     };
     unwrap(await this.db.from("accounts").upsert(row).select("id"));
   }
+
+  async delete(userId: UserId, id: AccountId) {
+    unwrap(await this.db.from("accounts").delete().eq("user_id", userId).eq("id", id));
+  }
 }
 
 export class SupabaseCategoryRepository implements CategoryRepository {

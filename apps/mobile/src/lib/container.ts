@@ -5,9 +5,12 @@
 import { asUserId, type UserId } from "@rabbit/domain";
 import type { FileStorage } from "@rabbit/application";
 import {
+  ArchiveAccount,
   ArchiveCategory,
   CreateAccount,
+  DeleteAccount,
   DeleteTransaction,
+  EditAccount,
   EditTransaction,
   GetAccountLedger,
   GetAccountsOverview,
@@ -93,6 +96,9 @@ function build(userId: UserId) {
       recordSavings: new RecordSavingsMovement(txns, ids, clock),
       setBudget: new SetBudget(budgets, ids),
       createAccount: new CreateAccount(accounts, ids),
+      editAccount: new EditAccount(accounts),
+      archiveAccount: new ArchiveAccount(accounts),
+      deleteAccount: new DeleteAccount(accounts, txns),
       reconcileBalance: new ReconcileAccountBalance(accounts),
       importStatement: new ImportStatement(txns, categories, ids, clock),
       saveCategory: new SaveCategory(categories, ids),

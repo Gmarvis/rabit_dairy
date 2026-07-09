@@ -98,6 +98,28 @@ export class Account {
     return this.props.role === "credit" ? bal.negated() : bal;
   }
 
+  /** Update the account's editable details (everything the user typed on the form). */
+  edit(p: {
+    name: string;
+    type: AccountType;
+    role: AccountRole;
+    institution: string | null;
+    mask: string | null;
+    isPrimary: boolean;
+    openingBalance: Money;
+  }): void {
+    if (!p.name.trim()) throw new Error("Account name is required");
+    this.props.name = p.name.trim();
+    this.props.type = p.type;
+    this.props.role = p.role;
+    this.props.institution = p.institution;
+    this.props.mask = p.mask;
+    this.props.isPrimary = p.isPrimary;
+    this.props.openingBalance = p.openingBalance;
+  }
+
+  setPrimary(v: boolean): void { this.props.isPrimary = v; }
+
   markDormant(): void {
     this.props.isDormant = true;
     this.props.isPrimary = false;

@@ -23,6 +23,7 @@ export interface AccountRepository {
   /** Signed net movement of an account's transactions (in − out). */
   netMovementOf(userId: UserId, id: AccountId): Promise<Money>;
   save(account: Account): Promise<void>;
+  delete(userId: UserId, id: AccountId): Promise<void>;
 }
 
 export interface CategoryRepository {

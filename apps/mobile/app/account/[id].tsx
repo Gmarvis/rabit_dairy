@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Circle, Polyline } from "react-native-svg";
 import type { AccountId } from "@rabbit/domain";
@@ -19,11 +19,36 @@ export default function AccountDetailScreen() {
   const t = useTheme();
   const s = makeStyles(t);
   const { id } = useLocalSearchParams<{ id: string }>();
+  const qc = useQueryClient();
 
   const { data, isLoading } = useQuery({
     queryKey: ["account-ledger", id],
     queryFn: () => c.queries.accountLedger.execute(c.userId, id as AccountId),
   });
+
+  const archive = useMutation({
+    mutationFn: async (dormant: boolean) => {
+      const res = await c.commands.archiveAccount.execute({ userId: c.userId, id: id as AccountId, dormant });
+      if (!res.ok) throw new Error(res.error.message);
+    },
+    onSuccess: () => qc.invalidateQueries(),
+  });
+
+  const del = useMutation({
+    mutationFn: async () => {
+      const res = await c.commands.deleteAccount.execute({ userId: c.userId, id: id as AccountId });
+      if (!res.ok) throw new Error(res.error.message);
+    },
+    onSuccess: () => { qc.invalidateQueries(); router.back(); },
+    onError: (e) => Alert.alert("Can't delete", e instanceof Error ? e.message : "Something went wrong."),
+  });
+
+  function confirmDelete() {
+    Alert.alert("Delete account?", "This can't be undone.", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Delete", style: "destructive", onPress: () => del.mutate() },
+    ]);
+  }
 
   return (
     <ScrollView
@@ -35,6 +60,10 @@ export default function AccountDetailScreen() {
         <Pressable onPress={() => router.back()} hitSlop={10} style={s.backBtn}>
           <Ionicons name="chevron-back" size={18} color={t.gold} />
           <Text style={s.back}>Accounts</Text>
+        </Pressable>
+        <Pressable onPress={() => router.push(`/account-new?id=${id}`)} hitSlop={10} style={s.editBtn}>
+          <Ionicons name="create-outline" size={16} color={t.ink} />
+          <Text style={s.editText}>Edit</Text>
         </Pressable>
       </Row>
 
@@ -98,6 +127,21 @@ export default function AccountDetailScreen() {
               ))
             )}
           </Card>
+
+          <SectionLabel>Manage</SectionLabel>
+          <Card style={{ paddingVertical: space(1) }}>
+            <Pressable style={[s.mrow, s.border]} onPress={() => archive.mutate(!data.isDormant)} disabled={archive.isPending}>
+              <Ionicons name={data.isDormant ? "eye-outline" : "archive-outline"} size={18} color={t.ink} />
+              <Text style={s.mtext}>{data.isDormant ? "Reopen account" : "Archive (hide) account"}</Text>
+            </Pressable>
+            <Pressable style={s.mrow} onPress={confirmDelete} disabled={del.isPending}>
+              <Ionicons name="trash-outline" size={18} color={t.negative} />
+              <Text style={[s.mtext, { color: t.negative }]}>Delete account</Text>
+            </Pressable>
+          </Card>
+          <Text style={s.manageHint}>
+            Archiving keeps your history but hides the account and drops it from totals. Delete only works when the account has no transactions.
+          </Text>
         </>
       )}
     </ScrollView>
@@ -139,6 +183,11 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   screen: { backgroundColor: c.bg },
   backBtn: { flexDirection: "row", alignItems: "center", gap: 2 },
   back: { color: c.gold, fontSize: 15, fontWeight: "700" },
+  editBtn: { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: radius.pill, paddingHorizontal: space(3), paddingVertical: space(1.5) },
+  editText: { color: c.ink, fontSize: 13, fontWeight: "700" },
+  mrow: { flexDirection: "row", alignItems: "center", gap: space(3), paddingVertical: space(3) },
+  mtext: { color: c.ink, fontSize: 14, fontWeight: "600" },
+  manageHint: { color: c.muted, fontSize: 11, lineHeight: 16, marginTop: space(1) },
   dim: { color: c.ink2 },
   name: { color: c.ink, fontSize: 13, fontWeight: "700" },
   txn: { flexDirection: "row", alignItems: "center", gap: space(2.5), paddingVertical: space(2.5) },

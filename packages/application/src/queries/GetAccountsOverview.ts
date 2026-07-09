@@ -20,6 +20,7 @@ export class GetAccountsOverview {
           institution: a.institution,
           mask: a.mask,
           balance: a.balance(net),
+          openingBalance: a.openingBalance,
           isPrimary: a.isPrimary,
           isDormant: a.isDormant,
         };

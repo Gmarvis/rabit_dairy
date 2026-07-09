@@ -65,6 +65,8 @@ export interface AccountListItem {
   institution: string | null;
   mask: string | null;
   balance: Money;
+  /** The starting balance, before any transactions — what the edit form shows. */
+  openingBalance: Money;
   isPrimary: boolean;
   isDormant: boolean;
 }

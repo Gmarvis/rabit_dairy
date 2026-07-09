@@ -1,6 +1,6 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { roleForType, type AccountRole, type AccountType } from "@rabbit/domain";
@@ -30,6 +30,8 @@ export default function NewAccountScreen() {
   const c = useContainer();
   const pal = useTheme();
   const s = makeStyles(pal);
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const editing = !!id;
 
   const [name, setName] = useState("");
   const [type, setType] = useState<AccountType>("bank_salary");
@@ -39,12 +41,33 @@ export default function NewAccountScreen() {
   const [opening, setOpening] = useState("");
   const [error, setError] = useState<string | null>(null);
 
+  // When editing, prefill the form from the account once — without clobbering
+  // any edits the user has already made.
+  const { data: accounts } = useQuery({
+    queryKey: ["accounts"],
+    queryFn: () => c.queries.accounts.execute(c.userId),
+    enabled: editing,
+  });
+  const prefilled = useRef(false);
+  useEffect(() => {
+    if (!editing || prefilled.current || !accounts) return;
+    const a = accounts.accounts.find((x) => x.id === id);
+    if (!a) return;
+    prefilled.current = true;
+    setName(a.name);
+    setType(a.type);
+    setRole(a.role);
+    setInstitution(a.institution ?? "");
+    setMask(a.mask ?? "");
+    setOpening(a.openingBalance.major ? String(a.openingBalance.major) : "");
+  }, [editing, accounts, id]);
+
   const isBank = type.startsWith("bank_");
   const canSave = name.trim().length > 0;
 
   const save = useMutation({
     mutationFn: async () => {
-      const res = await c.commands.createAccount.execute({
+      const fields = {
         userId: c.userId,
         name: name.trim(),
         type,
@@ -52,7 +75,10 @@ export default function NewAccountScreen() {
         institution: isBank ? institution : null,
         mask: isBank ? mask : null,
         openingBalanceMajor: opening ? parseInt(opening, 10) : 0,
-      });
+      };
+      const res = editing
+        ? await c.commands.editAccount.execute({ ...fields, id: id as never })
+        : await c.commands.createAccount.execute(fields);
       if (!res.ok) throw new Error(res.error.message);
     },
     onSuccess: () => { qc.invalidateQueries(); router.back(); },
@@ -62,7 +88,7 @@ export default function NewAccountScreen() {
   return (
     <View style={s.screen}>
       <ScrollView contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), gap: space(3) }}>
-        <ScreenHeader title="New account" onClose={() => router.back()} topInset={insets.top} />
+        <ScreenHeader title={editing ? "Edit account" : "New account"} onClose={() => router.back()} topInset={insets.top} />
 
         <View>
           <Text style={s.label}>Name</Text>
@@ -118,7 +144,7 @@ export default function NewAccountScreen() {
       </ScrollView>
 
       <View style={[s.footer, { paddingBottom: insets.bottom + space(2) }]}>
-        <PrimaryButton label="Add account" onPress={() => save.mutate()} disabled={!canSave} loading={save.isPending} />
+        <PrimaryButton label={editing ? "Save changes" : "Add account"} onPress={() => save.mutate()} disabled={!canSave} loading={save.isPending} />
       </View>
     </View>
   );
