@@ -35,7 +35,7 @@ import {
   ImportStatement,
   LogTransaction,
   ReconcileAccountBalance,
-  RecordSavingsMovement,
+  RecordTransfer,
   SaveCategory,
   SetBudget,
 } from "@rabbit/application";
@@ -93,7 +93,7 @@ function build(userId: UserId) {
       logTransaction: new LogTransaction(txns, categories, ids, clock),
       editTransaction: new EditTransaction(txns, categories),
       deleteTransaction: new DeleteTransaction(txns),
-      recordSavings: new RecordSavingsMovement(txns, ids, clock),
+      recordTransfer: new RecordTransfer(txns, categories, ids, clock),
       setBudget: new SetBudget(budgets, ids),
       createAccount: new CreateAccount(accounts, ids),
       editAccount: new EditAccount(accounts),

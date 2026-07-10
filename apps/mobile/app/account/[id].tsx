@@ -92,12 +92,10 @@ export default function AccountDetailScreen() {
             <Sparkline points={data.balanceHistory} color={t.positive} />
           </Card>
 
-          {data.isSavings ? (
-            <Row style={{ gap: space(2.5) }}>
-              <Action label="Deposit" icon="arrow-down" primary onPress={() => router.push("/savings")} />
-              <Action label="Withdraw" icon="arrow-up" onPress={() => router.push("/savings")} />
-            </Row>
-          ) : null}
+          <Row style={{ gap: space(2.5) }}>
+            <Action label="Deposit" icon="arrow-down" primary onPress={() => router.push(`/transfer?focus=${id}&dir=deposit`)} />
+            <Action label="Withdraw" icon="arrow-up" onPress={() => router.push(`/transfer?focus=${id}&dir=withdrawal`)} />
+          </Row>
 
           <SectionLabel>History</SectionLabel>
           <Card style={{ paddingVertical: space(1) }}>

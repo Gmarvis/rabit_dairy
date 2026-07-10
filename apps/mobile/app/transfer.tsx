@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
@@ -13,42 +13,50 @@ import { radius, space, type Palette } from "../src/theme/tokens";
 
 type Kind = "deposit" | "withdrawal";
 
-export default function SavingsScreen() {
+export default function TransferScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const qc = useQueryClient();
   const c = useContainer();
   const t = useTheme();
   const s = makeStyles(t);
+  const { focus, dir } = useLocalSearchParams<{ focus?: string; dir?: string }>();
 
-  const [kind, setKind] = useState<Kind>("deposit");
+  const [kind, setKind] = useState<Kind>(dir === "withdrawal" ? "withdrawal" : "deposit");
   const [digits, setDigits] = useState("");
   const [receiptPath, setReceiptPath] = useState<string | null>(null);
-  const [fundingId, setFundingId] = useState<string | null>(null);
+  const [otherId, setOtherId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const { data: options } = useQuery({
     queryKey: ["entry-options"],
     queryFn: () => c.queries.entryOptions.execute(c.userId),
   });
-  const savingsAccount = options?.accounts.find((a) => a.role === "savings");
-  const savingsCategory = options?.categories.find((cat) => cat.type === "savings");
-  const fundingAccounts = (options?.accounts ?? []).filter((a) => a.id !== savingsAccount?.id);
-  const effectiveFunding = fundingId ?? fundingAccounts[0]?.id ?? null;
-  const fundingName = fundingAccounts.find((a) => a.id === effectiveFunding)?.name ?? "account";
+  const accounts = options?.accounts ?? [];
+  // The account in focus (the one you opened this from) — default to primary.
+  const focusAccount =
+    accounts.find((a) => a.id === focus) ?? accounts.find((a) => a.isPrimary) ?? accounts[0];
+  const otherAccounts = accounts.filter((a) => a.id !== focusAccount?.id);
+  const effectiveOther = otherId ?? otherAccounts[0]?.id ?? null;
+  const otherName = otherAccounts.find((a) => a.id === effectiveOther)?.name ?? "account";
+
   const amountMajor = parseInt(digits || "0", 10);
-  const canSave = amountMajor > 0 && !!savingsAccount && !!savingsCategory && !!effectiveFunding;
+  const canSave = amountMajor > 0 && !!focusAccount && !!effectiveOther;
   const today = fullDate(new Date().toISOString());
 
-  async function attachReceipt(from: "camera" | "library") {
+  // Deposit = money into the focus account; withdrawal = money out of it.
+  const from = kind === "deposit" ? effectiveOther : focusAccount?.id ?? null;
+  const to = kind === "deposit" ? focusAccount?.id ?? null : effectiveOther;
+
+  async function attachReceipt(source: "camera" | "library") {
     setError(null);
     try {
       const perm =
-        from === "camera"
+        source === "camera"
           ? await ImagePicker.requestCameraPermissionsAsync()
           : await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!perm.granted) return setError(from === "camera" ? "Camera access is needed to snap a receipt." : "Photo access is needed to attach a receipt.");
-      const res = await (from === "camera"
+      if (!perm.granted) return setError(source === "camera" ? "Camera access is needed to snap a receipt." : "Photo access is needed to attach a receipt.");
+      const res = await (source === "camera"
         ? ImagePicker.launchCameraAsync({ quality: 0.5 })
         : ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.5 }));
       if (res.canceled || !res.assets[0]) return;
@@ -61,12 +69,10 @@ export default function SavingsScreen() {
 
   const save = useMutation({
     mutationFn: async () => {
-      const res = await c.commands.recordSavings.execute({
+      const res = await c.commands.recordTransfer.execute({
         userId: c.userId,
-        savingsAccountId: savingsAccount!.id as never,
-        fundingAccountId: effectiveFunding as never,
-        savingsCategoryId: savingsCategory!.id as never,
-        kind,
+        fromAccountId: from as never,
+        toAccountId: to as never,
         amountMajor,
         receiptPath,
       });
@@ -80,17 +86,17 @@ export default function SavingsScreen() {
     <View style={s.screen}>
       <View style={{ paddingHorizontal: space(4) }}>
         <ModalHeader
-          title={kind === "deposit" ? "Record deposit" : "Record withdrawal"}
+          title={kind === "deposit" ? "Move money in" : "Move money out"}
           onCancel={() => router.back()}
           topInset={insets.top}
         />
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: space(4), paddingBottom: space(4), gap: space(4) }}>
-        {!savingsAccount || !savingsCategory ? (
+        {accounts.length < 2 ? (
           <View style={s.notice}>
             <Ionicons name="alert-circle-outline" size={16} color={t.negative} />
-            <Text style={s.noticeText}>Add a savings account and a savings category first — then you can record a {kind}.</Text>
+            <Text style={s.noticeText}>Add a second account first — a transfer moves money between two of your accounts.</Text>
           </View>
         ) : null}
 
@@ -98,7 +104,7 @@ export default function SavingsScreen() {
           {(["deposit", "withdrawal"] as Kind[]).map((k) => (
             <Pressable key={k} style={[s.seg, kind === k && s.segOn]} onPress={() => setKind(k)}>
               <Ionicons name={k === "deposit" ? "arrow-down" : "arrow-up"} size={14} color={kind === k ? t.goldInk : t.ink2} />
-              <Text style={[s.segText, kind === k && s.segTextOn]}>{k === "deposit" ? "Deposit" : "Withdrawal"}</Text>
+              <Text style={[s.segText, kind === k && s.segTextOn]}>{k === "deposit" ? "Money in" : "Money out"}</Text>
             </Pressable>
           ))}
         </View>
@@ -115,14 +121,14 @@ export default function SavingsScreen() {
           />
           <Text style={s.cur}>
             FCFA · {kind === "deposit"
-              ? `${fundingName} → ${savingsAccount?.name ?? "Savings"}`
-              : `${savingsAccount?.name ?? "Savings"} → ${fundingName}`}
+              ? `${otherName} → ${focusAccount?.name ?? "account"}`
+              : `${focusAccount?.name ?? "account"} → ${otherName}`}
           </Text>
         </View>
 
-        <ChipRow label={kind === "deposit" ? "Move from" : "Move to"}>
-          {fundingAccounts.map((a) => (
-            <SelectChip key={a.id} label={a.name} selected={effectiveFunding === a.id} onPress={() => setFundingId(a.id)} />
+        <ChipRow label={kind === "deposit" ? "From" : "To"}>
+          {otherAccounts.map((a) => (
+            <SelectChip key={a.id} label={a.name} selected={effectiveOther === a.id} onPress={() => setOtherId(a.id)} />
           ))}
         </ChipRow>
 
@@ -163,7 +169,7 @@ export default function SavingsScreen() {
 
       <View style={[s.footer, { paddingBottom: insets.bottom + space(3) }]}>
         <PrimaryButton
-          label={kind === "deposit" ? "Save deposit" : "Save withdrawal"}
+          label={kind === "deposit" ? "Move money in" : "Move money out"}
           onPress={() => save.mutate()}
           disabled={!canSave}
           loading={save.isPending}
@@ -175,17 +181,12 @@ export default function SavingsScreen() {
 
 const makeStyles = (c: Palette) => StyleSheet.create({
   screen: { flex: 1, backgroundColor: c.bg },
-  save: { color: c.gold, fontSize: 15, fontWeight: "700" },
   segment: { flexDirection: "row", backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: radius.md, padding: 3 },
   seg: { flex: 1, flexDirection: "row", gap: 6, paddingVertical: space(2.5), borderRadius: radius.sm, alignItems: "center", justifyContent: "center" },
   segOn: { backgroundColor: c.gold },
   segText: { color: c.ink2, fontSize: 13, fontWeight: "700" },
   segTextOn: { color: c.goldInk },
   label: { color: c.muted, fontSize: 11, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase", marginBottom: space(2) },
-  chip: { backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: radius.pill, paddingHorizontal: space(3), paddingVertical: space(2) },
-  chipOn: { backgroundColor: c.gold, borderColor: c.gold },
-  chipText: { color: c.ink2, fontSize: 13, fontWeight: "600" },
-  chipTextOn: { color: c.goldInk },
   amount: { color: c.ink, fontSize: 44, fontWeight: "800", textAlign: "center", fontVariant: ["tabular-nums"], letterSpacing: -1, minWidth: 180 },
   cur: { color: c.ink2, fontSize: 13, fontWeight: "600", marginTop: 2 },
   field: { backgroundColor: c.card, borderColor: c.line, borderWidth: 1, borderRadius: radius.md, paddingHorizontal: space(4), paddingVertical: space(3), flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
