@@ -18,9 +18,9 @@ const TYPES: { key: AccountType; label: string }[] = [
 ];
 
 const ROLES: { key: AccountRole; label: string; hint: string }[] = [
-  { key: "spending", label: "Spending", hint: "Everyday money you can freely use." },
+  { key: "spending", label: "Spending", hint: "Everyday money you have — a current/cheque account, mobile money or cash. This is where your salary lands." },
   { key: "savings", label: "Savings", hint: "Money set aside — its balance counts as saved." },
-  { key: "credit", label: "Credit", hint: "Money you owe — subtracted from your total." },
+  { key: "credit", label: "Credit card / Loan", hint: "A debt you owe (credit card or loan). Its balance is money owed, so it's subtracted to get your net worth." },
 ];
 
 export default function NewAccountScreen() {

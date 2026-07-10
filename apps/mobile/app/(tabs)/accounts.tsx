@@ -156,7 +156,7 @@ function AccountRow({ a, last }: { a: AccountListItem; last: boolean }) {
       <View style={{ alignItems: "flex-end", gap: 3 }}>
         <MoneyText amount={a.balance} currency={false} size={13} />
         {a.role === "savings" ? <Pill tone="gold">Savings</Pill> : null}
-        {a.role === "credit" ? <Pill tone="negative">Credit</Pill> : null}
+        {a.role === "credit" ? <Pill tone="negative">Debt</Pill> : null}
         {a.isPrimary ? <Pill tone="positive">Primary</Pill> : null}
         {a.isDormant ? <Pill tone="muted">Hidden</Pill> : null}
       </View>
