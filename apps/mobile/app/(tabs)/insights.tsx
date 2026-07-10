@@ -9,7 +9,7 @@ import { Card, MoneyText, Row, SectionLabel, Skeleton } from "../../src/componen
 import { PressableScale } from "../../src/components/anim";
 import { useContainer } from "../../src/lib/auth";
 import { usePeriod } from "../../src/lib/period";
-import { abbrev, monthLabel, percent } from "../../src/lib/format";
+import { abbrev, monthLabel, percent, sparkSeries } from "../../src/lib/format";
 import { useTheme } from "../../src/theme/ThemeProvider";
 import { radius, space, type Palette } from "../../src/theme/tokens";
 
@@ -53,6 +53,7 @@ export default function InsightsScreen() {
         const balance = data?.netWorth ?? life?.netWorth;
         const monthActive = !!data && (data.summary.income.minor > 0 || data.summary.expenses.minor > 0);
         const hasLifetime = !!life && (life.transactionCount > 0 || life.netWorth.minor > 0);
+        const spark = life && life.series.length > 1 ? sparkSeries(life.series.map((p) => ({ value: p.value, label: p.label }))) : null;
         return (
           <Card hero>
             {/* Hero: the balance, stated once. */}
@@ -126,10 +127,11 @@ export default function InsightsScreen() {
                   </View>
                 </Row>
 
-                {life!.series.length > 1 ? (
+                {spark ? (
                   <View style={{ marginTop: space(3), marginLeft: -8 }}>
                     <LineChart
-                      data={life!.series.map((p) => ({ value: p.value, label: p.label }))}
+                      data={spark.data}
+                      maxValue={spark.maxValue}
                       width={CHART_W - 16}
                       height={120}
                       curved
@@ -159,9 +161,9 @@ export default function InsightsScreen() {
                         pointerLabelWidth: 120,
                         pointerLabelHeight: 30,
                         autoAdjustPointerLabelPosition: true,
-                        pointerLabelComponent: (items: { value: number }[]) => (
+                        pointerLabelComponent: (items: { real?: number; value: number }[]) => (
                           <View style={{ backgroundColor: t.ink, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 }}>
-                            <Text style={{ color: t.bg, fontSize: 11, fontWeight: "800" }}>{abbrev(items[0]?.value ?? 0)} FCFA</Text>
+                            <Text style={{ color: t.bg, fontSize: 11, fontWeight: "800" }}>{abbrev(items[0]?.real ?? items[0]?.value ?? 0)} FCFA</Text>
                           </View>
                         ),
                       }}

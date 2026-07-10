@@ -157,8 +157,8 @@ export function Card({
   return (
     <View
       style={[
-        { backgroundColor: c.card, borderRadius: 18, padding: 20, borderWidth: 1, borderColor: c.line },
-        hero && { backgroundColor: c.heroFrom, borderColor: c.line, borderRadius: 20, padding: 22 },
+        { backgroundColor: c.card, borderRadius: 18, paddingVertical: 18, paddingHorizontal: 16, borderWidth: 1, borderColor: c.line },
+        hero && { backgroundColor: c.heroFrom, borderColor: c.line, borderRadius: 20, paddingVertical: 20, paddingHorizontal: 18 },
         style,
       ]}
     >

@@ -9,7 +9,7 @@ import type { YearlyOverviewView } from "@rabbit/application";
 import { Card, MoneyText, PageHeader, Row, SectionLabel, SkeletonBlock, SkeletonHero } from "../src/components/ui";
 import { useContainer } from "../src/lib/auth";
 import { usePeriod } from "../src/lib/period";
-import { abbrev, percent } from "../src/lib/format";
+import { abbrev, percent, sparkSeries } from "../src/lib/format";
 import { chart, space, type Palette } from "../src/theme/tokens";
 import { useTheme } from "../src/theme/ThemeProvider";
 
@@ -98,16 +98,18 @@ function Accumulated({ data, year, t, s }: { data: YearlyOverviewView; year: num
   }
   const accumulated = run;
   const color = accumulated.isNegative ? t.negative : t.positive;
+  const spark = pts.length > 1 ? sparkSeries(pts) : null;
 
   return (
     <Card hero>
       <SectionLabel>Accumulated · {year}</SectionLabel>
       <MoneyText amount={accumulated} signed size={30} style={{ marginTop: 6 }} />
       <Text style={s.heroSub}>What you've kept — income minus spending, year to date</Text>
-      {pts.length > 1 ? (
+      {spark ? (
         <View style={{ marginTop: space(2), marginLeft: -8 }}>
           <LineChart
-            data={pts}
+            data={spark.data}
+            maxValue={spark.maxValue}
             width={YW - 16}
             height={110}
             curved
@@ -137,9 +139,9 @@ function Accumulated({ data, year, t, s }: { data: YearlyOverviewView; year: num
               pointerLabelWidth: 120,
               pointerLabelHeight: 30,
               autoAdjustPointerLabelPosition: true,
-              pointerLabelComponent: (items: { value: number }[]) => (
+              pointerLabelComponent: (items: { real?: number; value: number }[]) => (
                 <View style={{ backgroundColor: t.ink, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 }}>
-                  <Text style={{ color: t.bg, fontSize: 11, fontWeight: "800" }}>{abbrev(items[0]?.value ?? 0)} FCFA</Text>
+                  <Text style={{ color: t.bg, fontSize: 11, fontWeight: "800" }}>{abbrev(items[0]?.real ?? items[0]?.value ?? 0)} FCFA</Text>
                 </View>
               ),
             }}

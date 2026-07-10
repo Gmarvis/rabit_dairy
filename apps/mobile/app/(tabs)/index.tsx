@@ -14,7 +14,7 @@ import { CountUpMoney, PressableScale } from "../../src/components/anim";
 import { ONBOARDED_KEY } from "../onboarding";
 import { useAuth, useContainer } from "../../src/lib/auth";
 import { usePeriod } from "../../src/lib/period";
-import { greeting, monthLabel, percent, shortDate } from "../../src/lib/format";
+import { greeting, monthLabel, percent, shortDate, sparkSeries } from "../../src/lib/format";
 import { iconForCategory } from "../../src/theme/icons";
 import { useTheme } from "../../src/theme/ThemeProvider";
 import { space, type Palette } from "../../src/theme/tokens";
@@ -371,13 +371,16 @@ const HERO_W = Dimensions.get("window").width - space(4) * 2 - 44;
 function NetWorthSpark({ trend, c }: { trend: NetWorthTrendView; c: Palette }) {
   const up = !trend.change.isNegative;
   const stroke = up ? c.positive : c.negative;
-  const data = trend.points.map((p) => ({ value: p.value.minor }));
+  // Net worth can be negative; offset into a positive band so the area fill
+  // doesn't stretch past `height` (see sparkSeries).
+  const { data, maxValue } = sparkSeries(trend.points.map((p) => ({ value: p.value.minor })));
   return (
     <View style={{ marginTop: 14, marginLeft: -8 }}>
       <LineChart
         data={data}
         width={HERO_W - 16}
         height={64}
+        maxValue={maxValue}
         curved
         areaChart
         color={stroke}
@@ -404,10 +407,10 @@ function NetWorthSpark({ trend, c }: { trend: NetWorthTrendView; c: Palette }) {
           pointerLabelWidth: 120,
           pointerLabelHeight: 30,
           autoAdjustPointerLabelPosition: true,
-          pointerLabelComponent: (items: { value: number }[]) => (
+          pointerLabelComponent: (items: { real?: number; value: number }[]) => (
             <View style={{ backgroundColor: c.ink, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 }}>
               <Text style={{ color: c.bg, fontSize: 11, fontWeight: "800" }}>
-                {Number(items[0]?.value ?? 0).toLocaleString("en-US")} FCFA
+                {Number(items[0]?.real ?? items[0]?.value ?? 0).toLocaleString("en-US")} FCFA
               </Text>
             </View>
           ),

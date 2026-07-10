@@ -46,6 +46,25 @@ const METHOD_LABELS: Record<string, string> = {
 export const methodLabel = (m: string | null): string =>
   m ? METHOD_LABELS[m] ?? m : "";
 
+/**
+ * Prepare values for a gifted-charts area/line sparkline. The library fills the
+ * area down to the zero baseline, so negative data (e.g. a negative net worth)
+ * stretches the fill far past the chart's `height`. This offsets the series
+ * into a positive band (shape is all a sparkline conveys) and returns the
+ * matching `maxValue`; each point keeps its original figure on `real` for
+ * tooltips, plus any other fields (label, etc.).
+ */
+export function sparkSeries<T extends { value: number }>(
+  points: T[],
+): { data: (T & { real: number })[]; maxValue: number } {
+  const raw = points.map((p) => p.value);
+  const min = raw.length ? Math.min(...raw) : 0;
+  const max = raw.length ? Math.max(...raw) : 0;
+  const pad = (max - min || Math.abs(max) || 1) * 0.15;
+  const data = points.map((p) => ({ ...p, real: p.value, value: p.value - min + pad }));
+  return { data, maxValue: max - min + pad * 2 };
+}
+
 /** Compact number for chart axes / tight labels: 1_200 → "1k", 3_400_000 → "3.4M". */
 export function abbrev(n: number): string {
   const a = Math.abs(n);

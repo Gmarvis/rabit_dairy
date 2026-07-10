@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import {
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -100,9 +101,7 @@ export default function AuthScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.logo}>
-          <Text style={{ fontSize: 22 }}>🐇</Text>
-        </View>
+        <Image source={require("../assets/icon.png")} style={styles.logo} accessibilityLabel="Rabbit Diary" />
         <Text style={styles.title}>
           {mode === "signin" ? "Welcome back" : "Create your diary"}
         </Text>
@@ -207,8 +206,7 @@ const makeStyles = (c: Palette) =>
   StyleSheet.create({
     screen: { flex: 1, backgroundColor: c.bg },
     logo: {
-      width: 46, height: 46, borderRadius: radius.md, backgroundColor: c.card2,
-      alignItems: "center", justifyContent: "center", marginBottom: space(5),
+      width: 52, height: 52, borderRadius: radius.md, marginBottom: space(5),
     },
     title: { color: c.ink, fontSize: 24, fontWeight: "800" },
     sub: { color: c.ink2, fontSize: 13, marginTop: 4, marginBottom: space(5) },
